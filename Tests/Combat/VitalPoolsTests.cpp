@@ -24,22 +24,27 @@ void TestDamageHealingAndDeath(TestSuite &suite) {
   const DamageApplication lethal = health.ApplyDamage(150.0);
   suite.Expect(lethal.BecameDead && health.IsDead(),
                "crossing zero emits one death transition");
-  suite.ExpectNear(lethal.Applied, 100.0, "lethal hit applies remaining health");
-  suite.ExpectNear(lethal.Overkill, 50.0, "lethal excess is reported as overkill");
+  suite.ExpectNear(lethal.Applied, 100.0,
+                   "lethal hit applies remaining health");
+  suite.ExpectNear(lethal.Overkill, 50.0,
+                   "lethal excess is reported as overkill");
 
   const DamageApplication repeated = health.ApplyDamage(10.0);
   suite.Expect(repeated.WasAlreadyDead && !repeated.BecameDead,
                "repeated damage cannot emit another death transition");
-  suite.ExpectNear(repeated.Applied, 0.0, "dead health cannot be reduced again");
+  suite.ExpectNear(repeated.Applied, 0.0,
+                   "dead health cannot be reduced again");
   suite.ExpectNear(repeated.Overkill, 10.0,
                    "damage against a dead target remains observable");
 
   const HealingApplication deadHeal = health.Heal(40.0);
   suite.Expect(deadHeal.WasDead && deadHeal.Applied == 0.0,
                "ordinary healing cannot implicitly resurrect");
-  suite.Expect(health.Revive(25.0), "explicit revive succeeds with positive health");
+  suite.Expect(health.Revive(25.0),
+               "explicit revive succeeds with positive health");
   suite.ExpectNear(health.Current(), 25.0, "revive restores requested health");
-  suite.Expect(!health.Revive(25.0), "living target cannot be revived repeatedly");
+  suite.Expect(!health.Revive(25.0),
+               "living target cannot be revived repeatedly");
 }
 
 void TestHealthBoundsAndInvalidValues(TestSuite &suite) {
@@ -73,7 +78,8 @@ void TestHealthStateValidation(TestSuite &suite) {
   const HealthState saved = health.CaptureState();
   static_cast<void>(health.ApplyDamage(35.0));
   suite.Expect(health.RestoreState(saved), "valid health state restores");
-  suite.ExpectNear(health.Current(), 35.0, "health state restores current value");
+  suite.ExpectNear(health.Current(), 35.0,
+                   "health state restores current value");
   suite.Expect(!health.RestoreState({100.0, 25.0, true}),
                "dead flag inconsistent with health is rejected");
   suite.ExpectNear(health.Current(), 35.0,
@@ -116,9 +122,9 @@ void TestResourceStateValidation(TestSuite &suite) {
                    "resource state restores current value");
   suite.Expect(!resource.RestoreState({20.0, 21.0}),
                "resource state above maximum is rejected");
-  suite.Expect(!resource.RestoreState(
-                   {std::numeric_limits<double>::quiet_NaN(), 0.0}),
-               "non-finite resource state is rejected");
+  suite.Expect(
+      !resource.RestoreState({std::numeric_limits<double>::quiet_NaN(), 0.0}),
+      "non-finite resource state is rejected");
   suite.ExpectNear(resource.Current(), 50.0,
                    "rejected resource state leaves pool unchanged");
 }

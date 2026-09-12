@@ -31,9 +31,8 @@ inline constexpr std::uint32_t ResistancePenetrationBase = 300;
 [[nodiscard]] constexpr AttributeId
 DamageBonus(const Combat::DamageType type) noexcept {
   const auto index = static_cast<std::uint32_t>(type);
-  return index < Combat::DamageTypeCount
-             ? AttributeId{DamageBonusBase + index}
-             : AttributeId{};
+  return index < Combat::DamageTypeCount ? AttributeId{DamageBonusBase + index}
+                                         : AttributeId{};
 }
 
 [[nodiscard]] constexpr AttributeId

@@ -49,8 +49,7 @@ bool Combatant::SetBaseAttribute(const Stats::AttributeId id,
   return true;
 }
 
-bool Combatant::AddAttributeModifier(
-    const Stats::AttributeModifier modifier) {
+bool Combatant::AddAttributeModifier(const Stats::AttributeModifier modifier) {
   if (!attributes_.AddModifier(modifier)) {
     return false;
   }
@@ -90,9 +89,9 @@ bool Combatant::Revive(const double health) noexcept {
   return health_.Revive(health);
 }
 
-CombatResolution Combatant::ResolveAttack(Combatant &target,
-                                          const DamageSpec &spec,
-                                          const CombatRolls rolls) const noexcept {
+CombatResolution
+Combatant::ResolveAttack(Combatant &target, const DamageSpec &spec,
+                         const CombatRolls rolls) const noexcept {
   DamageRequest request;
   request.BaseDamage = CalculateScaledBaseDamage(spec);
   request.Attacker = BuildOffensiveStats();
@@ -109,9 +108,9 @@ CombatResolution Combatant::ResolveAttack(Combatant &target,
   return result;
 }
 
-CombatResolution Combatant::ResolveAttack(
-    Combatant &target, const DamageSpec &spec,
-    Core::DeterministicRandom &random) const noexcept {
+CombatResolution
+Combatant::ResolveAttack(Combatant &target, const DamageSpec &spec,
+                         Core::DeterministicRandom &random) const noexcept {
   const CombatRolls rolls{random.NextUnit(), random.NextUnit()};
   return ResolveAttack(target, spec, rolls);
 }
@@ -164,10 +163,10 @@ Combatant::CalculateScaledBaseDamage(const DamageSpec &spec) const noexcept {
         attackPower, NonNegativeFinite(spec.AttackPowerCoefficients[index]));
     const double spellContribution = SaturatingMultiply(
         spellPower, NonNegativeFinite(spec.SpellPowerCoefficients[index]));
-    scaled[index] = SaturatingAdd(
-        SaturatingAdd(NonNegativeFinite(spec.BaseDamage[index]),
-                      attackContribution),
-        spellContribution);
+    scaled[index] =
+        SaturatingAdd(SaturatingAdd(NonNegativeFinite(spec.BaseDamage[index]),
+                                    attackContribution),
+                      spellContribution);
   }
   return scaled;
 }
@@ -195,10 +194,8 @@ OffensiveStats Combatant::BuildOffensiveStats() const noexcept {
 DefensiveStats Combatant::BuildDefensiveStats() const noexcept {
   DefensiveStats stats;
   stats.Armor = attributes_.Get(Stats::CombatAttributes::Armor);
-  stats.ResistanceCap =
-      attributes_.Get(Stats::CombatAttributes::ResistanceCap);
-  stats.BlockChance =
-      attributes_.Get(Stats::CombatAttributes::BlockChance);
+  stats.ResistanceCap = attributes_.Get(Stats::CombatAttributes::ResistanceCap);
+  stats.BlockChance = attributes_.Get(Stats::CombatAttributes::BlockChance);
   stats.BlockMitigation =
       attributes_.Get(Stats::CombatAttributes::BlockMitigation);
   for (std::size_t index = 0; index < DamageTypeCount; ++index) {

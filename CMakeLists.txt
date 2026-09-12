@@ -59,6 +59,7 @@ include(CTest)
 if(BUILD_TESTING)
   function(lostsense_add_test target source test_name)
     add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE Tests)
     target_link_libraries(${target} PRIVATE lostsense_combat
                                             lostsense_project_options)
     add_test(NAME ${test_name} COMMAND ${target})

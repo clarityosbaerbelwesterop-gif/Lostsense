@@ -19,11 +19,10 @@ DeterministicRandom::DeterministicRandom(const std::uint64_t seed,
 std::uint32_t DeterministicRandom::NextUInt32() noexcept {
   const std::uint64_t previous = state_;
   state_ = previous * Multiplier + increment_;
-  const auto xorshifted = static_cast<std::uint32_t>(
-      ((previous >> 18U) ^ previous) >> 27U);
+  const auto xorshifted =
+      static_cast<std::uint32_t>(((previous >> 18U) ^ previous) >> 27U);
   const auto rotation = static_cast<std::uint32_t>(previous >> 59U);
-  return (xorshifted >> rotation) |
-         (xorshifted << ((0U - rotation) & 31U));
+  return (xorshifted >> rotation) | (xorshifted << ((0U - rotation) & 31U));
 }
 
 std::uint64_t DeterministicRandom::NextUInt64() noexcept {

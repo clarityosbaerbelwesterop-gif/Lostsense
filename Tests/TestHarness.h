@@ -21,8 +21,8 @@ public:
                   const std::string_view description,
                   const double tolerance = 0.000001) {
     if (!std::isfinite(actual) || std::abs(actual - expected) > tolerance) {
-      std::cerr << "FAIL [" << name_ << "]: " << description
-                << " (expected " << expected << ", got " << actual << ")\n";
+      std::cerr << "FAIL [" << name_ << "]: " << description << " (expected "
+                << expected << ", got " << actual << ")\n";
       ++failures_;
     }
   }

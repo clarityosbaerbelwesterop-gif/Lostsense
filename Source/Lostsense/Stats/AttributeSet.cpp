@@ -8,8 +8,8 @@
 namespace Lostsense::Stats {
 namespace {
 
-[[nodiscard]] bool IsDefinitionValid(
-    const AttributeDefinition &definition) noexcept {
+[[nodiscard]] bool
+IsDefinitionValid(const AttributeDefinition &definition) noexcept {
   return definition.Id.IsValid() && std::isfinite(definition.DefaultBase) &&
          std::isfinite(definition.Minimum) &&
          std::isfinite(definition.Maximum) &&
@@ -62,8 +62,7 @@ double AttributeSet::EvaluateEntry(const Entry &entry) noexcept {
   const long double maximum =
       static_cast<long double>(entry.Definition.Maximum);
   if (!std::isfinite(value)) {
-    return value < 0.0L ? entry.Definition.Minimum
-                        : entry.Definition.Maximum;
+    return value < 0.0L ? entry.Definition.Minimum : entry.Definition.Maximum;
   }
   return static_cast<double>(std::clamp(value, minimum, maximum));
 }
@@ -104,9 +103,8 @@ double AttributeSet::Get(const AttributeId id) const noexcept {
 bool AttributeSet::AddModifier(const AttributeModifier modifier) {
   const auto entry = entries_.find(modifier.Attribute);
   if (!modifier.Id.IsValid() || entry == entries_.end() ||
-      HasModifier(modifier.Id) ||
-      !IsOperationValid(modifier.Operation) || !IsSourceValid(modifier.Source) ||
-      !std::isfinite(modifier.Magnitude) ||
+      HasModifier(modifier.Id) || !IsOperationValid(modifier.Operation) ||
+      !IsSourceValid(modifier.Source) || !std::isfinite(modifier.Magnitude) ||
       (modifier.Operation == ModifierOperation::Multiplicative &&
        modifier.Magnitude < 0.0)) {
     return false;

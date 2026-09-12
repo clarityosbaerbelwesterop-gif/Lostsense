@@ -14,8 +14,7 @@ constexpr AttributeId UnknownAttribute{9001U};
 
 AttributeSet MakeTestSet() {
   AttributeSet attributes;
-  static_cast<void>(
-      attributes.Define({TestAttribute, 10.0, -100.0, 100.0}));
+  static_cast<void>(attributes.Define({TestAttribute, 10.0, -100.0, 100.0}));
   return attributes;
 }
 
@@ -23,10 +22,10 @@ void TestDefinitionValidation(TestSuite &suite) {
   AttributeSet attributes;
   suite.Expect(!attributes.Define({AttributeId{}, 1.0, 0.0, 2.0}),
                "zero attribute ID is reserved and rejected");
-  suite.Expect(!attributes.Define(
-                   {TestAttribute, std::numeric_limits<double>::quiet_NaN(),
-                    0.0, 2.0}),
-               "non-finite default is rejected");
+  suite.Expect(
+      !attributes.Define(
+          {TestAttribute, std::numeric_limits<double>::quiet_NaN(), 0.0, 2.0}),
+      "non-finite default is rejected");
   suite.Expect(!attributes.Define({TestAttribute, 1.0, 2.0, 1.0}),
                "inverted bounds are rejected");
   suite.Expect(!attributes.Define({TestAttribute, 200.0, 0.0, 100.0}),
@@ -51,8 +50,8 @@ void TestModifierEvaluation(TestSuite &suite) {
                                   ModifierOperation::Additive,
                                   ModifierSource::SkillTree, -3.0};
   const AttributeModifier multiplier{ModifierId{30U}, TestAttribute,
-                                    ModifierOperation::Multiplicative,
-                                    ModifierSource::StatusEffect, 2.0};
+                                     ModifierOperation::Multiplicative,
+                                     ModifierSource::StatusEffect, 2.0};
 
   suite.Expect(first.SetBase(TestAttribute, 20.0), "base value can be set");
   suite.Expect(second.SetBase(TestAttribute, 20.0), "second base can be set");
@@ -82,15 +81,13 @@ void TestModifierEvaluation(TestSuite &suite) {
                                    ModifierOperation::Multiplicative,
                                    ModifierSource::System, -1.0}),
                "negative multiplicative factor is rejected");
-  suite.Expect(!first.AddModifier(
-                   {ModifierId{101U}, TestAttribute,
-                    static_cast<ModifierOperation>(255U),
-                    ModifierSource::System, 1.0}),
+  suite.Expect(!first.AddModifier({ModifierId{101U}, TestAttribute,
+                                   static_cast<ModifierOperation>(255U),
+                                   ModifierSource::System, 1.0}),
                "unknown serialized modifier operation is rejected");
-  suite.Expect(!first.AddModifier(
-                   {ModifierId{102U}, TestAttribute,
-                    ModifierOperation::Additive,
-                    static_cast<ModifierSource>(255U), 1.0}),
+  suite.Expect(!first.AddModifier({ModifierId{102U}, TestAttribute,
+                                   ModifierOperation::Additive,
+                                   static_cast<ModifierSource>(255U), 1.0}),
                "unknown serialized modifier source is rejected");
 }
 
@@ -98,24 +95,21 @@ void TestBoundsAndSourceRemoval(TestSuite &suite) {
   AttributeSet attributes = MakeTestSet();
   suite.Expect(attributes.SetBase(TestAttribute, 99.0),
                "bounded base can be assigned");
-  suite.Expect(attributes.AddModifier(
-                   {ModifierId{1U}, TestAttribute,
-                    ModifierOperation::Additive, ModifierSource::Equipment,
-                    1000.0}),
+  suite.Expect(attributes.AddModifier({ModifierId{1U}, TestAttribute,
+                                       ModifierOperation::Additive,
+                                       ModifierSource::Equipment, 1000.0}),
                "large finite modifier remains valid");
   suite.ExpectNear(attributes.Get(TestAttribute), 100.0,
                    "evaluated value obeys its upper bound");
-  suite.Expect(attributes.AddModifier(
-                   {ModifierId{2U}, TestAttribute,
-                    ModifierOperation::Multiplicative,
-                    ModifierSource::Temporary, 0.0}),
+  suite.Expect(attributes.AddModifier({ModifierId{2U}, TestAttribute,
+                                       ModifierOperation::Multiplicative,
+                                       ModifierSource::Temporary, 0.0}),
                "zero factor can suppress an attribute temporarily");
   suite.ExpectNear(attributes.Get(TestAttribute), 0.0,
                    "zero multiplier is applied safely");
-  suite.Expect(attributes.AddModifier(
-                   {ModifierId{3U}, TestAttribute,
-                    ModifierOperation::Additive, ModifierSource::Equipment,
-                    -4.0}),
+  suite.Expect(attributes.AddModifier({ModifierId{3U}, TestAttribute,
+                                       ModifierOperation::Additive,
+                                       ModifierSource::Equipment, -4.0}),
                "second equipment modifier can be added");
   suite.Expect(attributes.RemoveModifiersBySource(ModifierSource::Equipment) ==
                    2U,
@@ -171,15 +165,14 @@ void TestCoreCombatDefinitions(TestSuite &suite) {
                    "core critical multiplier has a useful default");
   suite.ExpectNear(attributes.Get(CombatAttributes::MovementSpeedMultiplier),
                    1.0, "movement multiplier defaults to neutral");
-  suite.Expect(CombatAttributes::DamageBonus(
-                   Lostsense::Combat::DamageType::Physical) !=
-                   CombatAttributes::DamageBonus(
-                       Lostsense::Combat::DamageType::Fire),
-               "damage types map to distinct stable attributes");
-  suite.Expect(!CombatAttributes::Resistance(
-                    Lostsense::Combat::DamageType::Count)
-                    .IsValid(),
-               "sentinel damage type cannot create an attribute ID");
+  suite.Expect(
+      CombatAttributes::DamageBonus(Lostsense::Combat::DamageType::Physical) !=
+          CombatAttributes::DamageBonus(Lostsense::Combat::DamageType::Fire),
+      "damage types map to distinct stable attributes");
+  suite.Expect(
+      !CombatAttributes::Resistance(Lostsense::Combat::DamageType::Count)
+           .IsValid(),
+      "sentinel damage type cannot create an attribute ID");
 }
 
 } // namespace

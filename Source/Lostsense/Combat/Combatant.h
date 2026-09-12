@@ -59,8 +59,7 @@ struct CombatantState final {
 class Combatant final {
 public:
   Combatant(CombatantId id, CombatantKind kind);
-  Combatant(CombatantId id, CombatantKind kind,
-            Stats::AttributeSet attributes);
+  Combatant(CombatantId id, CombatantKind kind, Stats::AttributeSet attributes);
 
   [[nodiscard]] CombatantId Id() const noexcept { return id_; }
   [[nodiscard]] CombatantKind Kind() const noexcept { return kind_; }
@@ -75,8 +74,7 @@ public:
   [[nodiscard]] bool SetBaseAttribute(Stats::AttributeId id,
                                       double value) noexcept;
   [[nodiscard]] bool AddAttributeModifier(Stats::AttributeModifier modifier);
-  [[nodiscard]] bool
-  RemoveAttributeModifier(Stats::ModifierId id) noexcept;
+  [[nodiscard]] bool RemoveAttributeModifier(Stats::ModifierId id) noexcept;
   [[nodiscard]] std::size_t
   RemoveAttributeModifiersBySource(Stats::ModifierSource source) noexcept;
 

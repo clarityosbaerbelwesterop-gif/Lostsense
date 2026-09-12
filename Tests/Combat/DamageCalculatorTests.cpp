@@ -111,8 +111,7 @@ void TestDamageTypeBonusesAndOverflowSafety() {
 
   request.BaseDamage[static_cast<std::size_t>(DamageType::Fire)] =
       std::numeric_limits<double>::max();
-  request.Attacker.IncreasedDamagePercent =
-      std::numeric_limits<double>::max();
+  request.Attacker.IncreasedDamagePercent = std::numeric_limits<double>::max();
   const DamageResult saturated = DamageCalculator::Calculate(request);
   Expect(std::isfinite(saturated.TotalApplied),
          "finite extreme inputs saturate instead of overflowing");

@@ -23,7 +23,8 @@ public:
   [[nodiscard]] std::uint32_t NextUInt32() noexcept;
   [[nodiscard]] std::uint64_t NextUInt64() noexcept;
   [[nodiscard]] double NextUnit() noexcept;
-  [[nodiscard]] std::uint32_t NextBounded(std::uint32_t exclusiveUpper) noexcept;
+  [[nodiscard]] std::uint32_t
+  NextBounded(std::uint32_t exclusiveUpper) noexcept;
 
   [[nodiscard]] RandomState CaptureState() const noexcept;
   [[nodiscard]] bool RestoreState(RandomState state) noexcept;

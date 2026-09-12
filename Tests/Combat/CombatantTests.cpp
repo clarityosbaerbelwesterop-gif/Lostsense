@@ -11,8 +11,7 @@ using namespace Lostsense::Stats;
 using Lostsense::Core::DeterministicRandom;
 using Lostsense::Tests::TestSuite;
 
-constexpr std::size_t Physical =
-    static_cast<std::size_t>(DamageType::Physical);
+constexpr std::size_t Physical = static_cast<std::size_t>(DamageType::Physical);
 constexpr std::size_t Fire = static_cast<std::size_t>(DamageType::Fire);
 
 void FillHealth(Combatant &combatant, const double maximum) {
@@ -28,9 +27,9 @@ void TestAttributesDriveDamageAndHealth(TestSuite &suite) {
 
   suite.Expect(attacker.SetBaseAttribute(CombatAttributes::AttackPower, 50.0),
                "attack power can be configured");
-  suite.Expect(attacker.SetBaseAttribute(
-                   CombatAttributes::DamageBonusPercent, 20.0),
-               "global damage bonus can be configured");
+  suite.Expect(
+      attacker.SetBaseAttribute(CombatAttributes::DamageBonusPercent, 20.0),
+      "global damage bonus can be configured");
   suite.Expect(attacker.SetBaseAttribute(
                    CombatAttributes::DamageBonus(DamageType::Physical), 10.0),
                "type damage bonus can be configured");
@@ -66,8 +65,7 @@ void TestCriticalBlockResistanceAndPenetration(TestSuite &suite) {
       CombatAttributes::ResistancePenetration(DamageType::Fire), 0.10));
   static_cast<void>(boss.SetBaseAttribute(
       CombatAttributes::Resistance(DamageType::Fire), 0.25));
-  static_cast<void>(
-      boss.SetBaseAttribute(CombatAttributes::BlockChance, 1.0));
+  static_cast<void>(boss.SetBaseAttribute(CombatAttributes::BlockChance, 1.0));
   static_cast<void>(
       boss.SetBaseAttribute(CombatAttributes::BlockMitigation, 0.5));
 
@@ -85,16 +83,17 @@ void TestCriticalBlockResistanceAndPenetration(TestSuite &suite) {
 
 void TestDerivedPoolsTrackAttributes(TestSuite &suite) {
   Combatant combatant{CombatantId{5U}, CombatantKind::Elite};
-  static_cast<void>(combatant.ResolveAttack(
-      combatant,
-      DamageSpec{.BaseDamage = [] {
-        DamageValues damage{};
-        damage[Physical] = 40.0;
-        return damage;
-      }(),
-                 .CanCritical = false,
-                 .CanBlock = false},
-      CombatRolls{}));
+  static_cast<void>(
+      combatant.ResolveAttack(combatant,
+                              DamageSpec{.BaseDamage =
+                                             [] {
+                                               DamageValues damage{};
+                                               damage[Physical] = 40.0;
+                                               return damage;
+                                             }(),
+                                         .CanCritical = false,
+                                         .CanBlock = false},
+                              CombatRolls{}));
   suite.ExpectNear(combatant.Health().Current(), 60.0,
                    "setup damage reduces health");
 
@@ -150,7 +149,7 @@ void TestRandomResolutionIsReproducible(TestSuite &suite) {
                    second.CalculatedDamage.TotalApplied,
                    "same random stream reproduces damage outcome");
   suite.Expect(first.CalculatedDamage.WasCritical ==
-                   second.CalculatedDamage.WasCritical &&
+                       second.CalculatedDamage.WasCritical &&
                    first.CalculatedDamage.WasBlocked ==
                        second.CalculatedDamage.WasBlocked,
                "same stream reproduces combat event flags");
@@ -164,9 +163,8 @@ void TestRandomResolutionIsReproducible(TestSuite &suite) {
   DeterministicRandom expectedAdvance{99U, 2U};
   static_cast<void>(expectedAdvance.NextUnit());
   static_cast<void>(expectedAdvance.NextUnit());
-  static_cast<void>(firstAttacker.ResolveAttack(firstTarget,
-                                                deterministicAttack,
-                                                usedByCombat));
+  static_cast<void>(firstAttacker.ResolveAttack(
+      firstTarget, deterministicAttack, usedByCombat));
   suite.Expect(usedByCombat.CaptureState() == expectedAdvance.CaptureState(),
                "combat always advances exactly two authoritative samples");
 }

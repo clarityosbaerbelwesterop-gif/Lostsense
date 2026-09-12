@@ -11,9 +11,9 @@ using Lostsense::Tests::TestSuite;
 
 void TestGoldenSequence(TestSuite &suite) {
   DeterministicRandom random{42U, 54U};
-  constexpr std::array<std::uint32_t, 6> Expected{
-      0xA15C02B7U, 0x7B47F409U, 0xBA1D3330U,
-      0x83D2F293U, 0xBFA4784BU, 0xCBED606EU};
+  constexpr std::array<std::uint32_t, 6> Expected{0xA15C02B7U, 0x7B47F409U,
+                                                  0xBA1D3330U, 0x83D2F293U,
+                                                  0xBFA4784BU, 0xCBED606EU};
   for (const std::uint32_t expected : Expected) {
     suite.Expect(random.NextUInt32() == expected,
                  "PCG stream matches its cross-platform golden sequence");
@@ -31,7 +31,8 @@ void TestSeedAndStreamIdentity(TestSuite &suite) {
                  "equal seed and stream reproduce every sample");
     streamDiffers = streamDiffers || value != otherStream.NextUInt32();
   }
-  suite.Expect(streamDiffers, "independent stream IDs produce another sequence");
+  suite.Expect(streamDiffers,
+               "independent stream IDs produce another sequence");
 }
 
 void TestSnapshotAndValidation(TestSuite &suite) {
