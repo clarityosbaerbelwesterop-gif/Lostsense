@@ -23,6 +23,7 @@ using DamageValues = std::array<double, DamageTypeCount>;
 
 struct OffensiveStats final {
   double IncreasedDamagePercent{0.0};
+  DamageValues IncreasedDamageByTypePercent{};
   double CriticalChance{0.0};
   double CriticalMultiplier{1.5};
   double ArmorPenetration{0.0};

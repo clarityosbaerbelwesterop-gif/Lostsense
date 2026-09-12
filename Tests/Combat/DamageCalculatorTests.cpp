@@ -98,6 +98,28 @@ void TestInvalidInputsAreSafe() {
   Expect(std::isfinite(result.TotalApplied), "result remains finite");
 }
 
+void TestDamageTypeBonusesAndOverflowSafety() {
+  DamageRequest request;
+  request.BaseDamage[static_cast<std::size_t>(DamageType::Fire)] = 100.0;
+  request.Attacker.IncreasedDamagePercent = 10.0;
+  request.Attacker.IncreasedDamageByTypePercent[static_cast<std::size_t>(
+      DamageType::Fire)] = 20.0;
+  request.CanCritical = false;
+  request.CanBlock = false;
+  ExpectNear(DamageCalculator::Calculate(request).TotalApplied, 130.0,
+             "global and matching type bonuses combine additively");
+
+  request.BaseDamage[static_cast<std::size_t>(DamageType::Fire)] =
+      std::numeric_limits<double>::max();
+  request.Attacker.IncreasedDamagePercent =
+      std::numeric_limits<double>::max();
+  const DamageResult saturated = DamageCalculator::Calculate(request);
+  Expect(std::isfinite(saturated.TotalApplied),
+         "finite extreme inputs saturate instead of overflowing");
+  Expect(saturated.TotalApplied == std::numeric_limits<double>::max(),
+         "overflow saturation preserves maximum representable damage");
+}
+
 } // namespace
 
 int main() {
@@ -105,6 +127,7 @@ int main() {
   TestCriticalBlockAndPenetration();
   TestResistanceRules();
   TestInvalidInputsAreSafe();
+  TestDamageTypeBonusesAndOverflowSafety();
 
   if (Failures == 0) {
     std::cout << "All combat damage tests passed.\n";
