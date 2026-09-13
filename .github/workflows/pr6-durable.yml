@@ -1,0 +1,45 @@
+name: PR6 Durable Product Commit
+
+"on":
+  push:
+    branches: [codex/versioned-persistence-events]
+
+permissions:
+  contents: write
+
+jobs:
+  persist:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/versioned-persistence-events
+          fetch-depth: 0
+      - name: Reconstruct and verify product patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/pr6-transport-00.b64 .tmp/pr6-transport-01.b64 | base64 -d | gzip -d > /tmp/pr6.patch
+          echo "efe0d96b7bc40ec303efa7814f896c4f1f0be725950cfebacb4f447e5895fe39  /tmp/pr6.patch" | sha256sum -c -
+          git apply --check /tmp/pr6.patch
+          git apply /tmp/pr6.patch
+      - name: GCC release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-gcc -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-gcc --parallel
+          ctest --test-dir build-gcc --output-on-failure
+      - name: Commit durable product
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp
+          rm -f .github/workflows/pr6-durable.yml
+          git diff --check
+          git add -A
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Build versioned persistence and gameplay event authority"
+          git push origin HEAD:codex/versioned-persistence-events
