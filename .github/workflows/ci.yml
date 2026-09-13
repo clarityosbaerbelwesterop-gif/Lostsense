@@ -1,0 +1,70 @@
+name: CI
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: ${{ matrix.compiler }} release
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: GCC
+            cxx: g++
+          - compiler: Clang
+            cxx: clang++
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  sanitizers:
+    name: ASan and UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        env:
+          CXX: clang++
+        run: >-
+          cmake -S . -B build-sanitize -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DLOSTSENSE_ENABLE_SANITIZERS=ON
+          -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+      - name: Build
+        run: cmake --build build-sanitize --parallel
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir build-sanitize --output-on-failure
+
+  format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify formatting
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format --dry-run --Werror "${files[@]}"

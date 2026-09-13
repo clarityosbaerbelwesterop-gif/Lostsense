@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace Lostsense::Combat {
 namespace {
@@ -16,6 +17,32 @@ namespace {
 
 [[nodiscard]] double UnitInterval(const double value) noexcept {
   return std::clamp(FiniteOrZero(value), 0.0, 1.0);
+}
+
+[[nodiscard]] double IncreasedMultiplier(const double globalPercent,
+                                         const double typePercent) noexcept {
+  const long double percent =
+      static_cast<long double>(FiniteOrZero(globalPercent)) +
+      static_cast<long double>(FiniteOrZero(typePercent));
+  const long double multiplier = std::max(0.0L, 1.0L + percent / 100.0L);
+  const long double maximum =
+      static_cast<long double>(std::numeric_limits<double>::max());
+  return static_cast<double>(std::min(multiplier, maximum));
+}
+
+[[nodiscard]] double SaturatingMultiply(const double left,
+                                        const double right) noexcept {
+  if (left <= 0.0 || right <= 0.0) {
+    return 0.0;
+  }
+  const double maximum = std::numeric_limits<double>::max();
+  return left > maximum / right ? maximum : left * right;
+}
+
+[[nodiscard]] double SaturatingAdd(const double left,
+                                   const double right) noexcept {
+  const double maximum = std::numeric_limits<double>::max();
+  return left > maximum - right ? maximum : left + right;
 }
 
 [[nodiscard]] double ResistanceMultiplier(const double resistance,
@@ -41,8 +68,6 @@ DamageResult
 DamageCalculator::Calculate(const DamageRequest &request) noexcept {
   DamageResult result;
 
-  const double increasedMultiplier = std::max(
-      0.0, 1.0 + FiniteOrZero(request.Attacker.IncreasedDamagePercent) / 100.0);
   result.WasCritical =
       request.CanCritical && UnitInterval(request.CriticalRoll) <
                                  UnitInterval(request.Attacker.CriticalChance);
@@ -52,6 +77,9 @@ DamageCalculator::Calculate(const DamageRequest &request) noexcept {
           : 1.0;
 
   for (std::size_t index = 0; index < DamageTypeCount; ++index) {
+    const double increasedMultiplier = IncreasedMultiplier(
+        request.Attacker.IncreasedDamagePercent,
+        request.Attacker.IncreasedDamageByTypePercent[index]);
     double mitigationMultiplier =
         ResistanceMultiplier(request.Defender.Resistances[index],
                              request.Attacker.ResistancePenetration[index],
@@ -61,9 +89,11 @@ DamageCalculator::Calculate(const DamageRequest &request) noexcept {
           request.Defender.Armor, request.Attacker.ArmorPenetration);
     }
 
-    result.AppliedByType[index] = NonNegative(request.BaseDamage[index]) *
-                                  increasedMultiplier * criticalMultiplier *
-                                  mitigationMultiplier;
+    double damage = SaturatingMultiply(NonNegative(request.BaseDamage[index]),
+                                       increasedMultiplier);
+    damage = SaturatingMultiply(damage, criticalMultiplier);
+    result.AppliedByType[index] =
+        SaturatingMultiply(damage, mitigationMultiplier);
   }
 
   result.WasBlocked =
@@ -78,7 +108,7 @@ DamageCalculator::Calculate(const DamageRequest &request) noexcept {
   }
 
   for (const double damage : result.AppliedByType) {
-    result.TotalApplied += damage;
+    result.TotalApplied = SaturatingAdd(result.TotalApplied, damage);
   }
   return result;
 }
