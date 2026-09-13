@@ -1,0 +1,133 @@
+name: PR6 Assemble Final Product
+
+"on":
+  push:
+    branches: [codex/versioned-persistence-events]
+
+permissions:
+  contents: write
+
+jobs:
+  assemble-verify-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/versioned-persistence-events
+          fetch-depth: 0
+
+      - name: Reconstruct exact final product
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .tmp/pr6-final/0* | base64 -d > /tmp/pr6-final-files.tar.gz
+          echo "dbcd06e7912832a111ce9eab4b90857347ff4ac59ed11fba027b38a5ad10ca97  /tmp/pr6-final-files.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/pr6-final-files.tar.gz
+
+          check_hash() {
+            local expected="$1"
+            local path="$2"
+            local actual
+            actual="$(git hash-object "$path")"
+            test "$actual" = "$expected" || {
+              echo "hash mismatch: $path expected=$expected actual=$actual" >&2
+              exit 1
+            }
+          }
+
+          check_hash 05c0a780b768cecffcfb61de0afa66a56f370abc CMakeLists.txt
+          check_hash 15a5f65f38733e040b42717008860c85a13343bb README.md
+          check_hash d599ea7891ac7513842ee95b745a509b2850f0e1 Source/Lostsense/Gameplay/Events/GameplayEvents.cpp
+          check_hash 154ee6067613d406847a60f76e6b5a440ea3118f Source/Lostsense/Gameplay/Events/GameplayEvents.h
+          check_hash 36b2ccebb227b2548fe9df8b480cbad4dd34de4a Source/Lostsense/Gameplay/Persistence/CharacterPersistence.cpp
+          check_hash 6ccdd344f957fb871e5957e03035c07497b46a04 Source/Lostsense/Gameplay/Persistence/CharacterPersistence.h
+          check_hash f4bb5bd5448ebdcf542786b96413e4ccac12bb7e Source/Lostsense/Gameplay/Persistence/SaveCodec.cpp
+          check_hash f00d4f709ebd9a0725b0d9984136eec5ab198496 Source/Lostsense/Gameplay/Persistence/SaveCodec.h
+          check_hash edc9d48a4efabcb1b2503b5f4340017061fcccba Tests/Gameplay/GameplayEventTests.cpp
+          check_hash 7ddbc17bfba36fda00d72c931795ab580c97cd20 Tests/Gameplay/PersistenceTestFixtures.h
+          check_hash 2b9d8f8395889b473ecbdb1f7faab6976698a1e2 Tests/Gameplay/PersistenceTests.cpp
+
+      - name: Verify formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format --dry-run --Werror "${files[@]}"
+
+      - name: GCC release
+        shell: bash
+        run: |
+          set -euo pipefail
+          CXX=g++ cmake -S . -B build-pr6-gcc -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-pr6-gcc --parallel
+          ctest --test-dir build-pr6-gcc --output-on-failure
+
+      - name: Clang release
+        shell: bash
+        run: |
+          set -euo pipefail
+          CXX=clang++ cmake -S . -B build-pr6-clang -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-pr6-clang --parallel
+          ctest --test-dir build-pr6-clang --output-on-failure
+
+      - name: ASan and UBSan
+        shell: bash
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          set -euo pipefail
+          CXX=clang++ cmake -S . -B build-pr6-sanitize -G Ninja -DCMAKE_BUILD_TYPE=Debug -DLOSTSENSE_ENABLE_SANITIZERS=ON -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-pr6-sanitize --parallel
+          ctest --test-dir build-pr6-sanitize --output-on-failure
+
+      - name: Final product self-review and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          if grep -RInE 'TODO|FIXME|DEBUG' \
+              Source/Lostsense/Gameplay/Events \
+              Source/Lostsense/Gameplay/Persistence \
+              Tests/Gameplay/GameplayEventTests.cpp \
+              Tests/Gameplay/PersistenceTestFixtures.h \
+              Tests/Gameplay/PersistenceTests.cpp; then
+            echo "unfinished marker found" >&2
+            exit 1
+          fi
+
+          rm -rf .tmp
+          rm -f .github/workflows/pr6-finalize.yml
+          rm -f .github/workflows/pr6-assemble-final.yml
+          git add -A
+
+          base="$(git merge-base HEAD origin/main)"
+          expected="$(cat <<'EOF'
+          CMakeLists.txt
+          README.md
+          Source/Lostsense/Gameplay/Events/GameplayEvents.cpp
+          Source/Lostsense/Gameplay/Events/GameplayEvents.h
+          Source/Lostsense/Gameplay/Persistence/CharacterPersistence.cpp
+          Source/Lostsense/Gameplay/Persistence/CharacterPersistence.h
+          Source/Lostsense/Gameplay/Persistence/SaveCodec.cpp
+          Source/Lostsense/Gameplay/Persistence/SaveCodec.h
+          Tests/Gameplay/GameplayEventTests.cpp
+          Tests/Gameplay/PersistenceTestFixtures.h
+          Tests/Gameplay/PersistenceTests.cpp
+          EOF
+          )"
+          actual="$(git diff --cached --name-only "$base" | sort)"
+          test "$actual" = "$expected" || {
+            echo "unexpected final PR scope" >&2
+            printf 'expected:\n%s\nactual:\n%s\n' "$expected" "$actual" >&2
+            exit 1
+          }
+          git diff --cached --check "$base"
+          test ! -e .tmp
+          test ! -e .github/workflows/pr6-finalize.yml
+          test ! -e .github/workflows/pr6-assemble-final.yml
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Finalize versioned persistence and gameplay events'
+          git push origin HEAD:codex/versioned-persistence-events
