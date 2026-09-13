@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Lostsense VERSION 0.3.0 LANGUAGES CXX)
+project(Lostsense VERSION 0.4.0 LANGUAGES CXX)
 
 option(LOSTSENSE_ENABLE_SANITIZERS
        "Enable address and undefined-behaviour sanitizers" OFF)
@@ -58,7 +58,9 @@ target_link_libraries(lostsense_combat PUBLIC lostsense_core
 add_library(
   lostsense_gameplay
   Source/Lostsense/Gameplay/Effects/EffectRuntime.cpp
-  Source/Lostsense/Gameplay/Abilities/AbilityRuntime.cpp)
+  Source/Lostsense/Gameplay/Abilities/AbilityRuntime.cpp
+  Source/Lostsense/Gameplay/Loadout/AbilityLoadout.cpp
+  Source/Lostsense/Gameplay/Progression/SkillGraph.cpp)
 target_include_directories(lostsense_gameplay PUBLIC Source)
 target_link_libraries(lostsense_gameplay PUBLIC lostsense_combat
                                              lostsense_project_options)
@@ -101,6 +103,12 @@ if(BUILD_TESTING)
   lostsense_add_gameplay_test(lostsense_ability_tests
                               Tests/Gameplay/AbilityRuntimeTests.cpp
                               gameplay.abilities)
+  lostsense_add_gameplay_test(lostsense_loadout_tests
+                              Tests/Gameplay/AbilityLoadoutTests.cpp
+                              gameplay.loadout)
+  lostsense_add_gameplay_test(lostsense_skill_graph_tests
+                              Tests/Gameplay/SkillGraphTests.cpp
+                              gameplay.skill_graph)
 endif()
 
 find_program(LOSTSENSE_CLANG_FORMAT NAMES clang-format clang-format-18)

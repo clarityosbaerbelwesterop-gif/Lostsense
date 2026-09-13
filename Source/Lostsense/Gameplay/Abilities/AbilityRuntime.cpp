@@ -332,7 +332,9 @@ bool AbilityRuntime::IsDefinitionShapeValid(
       definition.MaximumCharges == 0U ||
       definition.MaximumCharges > MaximumConfiguredCharges ||
       !IsFiniteNonNegative(definition.RechargeSeconds) ||
-      !IsTargetRuleValid(definition.TargetRule)) {
+      !IsTargetRuleValid(definition.TargetRule) ||
+      (definition.AllowedLoadoutSlots &
+       static_cast<AbilityLoadoutSlotMask>(~AllAbilityLoadoutSlots)) != 0U) {
     return false;
   }
   if (definition.MaximumCharges > 1U && definition.RechargeSeconds <= 0.0) {
