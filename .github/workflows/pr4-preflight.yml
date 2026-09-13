@@ -1,0 +1,60 @@
+name: PR4 Apply And Preflight
+
+"on":
+  push:
+    branches: [codex/skill-graph-build-runtime]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-test-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/skill-graph-build-runtime
+          fetch-depth: 1
+      - name: Reconstruct and verify patch
+        run: |
+          cat .tmp/pr4.patch.0 .tmp/pr4.patch.1 .tmp/pr4.patch.2 .tmp/pr4.patch.3 .tmp/pr4.patch.4 | base64 -d | gzip -d > /tmp/pr4.patch
+          echo "6d418ea501800a5736411517b5006990fe2150240efb6015d823b9f76d45e0c5  /tmp/pr4.patch" | sha256sum -c -
+          git apply --check /tmp/pr4.patch
+          git apply /tmp/pr4.patch
+      - name: Format C++
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+          clang-format --dry-run --Werror "${files[@]}"
+      - name: GCC release
+        run: |
+          CXX=g++ cmake -S . -B /tmp/build-gcc -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build /tmp/build-gcc --parallel
+          ctest --test-dir /tmp/build-gcc --output-on-failure
+      - name: Clang release
+        run: |
+          CXX=clang++ cmake -S . -B /tmp/build-clang -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build /tmp/build-clang --parallel
+          ctest --test-dir /tmp/build-clang --output-on-failure
+      - name: ASan and UBSan
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          CXX=clang++ cmake -S . -B /tmp/build-sanitize -G Ninja -DCMAKE_BUILD_TYPE=Debug -DLOSTSENSE_ENABLE_SANITIZERS=ON -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build /tmp/build-sanitize --parallel
+          ctest --test-dir /tmp/build-sanitize --output-on-failure
+      - name: Self review and commit
+        run: |
+          rm -rf .tmp
+          rm .github/workflows/pr4-preflight.yml
+          git diff --check
+          if grep -RniE 'TODO|FIXME|debug print' Source/Lostsense/Gameplay Tests/Gameplay; then
+            echo "Unexpected implementation leftovers found"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build skill graph and loadout runtime"
+          git push origin HEAD:codex/skill-graph-build-runtime
