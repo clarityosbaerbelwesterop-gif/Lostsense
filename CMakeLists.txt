@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Lostsense VERSION 0.5.0 LANGUAGES CXX)
+project(Lostsense VERSION 0.6.0 LANGUAGES CXX)
 
 option(LOSTSENSE_ENABLE_SANITIZERS
        "Enable address and undefined-behaviour sanitizers" OFF)
@@ -64,7 +64,10 @@ add_library(
   Source/Lostsense/Gameplay/Items/ItemCatalog.cpp
   Source/Lostsense/Gameplay/Items/Inventory.cpp
   Source/Lostsense/Gameplay/Items/Equipment.cpp
-  Source/Lostsense/Gameplay/Items/LootRuntime.cpp)
+  Source/Lostsense/Gameplay/Items/LootRuntime.cpp
+  Source/Lostsense/Gameplay/Events/GameplayEvents.cpp
+  Source/Lostsense/Gameplay/Persistence/CharacterPersistence.cpp
+  Source/Lostsense/Gameplay/Persistence/SaveCodec.cpp)
 target_include_directories(lostsense_gameplay PUBLIC Source)
 target_link_libraries(lostsense_gameplay PUBLIC lostsense_combat
                                              lostsense_project_options)
@@ -119,6 +122,12 @@ if(BUILD_TESTING)
   lostsense_add_gameplay_test(lostsense_loot_runtime_tests
                               Tests/Gameplay/LootRuntimeTests.cpp
                               gameplay.deterministic_loot)
+  lostsense_add_gameplay_test(lostsense_gameplay_event_tests
+                              Tests/Gameplay/GameplayEventTests.cpp
+                              gameplay.events)
+  lostsense_add_gameplay_test(lostsense_persistence_tests
+                              Tests/Gameplay/PersistenceTests.cpp
+                              gameplay.persistence)
 endif()
 
 find_program(LOSTSENSE_CLANG_FORMAT NAMES clang-format clang-format-18)

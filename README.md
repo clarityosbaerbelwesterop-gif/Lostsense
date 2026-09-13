@@ -34,7 +34,13 @@ The portable C++20 layer currently provides:
 - validated item, rarity and affix definitions with persistent rolled item
   instances, transactional inventory/equipment ownership, exact equipment-owned
   AttributeSet modifiers, socket/unique hooks and deterministic loot generation
-  driven only by the existing PCG random stream.
+  driven only by the existing PCG random stream;
+- a bounded typed gameplay event stream with monotonic sequencing, checkpoints,
+  rollback and commit-only adapters around existing gameplay authorities; and
+- versioned aggregate character persistence that composes the existing runtime
+  snapshots, validates cross-system ownership/modifier invariants, restores
+  transactionally, encodes doubles exactly and migrates supported V1 saves to
+  the current V2 schema without raw-memory serialization.
 
 Authoritative gameplay randomness is never hidden inside the damage math.
 Callers can provide rolls directly or use `Core::DeterministicRandom`; the
@@ -77,13 +83,15 @@ portable core.
 - `Lostsense::Stats` owns extensible definitions, base values and modifiers.
 - `Lostsense::Combat` owns damage rules, vital pools and combat resolution.
 - `Lostsense::Gameplay` owns portable effects, abilities, skill/build graphs,
-  loadouts, item/inventory/equipment state and loot tables while consuming the
-  existing combat, stats and deterministic RNG authorities.
+  loadouts, item/inventory/equipment state, loot, typed committed gameplay
+  events and versioned aggregate persistence while consuming the existing
+  combat, stats and deterministic RNG authorities.
 - Future Unreal modules will adapt these systems to actors, components, input,
   replication, rendering and assets without moving authoritative rules into
   engine-only code.
 
-The next planned block is versioned aggregate persistence plus a typed gameplay
-event stream. Once that portable boundary is proven, development transitions
-toward a real Unreal integration foundation rather than extending abstractions
-indefinitely.
+The next milestone is the real Unreal integration foundation: verify the actual
+engine/toolchain available, create the in-repository Unreal project and bridge
+input/presentation to this portable authority without duplicating combat, loot,
+progression or persistence rules. Unreal functionality is not claimed until it
+is actually compiled and, where tooling permits, launched.
