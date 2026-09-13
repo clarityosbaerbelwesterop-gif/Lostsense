@@ -18,13 +18,19 @@ The portable C++20 layer currently provides:
 - a reusable combatant model connecting attributes, power scaling, damage,
   health and resources for players, enemies, elites and bosses;
 - a portable PCG random stream with stable cross-platform output and
-  snapshot/restore support; and
-- serialization-ready value-state snapshots with transactional validation.
+  snapshot/restore support;
+- deterministic gameplay effects with explicit stacking, timed DOT/HOT,
+  status-owned attribute modifiers, immunity, cleanse/dispel, restrictions and
+  transactional state restore; and
+- a data-driven ability runtime with ownership, prerequisites, class and target
+  validation, resource costs, cooldowns/groups, charges/recharge, direct combat
+  resolution, effect application and transactional activation rollback.
 
 Authoritative gameplay randomness is never hidden inside the damage math.
 Callers can provide rolls directly or use `Core::DeterministicRandom`; the
 combatant RNG overload consumes exactly two samples per attack for stable
-stream advancement.
+stream advancement. Timed gameplay systems advance through explicit simulation
+time rather than wall-clock state.
 
 ## Build and test
 
@@ -60,10 +66,12 @@ portable core.
 - `Lostsense::Core` owns portable deterministic utilities.
 - `Lostsense::Stats` owns extensible definitions, base values and modifiers.
 - `Lostsense::Combat` owns damage rules, vital pools and combat resolution.
+- `Lostsense::Gameplay` owns portable effect and ability definitions/runtime,
+  while consuming the existing combat, stats and deterministic RNG authorities.
 - Future Unreal modules will adapt these systems to actors, components, input,
   replication, rendering and assets without moving authoritative rules into
   engine-only code.
 
-The next planned block is the portable effects, abilities and skill-graph
-foundation. Unreal integration follows only after the gameplay core has a
-coherent, tested dependency chain.
+The next planned block is the graph-based skill/build runtime and portable
+ability loadout. Items, loot and versioned persistence follow before Unreal
+integration begins.

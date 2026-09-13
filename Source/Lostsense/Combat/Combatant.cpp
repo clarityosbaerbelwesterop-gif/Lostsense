@@ -89,6 +89,10 @@ bool Combatant::Revive(const double health) noexcept {
   return health_.Revive(health);
 }
 
+DamageApplication Combatant::ApplyDamage(const double amount) noexcept {
+  return health_.ApplyDamage(amount);
+}
+
 CombatResolution
 Combatant::ResolveAttack(Combatant &target, const DamageSpec &spec,
                          const CombatRolls rolls) const noexcept {
