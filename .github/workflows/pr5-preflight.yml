@@ -1,0 +1,97 @@
+name: PR5 Apply And Preflight
+
+"on":
+  push:
+    branches: [codex/items-equipment-inventory-loot]
+
+permissions:
+  contents: write
+
+jobs:
+  apply-test-commit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/items-equipment-inventory-loot
+          fetch-depth: 0
+
+      - name: Reconstruct and verify product patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .tmp/pr5-product.patch.gz.b64 | gzip -d > /tmp/pr5.patch
+          echo "fa8de9458a546fd4d0da1fbab9023d38d1a48e0a9875f63239a4c20ae5cb10a6  /tmp/pr5.patch" | sha256sum -c -
+          git apply --check /tmp/pr5.patch
+          git apply /tmp/pr5.patch
+
+      - name: Format C++
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+          clang-format --dry-run --Werror "${files[@]}"
+
+      - name: GCC release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-gcc -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON -DCMAKE_CXX_COMPILER=g++
+          cmake --build build-gcc --parallel 2
+          ctest --test-dir build-gcc --output-on-failure
+
+      - name: Clang release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-clang -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON -DCMAKE_CXX_COMPILER=clang++
+          cmake --build build-clang --parallel 2
+          ctest --test-dir build-clang --output-on-failure
+
+      - name: ASan and UBSan
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DLOSTSENSE_WARNINGS_AS_ERRORS=ON -DLOSTSENSE_ENABLE_SANITIZERS=ON -DCMAKE_CXX_COMPILER=clang++
+          cmake --build build-sanitize --parallel 2
+          ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir build-sanitize --output-on-failure
+
+      - name: Self review and commit product
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          if grep -R -n -E 'TODO|FIXME|debug|snapshot|preflight' \
+            Source/Lostsense/Gameplay/Items \
+            Tests/Gameplay/ItemTestFixtures.h \
+            Tests/Gameplay/ItemRuntimeTests.cpp \
+            Tests/Gameplay/LootRuntimeTests.cpp; then
+            echo "Forbidden temporary marker found in PR5 product scope"
+            exit 1
+          fi
+
+          rm -f .tmp/pr5-product.patch.gz.b64
+          rm -f .github/workflows/pr5-preflight.yml
+          rm -rf build-gcc build-clang build-sanitize
+          git add -A
+          git diff --cached --check
+
+          allowed='^(CMakeLists\.txt|README\.md|Source/Lostsense/Gameplay/GameplayTypes\.h|Source/Lostsense/Gameplay/Items/(ItemCatalog|Inventory|Equipment|LootRuntime)\.(h|cpp)|Tests/Gameplay/(ItemTestFixtures\.h|ItemRuntimeTests\.cpp|LootRuntimeTests\.cpp))$'
+          bad=$(git diff --cached --name-only | grep -Ev "$allowed" || true)
+          if [ -n "$bad" ]; then
+            echo "Unexpected staged paths:"
+            echo "$bad"
+            exit 1
+          fi
+          count=$(git diff --cached --name-only | wc -l)
+          if [ "$count" -ne 14 ]; then
+            echo "Expected 14 product files, got $count"
+            git diff --cached --name-only
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build items, equipment, inventory and deterministic loot"
+          git push origin HEAD:codex/items-equipment-inventory-loot
