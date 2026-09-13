@@ -34,6 +34,8 @@ struct AbilityDefinition final {
   double RechargeSeconds{0.0};
   AbilityTargetRule TargetRule{AbilityTargetRule::None};
   ClassId RequiredClass{};
+  AbilityLoadoutSlotMask AllowedLoadoutSlots{AllAbilityLoadoutSlots};
+  bool AllowDuplicateInLoadout{false};
   std::vector<AbilityId> Prerequisites{};
   Combat::DamageSpec Damage{};
   bool DealsDamage{false};
@@ -94,6 +96,7 @@ public:
                  std::vector<AbilityDefinition> definitions);
 
   [[nodiscard]] bool IsValid() const noexcept { return definitionsValid_; }
+  [[nodiscard]] ClassId OwnerClass() const noexcept { return ownerClass_; }
   [[nodiscard]] const AbilityDefinition *
   FindDefinition(AbilityId id) const noexcept;
   [[nodiscard]] bool IsUnlocked(AbilityId id) const noexcept;
