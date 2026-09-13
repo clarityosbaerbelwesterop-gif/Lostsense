@@ -18,8 +18,8 @@ constexpr double Epsilon = 1.0e-12;
   return std::isfinite(value) && value >= 0.0;
 }
 
-[[nodiscard]] bool IsStackingPolicyValid(
-    const EffectStackingPolicy policy) noexcept {
+[[nodiscard]] bool
+IsStackingPolicyValid(const EffectStackingPolicy policy) noexcept {
   switch (policy) {
   case EffectStackingPolicy::Replace:
   case EffectStackingPolicy::RefreshDuration:
@@ -30,16 +30,16 @@ constexpr double Epsilon = 1.0e-12;
   return false;
 }
 
-[[nodiscard]] bool IsRestrictionValid(
-    const EffectRestriction restriction) noexcept {
+[[nodiscard]] bool
+IsRestrictionValid(const EffectRestriction restriction) noexcept {
   constexpr std::uint32_t KnownMask =
       static_cast<std::uint32_t>(EffectRestriction::AbilityActivation) |
       static_cast<std::uint32_t>(EffectRestriction::Movement);
   return (static_cast<std::uint32_t>(restriction) & ~KnownMask) == 0U;
 }
 
-[[nodiscard]] bool IsModifierOperationValid(
-    const Stats::ModifierOperation operation) noexcept {
+[[nodiscard]] bool
+IsModifierOperationValid(const Stats::ModifierOperation operation) noexcept {
   switch (operation) {
   case Stats::ModifierOperation::Additive:
   case Stats::ModifierOperation::Multiplicative:
@@ -50,8 +50,8 @@ constexpr double Epsilon = 1.0e-12;
 
 [[nodiscard]] double SaturatingScale(const double magnitude,
                                      const std::uint32_t stacks) noexcept {
-  const long double scaled = static_cast<long double>(magnitude) *
-                             static_cast<long double>(stacks);
+  const long double scaled =
+      static_cast<long double>(magnitude) * static_cast<long double>(stacks);
   const long double maximum =
       static_cast<long double>(std::numeric_limits<double>::max());
   if (scaled > maximum) {
@@ -97,11 +97,10 @@ EffectRuntime::EffectRuntime(Combat::Combatant &owner,
     const auto [it, inserted] = groupRules.emplace(
         definition.StackGroup,
         StackGroupRule{definition.Stacking, definition.MaxStacks, id});
-    if (!inserted &&
-        (it->second.Policy != definition.Stacking ||
-         it->second.MaxStacks != definition.MaxStacks ||
-         (definition.Stacking != EffectStackingPolicy::Replace &&
-          it->second.FirstDefinition != id))) {
+    if (!inserted && (it->second.Policy != definition.Stacking ||
+                      it->second.MaxStacks != definition.MaxStacks ||
+                      (definition.Stacking != EffectStackingPolicy::Replace &&
+                       it->second.FirstDefinition != id))) {
       definitionsValid_ = false;
     }
     for (const EffectId immunity : definition.GrantedEffectImmunities) {
@@ -380,7 +379,8 @@ bool EffectRuntime::RestoreState(const EffectRuntimeState &state) {
 bool EffectRuntime::IsDefinitionValid(
     const EffectDefinition &definition) noexcept {
   if (!definition.Id.IsValid() || !definition.StackGroup.IsValid() ||
-      !IsStackingPolicyValid(definition.Stacking) || definition.MaxStacks == 0U ||
+      !IsStackingPolicyValid(definition.Stacking) ||
+      definition.MaxStacks == 0U ||
       definition.MaxStacks > MaximumConfiguredStacks ||
       !IsFiniteNonNegative(definition.DurationSeconds) ||
       !IsFiniteNonNegative(definition.TickIntervalSeconds) ||
@@ -402,7 +402,8 @@ bool EffectRuntime::IsDefinitionValid(
     return false;
   }
   std::set<Stats::AttributeId> modifiedAttributes;
-  for (const EffectAttributeModifier &modifier : definition.AttributeModifiers) {
+  for (const EffectAttributeModifier &modifier :
+       definition.AttributeModifiers) {
     if (!modifier.Attribute.IsValid() ||
         !IsModifierOperationValid(modifier.Operation) ||
         !std::isfinite(modifier.Magnitude) ||
@@ -437,7 +438,8 @@ bool EffectRuntime::IsImmuneTo(
     const EffectDefinition &definition) const noexcept {
   for (const auto &[instanceId, state] : active_) {
     static_cast<void>(instanceId);
-    const EffectDefinition *activeDefinition = FindDefinition(state.DefinitionId);
+    const EffectDefinition *activeDefinition =
+        FindDefinition(state.DefinitionId);
     if (activeDefinition == nullptr) {
       continue;
     }
@@ -469,8 +471,9 @@ bool EffectRuntime::MatchesFilter(
          ContainsTag(definition.Tags, filter.RequiredTag);
 }
 
-Stats::ModifierId EffectRuntime::ModifierIdFor(
-    const EffectInstanceId instance, const std::size_t index) const noexcept {
+Stats::ModifierId
+EffectRuntime::ModifierIdFor(const EffectInstanceId instance,
+                             const std::size_t index) const noexcept {
   if (!instance.IsValid() || instance.Value > MaximumEffectInstance ||
       index >= 65535U) {
     return {};
@@ -487,8 +490,10 @@ bool EffectRuntime::InstallModifiers(const ActiveEffectState &effect) {
   }
   for (std::size_t index = 0; index < definition->AttributeModifiers.size();
        ++index) {
-    const EffectAttributeModifier &source = definition->AttributeModifiers[index];
-    const Stats::ModifierId modifierId = ModifierIdFor(effect.InstanceId, index);
+    const EffectAttributeModifier &source =
+        definition->AttributeModifiers[index];
+    const Stats::ModifierId modifierId =
+        ModifierIdFor(effect.InstanceId, index);
     if (!modifierId.IsValid() || owner_.Attributes().HasModifier(modifierId)) {
       return false;
     }
@@ -518,7 +523,8 @@ void EffectRuntime::RemoveModifiers(const ActiveEffectState &effect) noexcept {
   }
   for (std::size_t index = 0; index < definition->AttributeModifiers.size();
        ++index) {
-    const Stats::ModifierId modifierId = ModifierIdFor(effect.InstanceId, index);
+    const Stats::ModifierId modifierId =
+        ModifierIdFor(effect.InstanceId, index);
     if (modifierId.IsValid()) {
       static_cast<void>(owner_.RemoveAttributeModifier(modifierId));
     }
@@ -596,7 +602,8 @@ bool EffectRuntime::ValidateState(
     }
     if (definition->TickIntervalSeconds > 0.0 &&
         (active.TimeUntilNextTick <= Epsilon ||
-         active.TimeUntilNextTick > definition->TickIntervalSeconds + Epsilon)) {
+         active.TimeUntilNextTick >
+             definition->TickIntervalSeconds + Epsilon)) {
       return false;
     }
     greatestInstance = std::max(greatestInstance, active.InstanceId.Value);

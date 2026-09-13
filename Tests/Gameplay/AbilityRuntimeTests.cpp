@@ -136,8 +136,8 @@ void TestDefinitionGraphAndOwnership(TestSuite &suite) {
   missing.Prerequisites = {{999U}};
   missing.TargetRule = AbilityTargetRule::None;
   Core::DeterministicRandom missingRandom{1U, 1U};
-  AbilityRuntime missingRuntime{fixture.Owner, fixture.OwnerEffects,
-                                missingRandom, Knight, {missing}};
+  AbilityRuntime missingRuntime{
+      fixture.Owner, fixture.OwnerEffects, missingRandom, Knight, {missing}};
   suite.Expect(!missingRuntime.IsValid(),
                "definition graph rejects missing prerequisite IDs");
 
@@ -148,8 +148,11 @@ void TestDefinitionGraphAndOwnership(TestSuite &suite) {
   second.Id = {32U};
   second.Prerequisites = {{31U}};
   Core::DeterministicRandom cycleRandom{2U, 1U};
-  AbilityRuntime cycleRuntime{fixture.Owner, fixture.OwnerEffects, cycleRandom,
-                              Knight, {first, second}};
+  AbilityRuntime cycleRuntime{fixture.Owner,
+                              fixture.OwnerEffects,
+                              cycleRandom,
+                              Knight,
+                              {first, second}};
   suite.Expect(!cycleRuntime.IsValid(), "definition graph rejects cycles");
 
   Combat::Combatant otherOwner{Combat::CombatantId{300U},
@@ -194,8 +197,7 @@ void TestActivationDamageCostCooldownAndEffects(TestSuite &suite) {
   suite.Expect(fixture.Abilities.Activate(ChargedBlast, hostile).Result ==
                    AbilityActivationResult::Success,
                "second charge activates after cooldown");
-  suite.Expect(fixture.Abilities.AdvanceTime(2.0),
-               "cooldown clears again");
+  suite.Expect(fixture.Abilities.AdvanceTime(2.0), "cooldown clears again");
   suite.Expect(fixture.Abilities.Activate(ChargedBlast, hostile).Result ==
                    AbilityActivationResult::NoCharges,
                "depleted charges are explicit");
@@ -304,11 +306,11 @@ void TestRechargeAndRestoreBoundaries(TestSuite &suite) {
       fixture.Abilities.AdvanceTime(20.0),
       "large deterministic advance processes multiple recharge intervals");
   const AbilityRuntimeState recharged = fixture.Abilities.CaptureState();
-  const auto charged = std::find_if(
-      recharged.Abilities.begin(), recharged.Abilities.end(),
-      [](const AbilityRuntimeEntryState &entry) {
-        return entry.Id == ChargedBlast;
-      });
+  const auto charged =
+      std::find_if(recharged.Abilities.begin(), recharged.Abilities.end(),
+                   [](const AbilityRuntimeEntryState &entry) {
+                     return entry.Id == ChargedBlast;
+                   });
   suite.Expect(charged != recharged.Abilities.end() && charged->Charges == 2U &&
                    charged->RechargeRemaining == 0.0,
                "large advance restores all charges without timer residue");

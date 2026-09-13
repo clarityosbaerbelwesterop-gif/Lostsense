@@ -25,13 +25,15 @@ enum class EffectRestriction : std::uint32_t {
 };
 
 [[nodiscard]] constexpr EffectRestriction
-operator|(const EffectRestriction left, const EffectRestriction right) noexcept {
+operator|(const EffectRestriction left,
+          const EffectRestriction right) noexcept {
   return static_cast<EffectRestriction>(static_cast<std::uint32_t>(left) |
                                         static_cast<std::uint32_t>(right));
 }
 
-[[nodiscard]] constexpr bool HasRestrictionFlag(
-    const EffectRestriction value, const EffectRestriction flag) noexcept {
+[[nodiscard]] constexpr bool
+HasRestrictionFlag(const EffectRestriction value,
+                   const EffectRestriction flag) noexcept {
   return (static_cast<std::uint32_t>(value) &
           static_cast<std::uint32_t>(flag)) != 0U;
 }

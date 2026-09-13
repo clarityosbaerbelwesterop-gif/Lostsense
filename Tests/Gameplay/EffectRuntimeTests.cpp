@@ -115,17 +115,19 @@ void TestRefreshModifierLifecycleAndExpiration(TestSuite &suite) {
   suite.Expect(effects.Apply(BattleFocus, Combat::CombatantId{2U}).Result ==
                    EffectApplyResult::Applied,
                "attribute buff applies");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   10.0, "effect modifier changes AttributeSet");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 10.0,
+      "effect modifier changes AttributeSet");
   const auto stacked = effects.Apply(BattleFocus, Combat::CombatantId{2U});
   suite.Expect(stacked.Result == EffectApplyResult::Stacked,
                "attribute effect stacks magnitude");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   20.0, "stacking rebuilds exact modifier magnitude");
-  suite.Expect(effects.Remove(stacked.InstanceId),
-               "explicit removal succeeds");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   0.0, "removal cleans exact modifier");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 20.0,
+      "stacking rebuilds exact modifier magnitude");
+  suite.Expect(effects.Remove(stacked.InstanceId), "explicit removal succeeds");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 0.0,
+      "removal cleans exact modifier");
 
   const auto stun = effects.Apply(Stun, Combat::CombatantId{9U});
   suite.Expect(effects.HasRestriction(EffectRestriction::AbilityActivation),
@@ -134,8 +136,7 @@ void TestRefreshModifierLifecycleAndExpiration(TestSuite &suite) {
   suite.Expect(effects.Apply(Stun, Combat::CombatantId{9U}).Result ==
                    EffectApplyResult::Refreshed,
                "refresh policy refreshes duration");
-  suite.Expect(effects.AdvanceTime(2.5),
-               "refreshed duration remains active");
+  suite.Expect(effects.AdvanceTime(2.5), "refreshed duration remains active");
   suite.Expect(effects.HasRestriction(EffectRestriction::AbilityActivation),
                "refreshed stun has not expired");
   suite.Expect(effects.AdvanceTime(0.6), "expiration boundary advances");
@@ -179,15 +180,18 @@ void TestSnapshotRestoreAndCorruption(TestSuite &suite) {
   static_cast<void>(effects.Apply(Stun, Combat::CombatantId{8U}));
   static_cast<void>(effects.AdvanceTime(1.0));
   const EffectRuntimeState saved = effects.CaptureState();
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   20.0, "snapshot captures active modifier state");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 20.0,
+      "snapshot captures active modifier state");
 
   static_cast<void>(effects.Cleanse({EffectPolarity::Any, {}}));
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   0.0, "mutation removes captured modifier");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 0.0,
+      "mutation removes captured modifier");
   suite.Expect(effects.RestoreState(saved), "valid effect state restores");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   20.0, "restore recreates exact modifier state");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 20.0,
+      "restore recreates exact modifier state");
   suite.Expect(effects.HasRestriction(EffectRestriction::AbilityActivation),
                "restore recreates restrictions");
 
@@ -199,8 +203,9 @@ void TestSnapshotRestoreAndCorruption(TestSuite &suite) {
   suite.Expect(effects.CaptureState().ActiveEffects.size() ==
                    beforeRejected.ActiveEffects.size(),
                "rejected restore leaves active effect count unchanged");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   20.0, "rejected restore leaves modifiers unchanged");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 20.0,
+      "rejected restore leaves modifiers unchanged");
 }
 
 void TestDeterministicReplay(TestSuite &suite) {
@@ -287,8 +292,9 @@ void TestModifierCollisionAndReplacePolicy(TestSuite &suite) {
   const auto failed = effects.Apply(BattleFocus, Combat::CombatantId{8U});
   suite.Expect(failed.Result == EffectApplyResult::InternalFailure,
                "modifier ownership collision rejects effect atomically");
-  suite.ExpectNear(target.Attributes().Get(Stats::CombatAttributes::AttackPower),
-                   3.0, "failed effect leaves foreign modifier unchanged");
+  suite.ExpectNear(
+      target.Attributes().Get(Stats::CombatAttributes::AttackPower), 3.0,
+      "failed effect leaves foreign modifier unchanged");
   suite.Expect(effects.ActiveCount() == 0U,
                "failed effect does not leak active runtime state");
 

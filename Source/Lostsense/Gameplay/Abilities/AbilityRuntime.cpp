@@ -27,7 +27,8 @@ constexpr std::uint32_t MaximumConfiguredCharges = 100'000U;
   return false;
 }
 
-[[nodiscard]] bool IsFatalEffectResult(const EffectApplyResult result) noexcept {
+[[nodiscard]] bool
+IsFatalEffectResult(const EffectApplyResult result) noexcept {
   return result == EffectApplyResult::UnknownEffect ||
          result == EffectApplyResult::InvalidSource ||
          result == EffectApplyResult::InvalidRuntime ||
@@ -54,9 +55,8 @@ AbilityRuntime::AbilityRuntime(Combat::Combatant &owner,
       continue;
     }
     const AbilityId id = definition.Id;
-    states_.emplace(id, AbilityRuntimeEntryState{id, false,
-                                                  definition.MaximumCharges,
-                                                  0.0, 0.0});
+    states_.emplace(id, AbilityRuntimeEntryState{
+                            id, false, definition.MaximumCharges, 0.0, 0.0});
     definitions_.emplace(id, std::move(definition));
   }
   for (const auto &[id, definition] : definitions_) {
@@ -94,8 +94,8 @@ bool AbilityRuntime::Unlock(const AbilityId id) noexcept {
   }
   const AbilityDefinition *definition = FindDefinition(id);
   const auto state = states_.find(id);
-  if (definition == nullptr || state == states_.end() || state->second.Unlocked ||
-      !HasUnlockedPrerequisites(*definition) ||
+  if (definition == nullptr || state == states_.end() ||
+      state->second.Unlocked || !HasUnlockedPrerequisites(*definition) ||
       (definition->RequiredClass.IsValid() &&
        definition->RequiredClass != ownerClass_)) {
     return false;
@@ -113,7 +113,8 @@ bool AbilityRuntime::Revoke(const AbilityId id) noexcept {
     if (otherId == id || !IsUnlocked(otherId)) {
       continue;
     }
-    if (std::find(definition.Prerequisites.begin(), definition.Prerequisites.end(),
+    if (std::find(definition.Prerequisites.begin(),
+                  definition.Prerequisites.end(),
                   id) != definition.Prerequisites.end()) {
       return false;
     }
@@ -217,8 +218,8 @@ AbilityActivationOutcome AbilityRuntime::Activate(const AbilityId id,
       outcome.Result = AbilityActivationResult::InternalFailure;
       return outcome;
     }
-    outcome.Damage = owner_.ResolveAttack(*target.Combatant, definition->Damage,
-                                          random_);
+    outcome.Damage =
+        owner_.ResolveAttack(*target.Combatant, definition->Damage, random_);
     outcome.DamageResolved = true;
   }
 
@@ -249,7 +250,8 @@ AbilityActivationOutcome AbilityRuntime::Activate(const AbilityId id,
   }
 
   state->second.CooldownRemaining = definition->CooldownSeconds;
-  if (definition->CooldownGroup.IsValid() && definition->CooldownSeconds > 0.0) {
+  if (definition->CooldownGroup.IsValid() &&
+      definition->CooldownSeconds > 0.0) {
     cooldownGroups_[definition->CooldownGroup] = definition->CooldownSeconds;
   }
   outcome.Result = AbilityActivationResult::Success;
@@ -324,7 +326,8 @@ bool AbilityRuntime::RestoreState(const AbilityRuntimeState &state) noexcept {
 
 bool AbilityRuntime::IsDefinitionShapeValid(
     const AbilityDefinition &definition) noexcept {
-  if (!definition.Id.IsValid() || !IsFiniteNonNegative(definition.ResourceCost) ||
+  if (!definition.Id.IsValid() ||
+      !IsFiniteNonNegative(definition.ResourceCost) ||
       !IsFiniteNonNegative(definition.CooldownSeconds) ||
       definition.MaximumCharges == 0U ||
       definition.MaximumCharges > MaximumConfiguredCharges ||
@@ -416,8 +419,9 @@ bool AbilityRuntime::HasUnlockedPrerequisites(
                      [this](const AbilityId id) { return IsUnlocked(id); });
 }
 
-bool AbilityRuntime::ValidateTarget(const AbilityDefinition &definition,
-                                    const AbilityTarget &target) const noexcept {
+bool AbilityRuntime::ValidateTarget(
+    const AbilityDefinition &definition,
+    const AbilityTarget &target) const noexcept {
   switch (definition.TargetRule) {
   case AbilityTargetRule::None:
     return target.Combatant == nullptr && target.Effects == nullptr &&
@@ -428,7 +432,8 @@ bool AbilityRuntime::ValidateTarget(const AbilityDefinition &definition,
            target.Relation == TargetRelation::Self &&
            (definition.EffectsOnTarget.empty() ||
             target.Effects == &ownerEffects_) &&
-           (target.Effects == nullptr || target.Effects->OwnerId() == owner_.Id());
+           (target.Effects == nullptr ||
+            target.Effects->OwnerId() == owner_.Id());
   case AbilityTargetRule::Hostile:
     return target.Combatant != nullptr && target.Combatant != &owner_ &&
            target.Relation == TargetRelation::Hostile &&
