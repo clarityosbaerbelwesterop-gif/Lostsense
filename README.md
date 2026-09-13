@@ -30,7 +30,11 @@ The portable C++20 layer currently provides:
   unlock integration and stable mutation/tag extension hooks; and
 - a portable ability loadout with authored slot compatibility, duplicate policy
   and transactional capture/restore across primary, secondary, four active,
-  dodge, class-mechanic and ultimate slots.
+  dodge, class-mechanic and ultimate slots; and
+- validated item, rarity and affix definitions with persistent rolled item
+  instances, transactional inventory/equipment ownership, exact equipment-owned
+  AttributeSet modifiers, socket/unique hooks and deterministic loot generation
+  driven only by the existing PCG random stream.
 
 Authoritative gameplay randomness is never hidden inside the damage math.
 Callers can provide rolls directly or use `Core::DeterministicRandom`; the
@@ -72,13 +76,14 @@ portable core.
 - `Lostsense::Core` owns portable deterministic utilities.
 - `Lostsense::Stats` owns extensible definitions, base values and modifiers.
 - `Lostsense::Combat` owns damage rules, vital pools and combat resolution.
-- `Lostsense::Gameplay` owns portable effects, abilities, skill/build graphs
-  and loadout state while consuming the existing combat, stats and deterministic
-  RNG authorities.
+- `Lostsense::Gameplay` owns portable effects, abilities, skill/build graphs,
+  loadouts, item/inventory/equipment state and loot tables while consuming the
+  existing combat, stats and deterministic RNG authorities.
 - Future Unreal modules will adapt these systems to actors, components, input,
   replication, rendering and assets without moving authoritative rules into
   engine-only code.
 
-The next planned block is the portable item, equipment, inventory and
-reproducible loot foundation. Versioned persistence follows before Unreal
-integration begins.
+The next planned block is versioned aggregate persistence plus a typed gameplay
+event stream. Once that portable boundary is proven, development transitions
+toward a real Unreal integration foundation rather than extending abstractions
+indefinitely.

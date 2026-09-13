@@ -88,6 +88,72 @@ struct AbilityMutationId final {
               const AbilityMutationId &) noexcept = default;
 };
 
+struct ItemId final {
+  std::uint32_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const ItemId &, const ItemId &) noexcept = default;
+};
+
+struct ItemInstanceId final {
+  std::uint64_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const ItemInstanceId &,
+              const ItemInstanceId &) noexcept = default;
+};
+
+struct AffixId final {
+  std::uint32_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const AffixId &, const AffixId &) noexcept = default;
+};
+
+struct AffixExclusiveGroupId final {
+  std::uint32_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const AffixExclusiveGroupId &,
+              const AffixExclusiveGroupId &) noexcept = default;
+};
+
+struct LootTableId final {
+  std::uint32_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const LootTableId &, const LootTableId &) noexcept = default;
+};
+
+struct EquipmentSlotId final {
+  std::uint16_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const EquipmentSlotId &,
+              const EquipmentSlotId &) noexcept = default;
+};
+
+struct ItemTypeId final {
+  std::uint16_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const ItemTypeId &, const ItemTypeId &) noexcept = default;
+};
+
+struct WeaponTypeId final {
+  std::uint16_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const WeaponTypeId &, const WeaponTypeId &) noexcept = default;
+};
+
+struct RarityId final {
+  std::uint16_t Value{0};
+  [[nodiscard]] constexpr bool IsValid() const noexcept { return Value != 0U; }
+  [[nodiscard]] friend constexpr auto
+  operator<=>(const RarityId &, const RarityId &) noexcept = default;
+};
+
 enum class AbilityLoadoutSlot : std::uint8_t {
   PrimaryAttack,
   SecondaryAttack,
