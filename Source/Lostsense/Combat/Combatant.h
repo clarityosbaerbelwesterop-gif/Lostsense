@@ -82,6 +82,7 @@ public:
   [[nodiscard]] ResourceRestoration RestoreResource(double amount) noexcept;
   [[nodiscard]] HealingApplication Heal(double amount) noexcept;
   [[nodiscard]] bool Revive(double health) noexcept;
+  [[nodiscard]] DamageApplication ApplyDamage(double amount) noexcept;
 
   [[nodiscard]] CombatResolution
   ResolveAttack(Combatant &target, const DamageSpec &spec,

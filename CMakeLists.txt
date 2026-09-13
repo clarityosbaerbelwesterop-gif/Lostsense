@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Lostsense VERSION 0.2.0 LANGUAGES CXX)
+project(Lostsense VERSION 0.3.0 LANGUAGES CXX)
 
 option(LOSTSENSE_ENABLE_SANITIZERS
        "Enable address and undefined-behaviour sanitizers" OFF)
@@ -55,6 +55,14 @@ target_include_directories(lostsense_combat PUBLIC Source)
 target_link_libraries(lostsense_combat PUBLIC lostsense_core
                                            lostsense_project_options)
 
+add_library(
+  lostsense_gameplay
+  Source/Lostsense/Gameplay/Effects/EffectRuntime.cpp
+  Source/Lostsense/Gameplay/Abilities/AbilityRuntime.cpp)
+target_include_directories(lostsense_gameplay PUBLIC Source)
+target_link_libraries(lostsense_gameplay PUBLIC lostsense_combat
+                                             lostsense_project_options)
+
 include(CTest)
 if(BUILD_TESTING)
   function(lostsense_add_test target source test_name)
@@ -77,6 +85,22 @@ if(BUILD_TESTING)
                      Tests/Core/DeterministicRandomTests.cpp core.random)
   lostsense_add_test(lostsense_attribute_tests
                      Tests/Stats/AttributeSetTests.cpp stats.attributes)
+
+  function(lostsense_add_gameplay_test target source test_name)
+    add_executable(${target} ${source})
+    target_include_directories(${target} PRIVATE Tests)
+    target_link_libraries(${target} PRIVATE lostsense_gameplay
+                                            lostsense_project_options)
+    add_test(NAME ${test_name} COMMAND ${target})
+    set_tests_properties(${test_name} PROPERTIES TIMEOUT 30)
+  endfunction()
+
+  lostsense_add_gameplay_test(lostsense_effect_tests
+                              Tests/Gameplay/EffectRuntimeTests.cpp
+                              gameplay.effects)
+  lostsense_add_gameplay_test(lostsense_ability_tests
+                              Tests/Gameplay/AbilityRuntimeTests.cpp
+                              gameplay.abilities)
 endif()
 
 find_program(LOSTSENSE_CLANG_FORMAT NAMES clang-format clang-format-18)
