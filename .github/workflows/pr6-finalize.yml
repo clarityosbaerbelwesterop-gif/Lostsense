@@ -21,7 +21,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 -d .tmp/pr6-final.patch.gz.b64 | gzip -d > /tmp/pr6-final.patch
-          echo "3cebe106ceca4cb340589a7920439d49fe31f226cd45a4aefb4fa484193ced78  /tmp/pr6-final.patch" | sha256sum -c -
+          echo "cbb928d1e6abe944b24ea083e51ef024ebe29969ccfecbdddcb9c31cdc86f679  /tmp/pr6-final.patch" | sha256sum -c -
           git apply --check /tmp/pr6-final.patch
           git apply /tmp/pr6-final.patch
       - name: Apply repository formatting
@@ -66,15 +66,16 @@ jobs:
           set -euo pipefail
           rm -rf .tmp
           rm -f .github/workflows/pr6-finalize.yml
-          git diff --check
-          test -z "$(git diff --name-only origin/main...HEAD -- .tmp .github/workflows/pr6-finalize.yml)"
+          git add -A
+          git diff --cached --check
+          test -z "$(git diff --cached --name-only origin/main -- .tmp .github/workflows/pr6-finalize.yml)"
+          test "$(git diff --cached --name-only origin/main | wc -l)" -eq 11
           ! grep -RniE 'TODO|FIXME|debug print|preflight|snapshot|transport' \
             Source/Lostsense/Gameplay/Events \
             Source/Lostsense/Gameplay/Persistence \
             Tests/Gameplay/GameplayEventTests.cpp \
             Tests/Gameplay/PersistenceTestFixtures.h \
             Tests/Gameplay/PersistenceTests.cpp
-          git add -A
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git commit -m "Harden persistence codec and event checkpoints"
