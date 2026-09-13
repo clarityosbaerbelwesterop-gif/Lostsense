@@ -25,8 +25,8 @@ class SaveCodec final {
 public:
   [[nodiscard]] static bool Serialize(const CharacterSaveState &state,
                                       std::string &payload);
-  [[nodiscard]] static SaveDecodeResult
-  Deserialize(std::string_view payload, CharacterSaveState &state);
+  [[nodiscard]] static SaveDecodeResult Deserialize(std::string_view payload,
+                                                    CharacterSaveState &state);
 };
 
 } // namespace Lostsense::Gameplay

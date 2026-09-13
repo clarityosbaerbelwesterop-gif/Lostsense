@@ -80,9 +80,10 @@ struct RuntimeFixture final {
         Skills{Owner, Abilities, Loadout, TreeDefinition(), 3U},
         InventoryStateAuthority{Items, 16U}, Equipment{Items, Owner, Knight},
         Loot{Items, LootTables, Random},
-        Persistence{Character, Knight, Owner, Random, Effects, Abilities,
-                    Skills, Loadout, InventoryStateAuthority, Equipment, Loot} {
-  }
+        Persistence{Character, Knight,  Owner,
+                    Random,    Effects, Abilities,
+                    Skills,    Loadout, InventoryStateAuthority,
+                    Equipment, Loot} {}
 
   [[nodiscard]] bool PopulatePersistentState() {
     if (!Persistence.IsValid() ||
@@ -92,15 +93,13 @@ struct RuntimeFixture final {
             LoadoutResult::Success ||
         InventoryStateAuthority.AddStack(Potion, 7U) !=
             InventoryResult::Success ||
-        InventoryStateAuthority.AddInstance(
-            CommonInstance(ItemInstanceId{100U}, Sword)) !=
-            InventoryResult::Success ||
-        InventoryStateAuthority.AddInstance(
-            CommonInstance(ItemInstanceId{200U}, Helmet)) !=
-            InventoryResult::Success ||
+        InventoryStateAuthority.AddInstance(CommonInstance(
+            ItemInstanceId{100U}, Sword)) != InventoryResult::Success ||
+        InventoryStateAuthority.AddInstance(CommonInstance(
+            ItemInstanceId{200U}, Helmet)) != InventoryResult::Success ||
         Equipment.EquipFromInventory(InventoryStateAuthority,
-                                     ItemInstanceId{100U}, MainHand) !=
-            EquipmentResult::Success ||
+                                     ItemInstanceId{100U},
+                                     MainHand) != EquipmentResult::Success ||
         Effects.Apply(PersistentBuff, Owner.Id()).Result !=
             EffectApplyResult::Applied ||
         !Loot.RestoreState(LootRuntimeState{1000U})) {

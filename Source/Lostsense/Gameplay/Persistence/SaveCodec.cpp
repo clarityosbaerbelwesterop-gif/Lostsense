@@ -3,9 +3,9 @@
 #include <algorithm>
 #include <bit>
 #include <charconv>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cmath>
 #include <iomanip>
 #include <limits>
 #include <set>
@@ -176,6 +176,163 @@ void WriteItemInstance(std::ostringstream &output,
       return false;
     }
     instance.SocketedItems.push_back(socket);
+  }
+  return true;
+}
+
+[[nodiscard]] bool IsKnownCombatantKind(const Combat::CombatantKind kind) {
+  switch (kind) {
+  case Combat::CombatantKind::Player:
+  case Combat::CombatantKind::Enemy:
+  case Combat::CombatantKind::Elite:
+  case Combat::CombatantKind::Boss:
+    return true;
+  }
+  return false;
+}
+
+[[nodiscard]] bool
+IsKnownModifierOperation(const Stats::ModifierOperation operation) {
+  return operation == Stats::ModifierOperation::Additive ||
+         operation == Stats::ModifierOperation::Multiplicative;
+}
+
+[[nodiscard]] bool IsKnownModifierSource(const Stats::ModifierSource source) {
+  switch (source) {
+  case Stats::ModifierSource::System:
+  case Stats::ModifierSource::Equipment:
+  case Stats::ModifierSource::SkillTree:
+  case Stats::ModifierSource::StatusEffect:
+  case Stats::ModifierSource::Temporary:
+    return true;
+  }
+  return false;
+}
+
+[[nodiscard]] bool IsItemShapeValid(const ItemInstance &item) {
+  if (!item.InstanceId.IsValid() || !item.DefinitionId.IsValid() ||
+      item.ItemLevel == 0U || !item.Rarity.IsValid() ||
+      item.Affixes.size() > MaximumAffixesPerItem ||
+      item.SocketedItems.size() > MaximumSocketsPerItem) {
+    return false;
+  }
+  for (const RolledAffix &affix : item.Affixes) {
+    if (!affix.Id.IsValid() ||
+        affix.Magnitudes.size() > MaximumMagnitudesPerAffix) {
+      return false;
+    }
+    for (const double magnitude : affix.Magnitudes) {
+      if (!std::isfinite(magnitude)) {
+        return false;
+      }
+    }
+  }
+  return std::all_of(item.SocketedItems.begin(), item.SocketedItems.end(),
+                     [](const ItemId itemId) { return itemId.IsValid(); });
+}
+
+[[nodiscard]] bool IsCodecShapeValid(const CharacterSaveState &state,
+                                     const bool requireLootAllocator) {
+  if (!state.Character.IsValid() || !state.CharacterClass.IsValid() ||
+      !state.SkillTreeDefinition.IsValid() || !state.Combatant.Id.IsValid() ||
+      !IsKnownCombatantKind(state.Combatant.Kind) ||
+      (state.Random.Increment & 1U) == 0U ||
+      (requireLootAllocator && state.Loot.NextInstanceValue == 0U) ||
+      state.Combatant.Attributes.BaseValues.size() > MaximumAttributes ||
+      state.Combatant.Attributes.Modifiers.size() > MaximumModifiers ||
+      state.Effects.ActiveEffects.size() > MaximumEffects ||
+      state.Abilities.Abilities.size() > MaximumAbilities ||
+      state.Abilities.CooldownGroups.size() > MaximumCooldownGroups ||
+      state.SkillTree.AllocatedNodes.size() > MaximumSkillNodes ||
+      state.Inventory.Stacks.size() > MaximumInventoryRecords ||
+      state.Inventory.Instances.size() > MaximumInventoryRecords ||
+      state.Equipment.Items.size() > MaximumEquipmentItems ||
+      !std::isfinite(state.Combatant.Health.Maximum) ||
+      !std::isfinite(state.Combatant.Health.Current) ||
+      state.Combatant.Health.Maximum < 0.0 ||
+      state.Combatant.Health.Current < 0.0 ||
+      state.Combatant.Health.Current > state.Combatant.Health.Maximum ||
+      state.Combatant.Health.Dead != (state.Combatant.Health.Current == 0.0) ||
+      !std::isfinite(state.Combatant.Resource.Maximum) ||
+      !std::isfinite(state.Combatant.Resource.Current) ||
+      state.Combatant.Resource.Maximum < 0.0 ||
+      state.Combatant.Resource.Current < 0.0 ||
+      state.Combatant.Resource.Current > state.Combatant.Resource.Maximum) {
+    return false;
+  }
+
+  std::set<Stats::AttributeId> baseIds;
+  for (const Stats::AttributeBaseState &base :
+       state.Combatant.Attributes.BaseValues) {
+    if (!base.Id.IsValid() || !std::isfinite(base.Value) ||
+        !baseIds.insert(base.Id).second) {
+      return false;
+    }
+  }
+  std::set<Stats::ModifierId> modifierIds;
+  for (const Stats::AttributeModifier &modifier :
+       state.Combatant.Attributes.Modifiers) {
+    if (!modifier.Id.IsValid() || !modifier.Attribute.IsValid() ||
+        !IsKnownModifierOperation(modifier.Operation) ||
+        !IsKnownModifierSource(modifier.Source) ||
+        modifier.Source == Stats::ModifierSource::Temporary ||
+        !std::isfinite(modifier.Magnitude) ||
+        !modifierIds.insert(modifier.Id).second) {
+      return false;
+    }
+  }
+  std::set<EffectInstanceId> effectIds;
+  for (const ActiveEffectState &effect : state.Effects.ActiveEffects) {
+    if (!effect.InstanceId.IsValid() || !effect.DefinitionId.IsValid() ||
+        !effect.SourceId.IsValid() || effect.Stacks == 0U ||
+        !std::isfinite(effect.RemainingSeconds) ||
+        !std::isfinite(effect.TimeUntilNextTick) ||
+        !effectIds.insert(effect.InstanceId).second) {
+      return false;
+    }
+  }
+  std::set<AbilityId> abilityIds;
+  for (const AbilityRuntimeEntryState &ability : state.Abilities.Abilities) {
+    if (!ability.Id.IsValid() || !std::isfinite(ability.CooldownRemaining) ||
+        !std::isfinite(ability.RechargeRemaining) ||
+        !abilityIds.insert(ability.Id).second) {
+      return false;
+    }
+  }
+  std::set<CooldownGroupId> cooldownIds;
+  for (const CooldownGroupState &group : state.Abilities.CooldownGroups) {
+    if (!group.Id.IsValid() || !std::isfinite(group.Remaining) ||
+        !cooldownIds.insert(group.Id).second) {
+      return false;
+    }
+  }
+  std::set<SkillNodeId> skillIds;
+  for (const SkillNodeId node : state.SkillTree.AllocatedNodes) {
+    if (!node.IsValid() || !skillIds.insert(node).second) {
+      return false;
+    }
+  }
+  std::set<ItemId> stackIds;
+  for (const ItemStackState &stack : state.Inventory.Stacks) {
+    if (!stack.Item.IsValid() || stack.Quantity == 0U ||
+        !stackIds.insert(stack.Item).second) {
+      return false;
+    }
+  }
+  std::set<ItemInstanceId> itemInstanceIds;
+  for (const ItemInstance &item : state.Inventory.Instances) {
+    if (!IsItemShapeValid(item) ||
+        !itemInstanceIds.insert(item.InstanceId).second) {
+      return false;
+    }
+  }
+  std::set<EquipmentSlotId> equipmentSlots;
+  for (const EquippedItemState &entry : state.Equipment.Items) {
+    if (!entry.Slot.IsValid() || !IsItemShapeValid(entry.Item) ||
+        !equipmentSlots.insert(entry.Slot).second ||
+        !itemInstanceIds.insert(entry.Item.InstanceId).second) {
+      return false;
+    }
   }
   return true;
 }
@@ -429,15 +586,16 @@ void WriteItemInstance(std::ostringstream &output,
 
 bool SaveCodec::Serialize(const CharacterSaveState &state,
                           std::string &payload) {
-  if (state.SchemaVersion != CurrentSaveSchemaVersion) {
+  if (state.SchemaVersion != CurrentSaveSchemaVersion ||
+      !IsCodecShapeValid(state, true)) {
     return false;
   }
 
   std::ostringstream output;
   output << "LOSTSENSE_SAVE " << CurrentSaveSchemaVersion << '\n';
   output << "IDENTITY " << state.Character.Value << ' '
-         << state.CharacterClass.Value << ' '
-         << state.SkillTreeDefinition.Value << '\n';
+         << state.CharacterClass.Value << ' ' << state.SkillTreeDefinition.Value
+         << '\n';
   output << "RNG " << state.Random.State << ' ' << state.Random.Increment
          << '\n';
   output << "LOOT " << state.Loot.NextInstanceValue << '\n';
@@ -466,8 +624,8 @@ bool SaveCodec::Serialize(const CharacterSaveState &state,
   output << "HEALTH " << EncodeDouble(state.Combatant.Health.Maximum) << ' '
          << EncodeDouble(state.Combatant.Health.Current) << ' '
          << (state.Combatant.Health.Dead ? 1U : 0U) << '\n';
-  output << "RESOURCE " << EncodeDouble(state.Combatant.Resource.Maximum)
-         << ' ' << EncodeDouble(state.Combatant.Resource.Current) << '\n';
+  output << "RESOURCE " << EncodeDouble(state.Combatant.Resource.Maximum) << ' '
+         << EncodeDouble(state.Combatant.Resource.Current) << '\n';
 
   output << "EFFECTS " << state.Effects.NextInstanceValue << ' '
          << state.Effects.ActiveEffects.size() << '\n';
@@ -551,8 +709,16 @@ SaveDecodeResult SaveCodec::Deserialize(const std::string_view payload,
   if (!ParseBody(reader, sourceVersion, decoded)) {
     return {SaveDecodeStatus::Malformed, sourceVersion};
   }
+  if (sourceVersion >= 2U && !IsCodecShapeValid(decoded, true)) {
+    return {SaveDecodeStatus::Malformed, sourceVersion};
+  }
   if (sourceVersion == 1U && !MigrateVersionOne(decoded)) {
     return {SaveDecodeStatus::MigrationFailed, sourceVersion};
+  }
+  if (!IsCodecShapeValid(decoded, true)) {
+    return {sourceVersion == 1U ? SaveDecodeStatus::MigrationFailed
+                                : SaveDecodeStatus::Malformed,
+            sourceVersion};
   }
   decoded.SchemaVersion = CurrentSaveSchemaVersion;
   state = std::move(decoded);

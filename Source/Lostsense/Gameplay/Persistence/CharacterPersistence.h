@@ -66,15 +66,15 @@ public:
   [[nodiscard]] bool IsValid() const noexcept { return valid_; }
   [[nodiscard]] CharacterSaveState CaptureState() const;
   [[nodiscard]] bool ValidateState(const CharacterSaveState &state) const;
-  [[nodiscard]] CharacterRestoreResult RestoreState(
-      const CharacterSaveState &state);
+  [[nodiscard]] CharacterRestoreResult
+  RestoreState(const CharacterSaveState &state);
 
 private:
   [[nodiscard]] bool ValidateEnvelope(const CharacterSaveState &state) const;
   [[nodiscard]] bool ValidateCrossState(const CharacterSaveState &state) const;
   [[nodiscard]] bool ApplyState(const CharacterSaveState &state);
-  [[nodiscard]] bool DerivedModifiersMatch(
-      const CharacterSaveState &state) const;
+  [[nodiscard]] bool
+  DerivedModifiersMatch(const CharacterSaveState &state) const;
 
   CharacterPersistentId character_{};
   ClassId characterClass_{};

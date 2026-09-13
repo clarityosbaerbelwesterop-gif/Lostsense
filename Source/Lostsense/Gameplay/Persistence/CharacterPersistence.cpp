@@ -33,11 +33,10 @@ DerivedModifiers(const Stats::AttributeSetState &state) {
       result.push_back(modifier);
     }
   }
-  std::sort(result.begin(), result.end(),
-            [](const Stats::AttributeModifier &left,
-               const Stats::AttributeModifier &right) {
-              return left.Id < right.Id;
-            });
+  std::sort(
+      result.begin(), result.end(),
+      [](const Stats::AttributeModifier &left,
+         const Stats::AttributeModifier &right) { return left.Id < right.Id; });
   return result;
 }
 
@@ -49,8 +48,8 @@ FindAbilityState(const AbilityRuntimeState &state, const AbilityId id) {
   return found == state.Abilities.end() ? nullptr : &*found;
 }
 
-[[nodiscard]] std::uint64_t MaximumPersistentInstance(
-    const CharacterSaveState &state, bool &valid) {
+[[nodiscard]] std::uint64_t
+MaximumPersistentInstance(const CharacterSaveState &state, bool &valid) {
   valid = true;
   std::set<ItemInstanceId> ids;
   std::uint64_t maximum = 0U;
@@ -88,9 +87,9 @@ CharacterPersistence::CharacterPersistence(
            combatant_.Kind() == Combat::CombatantKind::Player &&
            effects_.IsValid() && effects_.OwnerId() == combatant_.Id() &&
            abilities_.IsValid() && abilities_.OwnerClass() == characterClass_ &&
-           loadout_.IsValid() &&
-           loadout_.AbilityAuthority() == &abilities_ && skillTree_.IsValid() &&
-           inventory_.IsValid() && equipment_.IsValid() && loot_.IsValid();
+           loadout_.IsValid() && loadout_.AbilityAuthority() == &abilities_ &&
+           skillTree_.IsValid() && inventory_.IsValid() &&
+           equipment_.IsValid() && loot_.IsValid();
 }
 
 CharacterSaveState CharacterPersistence::CaptureState() const {
@@ -111,8 +110,8 @@ CharacterSaveState CharacterPersistence::CaptureState() const {
   state.Combatant.Health.Dead = state.Combatant.Health.Current <= 0.0;
   state.Combatant.Resource.Maximum =
       durableAttributes.Get(Stats::CombatAttributes::MaxResource);
-  state.Combatant.Resource.Current = std::min(
-      state.Combatant.Resource.Current, state.Combatant.Resource.Maximum);
+  state.Combatant.Resource.Current = std::min(state.Combatant.Resource.Current,
+                                              state.Combatant.Resource.Maximum);
   state.Random = random_.CaptureState();
   state.Effects = effects_.CaptureState();
   state.Abilities = abilities_.CaptureState();
@@ -124,11 +123,11 @@ CharacterSaveState CharacterPersistence::CaptureState() const {
   return state;
 }
 
-
 bool CharacterPersistence::ValidateState(
     const CharacterSaveState &state) const {
   if (!valid_ || state.SchemaVersion != CurrentSaveSchemaVersion ||
-      state.Character != character_ || state.CharacterClass != characterClass_ ||
+      state.Character != character_ ||
+      state.CharacterClass != characterClass_ ||
       state.SkillTreeDefinition != skillTree_.TreeId() ||
       state.Combatant.Id != combatant_.Id() ||
       state.Combatant.Kind != combatant_.Kind()) {
@@ -145,7 +144,8 @@ CharacterPersistence::RestoreState(const CharacterSaveState &state) {
   if (state.SchemaVersion != CurrentSaveSchemaVersion) {
     return CharacterRestoreResult::UnsupportedSchema;
   }
-  if (state.Character != character_ || state.CharacterClass != characterClass_ ||
+  if (state.Character != character_ ||
+      state.CharacterClass != characterClass_ ||
       state.SkillTreeDefinition != skillTree_.TreeId() ||
       state.Combatant.Id != combatant_.Id() ||
       state.Combatant.Kind != combatant_.Kind()) {
@@ -155,7 +155,10 @@ CharacterPersistence::RestoreState(const CharacterSaveState &state) {
     return CharacterRestoreResult::InvalidAggregateState;
   }
 
-  const CharacterSaveState before = CaptureState();
+  CharacterSaveState before = CaptureState();
+  // Persistent capture intentionally removes transient Attribute modifiers, but
+  // a failed load must roll back the exact live runtime, including transients.
+  before.Combatant = combatant_.CaptureState();
   if (ApplyState(state)) {
     return CharacterRestoreResult::Success;
   }
@@ -197,8 +200,8 @@ bool CharacterPersistence::ValidateCrossState(
     if (!ability.IsValid()) {
       continue;
     }
-    const AbilityRuntimeEntryState *entry = FindAbilityState(state.Abilities,
-                                                              ability);
+    const AbilityRuntimeEntryState *entry =
+        FindAbilityState(state.Abilities, ability);
     if (entry == nullptr || !entry->Unlocked) {
       return false;
     }
@@ -231,8 +234,8 @@ bool CharacterPersistence::ApplyState(const CharacterSaveState &state) {
       !skillTree_.RestoreState(state.SkillTree) ||
       !abilities_.RestoreState(state.Abilities) ||
       !loadout_.RestoreState(state.Loadout) ||
-      !loot_.RestoreState(state.Loot) ||
-      !random_.RestoreState(state.Random) || !DerivedModifiersMatch(state) ||
+      !loot_.RestoreState(state.Loot) || !random_.RestoreState(state.Random) ||
+      !DerivedModifiersMatch(state) ||
       !combatant_.RestoreState(state.Combatant)) {
     return false;
   }

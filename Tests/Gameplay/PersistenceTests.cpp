@@ -1,5 +1,5 @@
-#include "PersistenceTestFixtures.h"
 #include "Lostsense/Gameplay/Persistence/SaveCodec.h"
+#include "PersistenceTestFixtures.h"
 #include "TestHarness.h"
 
 #include <algorithm>
@@ -36,14 +36,14 @@ std::string VersionOneFixtureFrom(std::string versionTwo) {
 
 Stats::AttributeModifier *FindModifier(CharacterSaveState &state,
                                        const Stats::ModifierSource source) {
-  const auto found = std::find_if(
-      state.Combatant.Attributes.Modifiers.begin(),
-      state.Combatant.Attributes.Modifiers.end(),
-      [source](const Stats::AttributeModifier &modifier) {
-        return modifier.Source == source;
-      });
+  const auto found =
+      std::find_if(state.Combatant.Attributes.Modifiers.begin(),
+                   state.Combatant.Attributes.Modifiers.end(),
+                   [source](const Stats::AttributeModifier &modifier) {
+                     return modifier.Source == source;
+                   });
   return found == state.Combatant.Attributes.Modifiers.end() ? nullptr
-                                                              : &*found;
+                                                             : &*found;
 }
 
 void TestCaptureSerializeDeserializeAndRestore(TestSuite &suite) {
@@ -93,10 +93,10 @@ void TestCaptureSerializeDeserializeAndRestore(TestSuite &suite) {
                    CharacterRestoreResult::Success,
                "aggregate restore succeeds after broad live-state mutation");
   std::string restoredPayload;
-  suite.Expect(SerializeState(fixture.Persistence.CaptureState(),
-                              restoredPayload) &&
-                   restoredPayload == firstPayload,
-               "full restore recreates exact serialized aggregate state");
+  suite.Expect(
+      SerializeState(fixture.Persistence.CaptureState(), restoredPayload) &&
+          restoredPayload == firstPayload,
+      "full restore recreates exact serialized aggregate state");
 }
 
 void TestTemporaryModifiersAreNotPersisted(TestSuite &suite) {
@@ -119,8 +119,9 @@ void TestTemporaryModifiersAreNotPersisted(TestSuite &suite) {
                                      Stats::ModifierSource::Temporary;
                             }),
                "capture excludes transient AttributeSet modifiers");
-  suite.ExpectNear(captured.Combatant.Health.Maximum, 100.0,
-                   "capture recomputes durable health maximum without transient modifier");
+  suite.ExpectNear(
+      captured.Combatant.Health.Maximum, 100.0,
+      "capture recomputes durable health maximum without transient modifier");
   suite.Expect(fixture.Persistence.ValidateState(captured),
                "filtered durable capture remains valid");
 }
@@ -131,7 +132,8 @@ void TestCrossStateValidation(TestSuite &suite) {
   const CharacterSaveState good = fixture.Persistence.CaptureState();
 
   CharacterSaveState duplicate = good;
-  duplicate.Inventory.Instances.push_back(duplicate.Equipment.Items.front().Item);
+  duplicate.Inventory.Instances.push_back(
+      duplicate.Equipment.Items.front().Item);
   suite.Expect(!fixture.Persistence.ValidateState(duplicate),
                "inventory/equipment duplicate ownership is rejected");
 
@@ -141,8 +143,9 @@ void TestCrossStateValidation(TestSuite &suite) {
                "loot allocator cannot collide with persistent instance IDs");
 
   CharacterSaveState unknownLoadout = good;
-  unknownLoadout.Loadout.Slots[static_cast<std::size_t>(
-      AbilityLoadoutSlot::Active1)] = AbilityId{99999U};
+  unknownLoadout.Loadout
+      .Slots[static_cast<std::size_t>(AbilityLoadoutSlot::Active1)] =
+      AbilityId{99999U};
   suite.Expect(!fixture.Persistence.ValidateState(unknownLoadout),
                "unknown loadout ability is rejected");
 
@@ -189,7 +192,71 @@ void TestTransactionalAggregateFailure(TestSuite &suite) {
   std::string after;
   suite.Expect(SerializeState(fixture.Persistence.CaptureState(), after) &&
                    after == before,
-               "aggregate rollback restores combat RNG effects abilities skills loadout inventory equipment and loot");
+               "aggregate rollback restores combat RNG effects abilities "
+               "skills loadout inventory equipment and loot");
+}
+
+void TestFailedRestorePreservesTransientLiveState(TestSuite &suite) {
+  RuntimeFixture fixture;
+  suite.Expect(fixture.PopulatePersistentState(), "fixture populates");
+  const Stats::ModifierId transient{456789U};
+  suite.Expect(fixture.Owner.AddAttributeModifier(
+                   {transient, Stats::CombatAttributes::MaxHealth,
+                    Stats::ModifierOperation::Additive,
+                    Stats::ModifierSource::Temporary, 25.0}),
+               "transient live modifier installs before failed load");
+  const Combat::CombatantState rawBefore = fixture.Owner.CaptureState();
+
+  CharacterSaveState corrupted = fixture.Persistence.CaptureState();
+  corrupted.Inventory.Stacks.push_back({ItemId{999999U}, 1U});
+  suite.Expect(fixture.Persistence.RestoreState(corrupted) ==
+                   CharacterRestoreResult::SubsystemRestoreFailed,
+               "corrupt aggregate fails after restore mutation begins");
+
+  const Combat::CombatantState rawAfter = fixture.Owner.CaptureState();
+  suite.Expect(fixture.Owner.Attributes().HasModifier(transient),
+               "failed aggregate restore preserves transient live modifier");
+  suite.Expect(
+      std::bit_cast<std::uint64_t>(rawAfter.Health.Maximum) ==
+              std::bit_cast<std::uint64_t>(rawBefore.Health.Maximum) &&
+          std::bit_cast<std::uint64_t>(rawAfter.Health.Current) ==
+              std::bit_cast<std::uint64_t>(rawBefore.Health.Current) &&
+          rawAfter.Attributes.Modifiers.size() ==
+              rawBefore.Attributes.Modifiers.size(),
+      "rollback restores raw combatant pool and modifier state exactly");
+}
+
+void TestRestoreEnvelopeFailuresAreNonMutating(TestSuite &suite) {
+  RuntimeFixture fixture;
+  suite.Expect(fixture.PopulatePersistentState(), "fixture populates");
+  const CharacterSaveState good = fixture.Persistence.CaptureState();
+  std::string before;
+  suite.Expect(SerializeState(good, before),
+               "baseline serializes before envelope rejection tests");
+
+  CharacterSaveState unsupported = good;
+  unsupported.SchemaVersion = CurrentSaveSchemaVersion + 1U;
+  suite.Expect(fixture.Persistence.RestoreState(unsupported) ==
+                   CharacterRestoreResult::UnsupportedSchema,
+               "aggregate restore rejects unsupported schema explicitly");
+
+  CharacterSaveState wrongIdentity = good;
+  wrongIdentity.Character = CharacterPersistentId{Character.Value + 1U};
+  suite.Expect(fixture.Persistence.RestoreState(wrongIdentity) ==
+                   CharacterRestoreResult::IdentityMismatch,
+               "aggregate restore rejects mismatched character identity");
+
+  CharacterSaveState invalidRng = good;
+  invalidRng.Random.Increment &= ~std::uint64_t{1U};
+  suite.Expect(fixture.Persistence.RestoreState(invalidRng) ==
+                   CharacterRestoreResult::InvalidAggregateState,
+               "aggregate restore rejects malformed deterministic RNG state");
+
+  std::string after;
+  suite.Expect(
+      SerializeState(fixture.Persistence.CaptureState(), after) &&
+          after == before,
+      "pre-mutation restore failures leave complete live state unchanged");
 }
 
 void TestVersionOneMigrationAndParserHardening(TestSuite &suite) {
@@ -207,13 +274,15 @@ void TestVersionOneMigrationAndParserHardening(TestSuite &suite) {
                    migrated.SchemaVersion == CurrentSaveSchemaVersion,
                "V1 fixture migrates explicitly to V2");
   suite.Expect(migrated.Loot.NextInstanceValue == 201U,
-               "V1 migration reconstructs allocator from highest persistent instance ID");
+               "V1 migration reconstructs allocator from highest persistent "
+               "instance ID");
   suite.Expect(fixture.Persistence.ValidateState(migrated),
                "migrated V1 aggregate validates against current runtime");
 
   std::string invalidId = v1;
   const std::size_t item = invalidId.find("ITEM 200 ");
-  suite.Expect(item != std::string::npos, "historical fixture contains inventory instance");
+  suite.Expect(item != std::string::npos,
+               "historical fixture contains inventory instance");
   if (item != std::string::npos) {
     invalidId.replace(item, std::string{"ITEM 200"}.size(), "ITEM 0");
     CharacterSaveState rejected;
@@ -225,8 +294,7 @@ void TestVersionOneMigrationAndParserHardening(TestSuite &suite) {
   std::string overflow = v1;
   const std::size_t maxItem = overflow.find("ITEM 200 ");
   if (maxItem != std::string::npos) {
-    overflow.replace(maxItem + 5U, 3U,
-                     "18446744073709551615");
+    overflow.replace(maxItem + 5U, 3U, "18446744073709551615");
     CharacterSaveState rejected;
     suite.Expect(SaveCodec::Deserialize(overflow, rejected).Status ==
                      SaveDecodeStatus::MigrationFailed,
@@ -234,9 +302,10 @@ void TestVersionOneMigrationAndParserHardening(TestSuite &suite) {
   }
 
   CharacterSaveState ignored;
-  suite.Expect(SaveCodec::Deserialize("LOSTSENSE_SAVE 99\nEND\n", ignored)
-                       .Status == SaveDecodeStatus::UnsupportedVersion,
-               "future schema is rejected explicitly");
+  suite.Expect(
+      SaveCodec::Deserialize("LOSTSENSE_SAVE 99\nEND\n", ignored).Status ==
+          SaveDecodeStatus::UnsupportedVersion,
+      "future schema is rejected explicitly");
   suite.Expect(SaveCodec::Deserialize(v2 + "TRAILING\n", ignored).Status ==
                    SaveDecodeStatus::Malformed,
                "trailing payload records are rejected");
@@ -257,11 +326,85 @@ void TestVersionOneMigrationAndParserHardening(TestSuite &suite) {
                "parser rejects payload beyond hard byte limit");
 }
 
+void TestCodecShapeValidation(TestSuite &suite) {
+  RuntimeFixture fixture;
+  suite.Expect(fixture.PopulatePersistentState(), "fixture populates");
+  const CharacterSaveState good = fixture.Persistence.CaptureState();
+
+  CharacterSaveState temporary = good;
+  temporary.Combatant.Attributes.Modifiers.push_back(
+      {Stats::ModifierId{999U}, Stats::CombatAttributes::Armor,
+       Stats::ModifierOperation::Additive, Stats::ModifierSource::Temporary,
+       1.0});
+  std::string payload;
+  suite.Expect(!SaveCodec::Serialize(temporary, payload),
+               "codec refuses transient modifiers even when called directly");
+
+  CharacterSaveState duplicateBase = good;
+  duplicateBase.Combatant.Attributes.BaseValues.push_back(
+      duplicateBase.Combatant.Attributes.BaseValues.front());
+  suite.Expect(!SaveCodec::Serialize(duplicateBase, payload),
+               "codec rejects duplicate attribute records before encoding");
+
+  CharacterSaveState invalidKind = good;
+  invalidKind.Combatant.Kind = static_cast<Combat::CombatantKind>(255U);
+  suite.Expect(!SaveCodec::Serialize(invalidKind, payload),
+               "codec rejects unknown combatant enum values");
+
+  CharacterSaveState nonFinite = good;
+  nonFinite.Combatant.Health.Current = std::numeric_limits<double>::infinity();
+  suite.Expect(!SaveCodec::Serialize(nonFinite, payload),
+               "codec refuses non-finite state before serialization");
+
+  CharacterSaveState tooManyBases = good;
+  tooManyBases.Combatant.Attributes.BaseValues.clear();
+  for (std::uint32_t index = 1U; index <= 4097U; ++index) {
+    tooManyBases.Combatant.Attributes.BaseValues.push_back(
+        {Stats::AttributeId{index}, 1.0});
+  }
+  suite.Expect(
+      !SaveCodec::Serialize(tooManyBases, payload),
+      "serializer enforces the same bounded attribute count as parser");
+
+  std::string valid;
+  suite.Expect(SaveCodec::Serialize(good, valid),
+               "valid aggregate serializes for payload corruption checks");
+  const std::string combatantPrefix =
+      "COMBATANT " + std::to_string(good.Combatant.Id.Value) + " 0";
+  const std::size_t combatant = valid.find(combatantPrefix);
+  suite.Expect(combatant != std::string::npos,
+               "fixture exposes player combatant record");
+  if (combatant != std::string::npos) {
+    std::string invalidEnum = valid;
+    invalidEnum.replace(combatant, combatantPrefix.size(),
+                        "COMBATANT " + std::to_string(good.Combatant.Id.Value) +
+                            " 255");
+    CharacterSaveState rejected;
+    suite.Expect(
+        SaveCodec::Deserialize(invalidEnum, rejected).Status ==
+            SaveDecodeStatus::Malformed,
+        "parser rejects unknown enum values instead of casting through");
+  }
+
+  std::string v1 = VersionOneFixtureFrom(valid);
+  const std::size_t item = v1.find("ITEM 200 ");
+  suite.Expect(item != std::string::npos,
+               "historical fixture exposes second persistent item ID");
+  if (item != std::string::npos) {
+    v1.replace(item, std::string{"ITEM 200"}.size(), "ITEM 100");
+    CharacterSaveState rejected;
+    suite.Expect(SaveCodec::Deserialize(v1, rejected).Status ==
+                     SaveDecodeStatus::MigrationFailed,
+                 "V1 migration rejects duplicate persistent instance IDs");
+  }
+}
+
 void TestExactDoubleRoundTrip(TestSuite &suite) {
   RuntimeFixture fixture;
   suite.Expect(fixture.PopulatePersistentState(), "fixture populates");
   CharacterSaveState state = fixture.Persistence.CaptureState();
-  const double exact = std::bit_cast<double>(std::uint64_t{0x3fd5555555555555ULL});
+  const double exact =
+      std::bit_cast<double>(std::uint64_t{0x3fd5555555555555ULL});
   state.Combatant.Attributes.BaseValues.front().Value = exact;
   std::string payload;
   suite.Expect(SerializeState(state, payload), "exact-double state serializes");
@@ -283,7 +426,10 @@ int main() {
   TestTemporaryModifiersAreNotPersisted(suite);
   TestCrossStateValidation(suite);
   TestTransactionalAggregateFailure(suite);
+  TestFailedRestorePreservesTransientLiveState(suite);
+  TestRestoreEnvelopeFailuresAreNonMutating(suite);
   TestVersionOneMigrationAndParserHardening(suite);
+  TestCodecShapeValidation(suite);
   TestExactDoubleRoundTrip(suite);
   return suite.Finish();
 }

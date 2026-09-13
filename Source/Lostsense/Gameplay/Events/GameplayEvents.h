@@ -45,6 +45,7 @@ struct GameplayEvent final {
 struct GameplayEventCheckpoint final {
   std::size_t EventCount{0U};
   std::uint64_t NextSequence{1U};
+  std::uint64_t Epoch{0U};
 };
 
 class GameplayEventStream final {
@@ -59,7 +60,8 @@ public:
   }
 
   // Presentation/event delivery must never become a second gameplay authority.
-  // A full stream therefore reports failure without altering committed gameplay.
+  // A full stream therefore reports failure without altering committed
+  // gameplay.
   [[nodiscard]] bool Publish(GameplayEvent event) noexcept;
   [[nodiscard]] GameplayEventCheckpoint Checkpoint() const noexcept;
   [[nodiscard]] bool Rollback(GameplayEventCheckpoint checkpoint) noexcept;
@@ -67,8 +69,12 @@ public:
   void Clear() noexcept;
 
 private:
+  void AdvanceCheckpointEpoch() noexcept;
+
   std::size_t capacity_{0U};
   std::uint64_t nextSequence_{1U};
+  std::uint64_t checkpointEpoch_{1U};
+  std::uint64_t epochStartSequence_{1U};
   std::vector<GameplayEvent> events_{};
 };
 
@@ -113,10 +119,11 @@ public:
         ItemInstanceId instance, EquipmentSlotId slot,
         Combat::CombatantId actor, GameplayEventStream &events);
 
-  [[nodiscard]] static EquipmentResult
-  Unequip(EquipmentRuntime &equipment, Inventory &inventory,
-          EquipmentSlotId slot, Combat::CombatantId actor,
-          GameplayEventStream &events);
+  [[nodiscard]] static EquipmentResult Unequip(EquipmentRuntime &equipment,
+                                               Inventory &inventory,
+                                               EquipmentSlotId slot,
+                                               Combat::CombatantId actor,
+                                               GameplayEventStream &events);
 };
 
 } // namespace Lostsense::Gameplay

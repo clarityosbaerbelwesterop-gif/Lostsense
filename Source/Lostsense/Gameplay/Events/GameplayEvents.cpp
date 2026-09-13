@@ -39,9 +39,8 @@ GameplayEventStream::GameplayEventStream(const std::size_t capacity) noexcept
 }
 
 bool GameplayEventStream::Publish(GameplayEvent event) noexcept {
-  if (capacity_ == 0U || events_.size() >= capacity_ ||
-      nextSequence_ == 0U || nextSequence_ ==
-                                 std::numeric_limits<std::uint64_t>::max()) {
+  if (capacity_ == 0U || events_.size() >= capacity_ || nextSequence_ == 0U ||
+      nextSequence_ == std::numeric_limits<std::uint64_t>::max()) {
     return false;
   }
   event.Sequence = nextSequence_++;
@@ -50,13 +49,21 @@ bool GameplayEventStream::Publish(GameplayEvent event) noexcept {
 }
 
 GameplayEventCheckpoint GameplayEventStream::Checkpoint() const noexcept {
-  return {events_.size(), nextSequence_};
+  return {events_.size(), nextSequence_, checkpointEpoch_};
 }
 
 bool GameplayEventStream::Rollback(
     const GameplayEventCheckpoint checkpoint) noexcept {
-  if (checkpoint.EventCount > events_.size() || checkpoint.NextSequence == 0U ||
+  if (checkpoint.Epoch == 0U || checkpoint.Epoch != checkpointEpoch_ ||
+      checkpoint.EventCount > events_.size() || checkpoint.NextSequence == 0U ||
       checkpoint.NextSequence > nextSequence_) {
+    return false;
+  }
+  const std::uint64_t expectedSequence =
+      checkpoint.EventCount == 0U
+          ? epochStartSequence_
+          : events_[checkpoint.EventCount - 1U].Sequence + 1U;
+  if (checkpoint.NextSequence != expectedSequence) {
     return false;
   }
   events_.resize(checkpoint.EventCount);
@@ -68,10 +75,25 @@ std::vector<GameplayEvent> GameplayEventStream::Drain() {
   std::vector<GameplayEvent> drained = std::move(events_);
   events_.clear();
   events_.reserve(capacity_);
+  AdvanceCheckpointEpoch();
   return drained;
 }
 
-void GameplayEventStream::Clear() noexcept { events_.clear(); }
+void GameplayEventStream::Clear() noexcept {
+  events_.clear();
+  AdvanceCheckpointEpoch();
+}
+
+void GameplayEventStream::AdvanceCheckpointEpoch() noexcept {
+  epochStartSequence_ = nextSequence_;
+  if (checkpointEpoch_ == std::numeric_limits<std::uint64_t>::max()) {
+    checkpointEpoch_ = 0U;
+    return;
+  }
+  if (checkpointEpoch_ != 0U) {
+    ++checkpointEpoch_;
+  }
+}
 
 Combat::DamageApplication GameplayEventAuthority::ApplyDamage(
     const Combat::CombatantId source, Combat::Combatant &target,
@@ -118,11 +140,11 @@ bool GameplayEventAuthority::RemoveEffect(
     EffectRuntime &runtime, const EffectInstanceId instance,
     GameplayEventStream &events) noexcept {
   const EffectRuntimeState before = runtime.CaptureState();
-  const auto found = std::find_if(
-      before.ActiveEffects.begin(), before.ActiveEffects.end(),
-      [instance](const ActiveEffectState &active) {
-        return active.InstanceId == instance;
-      });
+  const auto found =
+      std::find_if(before.ActiveEffects.begin(), before.ActiveEffects.end(),
+                   [instance](const ActiveEffectState &active) {
+                     return active.InstanceId == instance;
+                   });
   if (found == before.ActiveEffects.end() || !runtime.Remove(instance)) {
     return false;
   }
@@ -145,7 +167,7 @@ AbilityActivationOutcome GameplayEventAuthority::ActivateAbility(
     event.Type = GameplayEventType::AbilityActivated;
     event.Source = actor;
     event.Target = target.Combatant == nullptr ? Combat::CombatantId{}
-                                                : target.Combatant->Id();
+                                               : target.Combatant->Id();
     event.Ability = ability;
     PublishIgnoringBackpressure(events, event);
   }
@@ -215,10 +237,12 @@ InventoryResult GameplayEventAuthority::DropInstance(
   return result;
 }
 
-EquipmentResult GameplayEventAuthority::Equip(
-    EquipmentRuntime &equipment, Inventory &inventory,
-    const ItemInstanceId instance, const EquipmentSlotId slot,
-    const Combat::CombatantId actor, GameplayEventStream &events) {
+EquipmentResult GameplayEventAuthority::Equip(EquipmentRuntime &equipment,
+                                              Inventory &inventory,
+                                              const ItemInstanceId instance,
+                                              const EquipmentSlotId slot,
+                                              const Combat::CombatantId actor,
+                                              GameplayEventStream &events) {
   const ItemInstance *candidate = inventory.FindInstance(instance);
   const ItemId item = candidate == nullptr ? ItemId{} : candidate->DefinitionId;
   const EquipmentResult result =
@@ -235,10 +259,11 @@ EquipmentResult GameplayEventAuthority::Equip(
   return result;
 }
 
-EquipmentResult GameplayEventAuthority::Unequip(
-    EquipmentRuntime &equipment, Inventory &inventory,
-    const EquipmentSlotId slot, const Combat::CombatantId actor,
-    GameplayEventStream &events) {
+EquipmentResult GameplayEventAuthority::Unequip(EquipmentRuntime &equipment,
+                                                Inventory &inventory,
+                                                const EquipmentSlotId slot,
+                                                const Combat::CombatantId actor,
+                                                GameplayEventStream &events) {
   const ItemInstance *equipped = equipment.EquippedAt(slot);
   const ItemId item = equipped == nullptr ? ItemId{} : equipped->DefinitionId;
   const ItemInstanceId instance =
