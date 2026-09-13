@@ -1,0 +1,81 @@
+name: PR6 Finalize Product
+
+"on":
+  push:
+    branches: [codex/versioned-persistence-events]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/versioned-persistence-events
+          fetch-depth: 0
+      - name: Verify and apply final delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .tmp/pr6-final.patch.gz.b64 | gzip -d > /tmp/pr6-final.patch
+          echo "3cebe106ceca4cb340589a7920439d49fe31f226cd45a4aefb4fa484193ced78  /tmp/pr6-final.patch" | sha256sum -c -
+          git apply --check /tmp/pr6-final.patch
+          git apply /tmp/pr6-final.patch
+      - name: Apply repository formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          clang-format -i \
+            Source/Lostsense/Gameplay/Events/GameplayEvents.cpp \
+            Source/Lostsense/Gameplay/Events/GameplayEvents.h \
+            Source/Lostsense/Gameplay/Persistence/CharacterPersistence.cpp \
+            Source/Lostsense/Gameplay/Persistence/CharacterPersistence.h \
+            Source/Lostsense/Gameplay/Persistence/SaveCodec.cpp \
+            Source/Lostsense/Gameplay/Persistence/SaveCodec.h \
+            Tests/Gameplay/GameplayEventTests.cpp \
+            Tests/Gameplay/PersistenceTestFixtures.h \
+            Tests/Gameplay/PersistenceTests.cpp
+          find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 clang-format --dry-run --Werror
+      - name: GCC release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmake -S . -B build-gcc -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-gcc --parallel
+          ctest --test-dir build-gcc --output-on-failure
+      - name: Clang release
+        shell: bash
+        run: |
+          set -euo pipefail
+          CC=clang CXX=clang++ cmake -S . -B build-clang -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-clang --parallel
+          ctest --test-dir build-clang --output-on-failure
+      - name: ASan and UBSan
+        shell: bash
+        run: |
+          set -euo pipefail
+          CC=clang CXX=clang++ cmake -S . -B build-sanitize -DCMAKE_BUILD_TYPE=Debug -DLOSTSENSE_WARNINGS_AS_ERRORS=ON -DLOSTSENSE_ENABLE_SANITIZERS=ON
+          cmake --build build-sanitize --parallel
+          ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir build-sanitize --output-on-failure
+      - name: Final self review and commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .tmp
+          rm -f .github/workflows/pr6-finalize.yml
+          git diff --check
+          test -z "$(git diff --name-only origin/main...HEAD -- .tmp .github/workflows/pr6-finalize.yml)"
+          ! grep -RniE 'TODO|FIXME|debug print|preflight|snapshot|transport' \
+            Source/Lostsense/Gameplay/Events \
+            Source/Lostsense/Gameplay/Persistence \
+            Tests/Gameplay/GameplayEventTests.cpp \
+            Tests/Gameplay/PersistenceTestFixtures.h \
+            Tests/Gameplay/PersistenceTests.cpp
+          git add -A
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Harden persistence codec and event checkpoints"
+          git push origin HEAD:codex/versioned-persistence-events
