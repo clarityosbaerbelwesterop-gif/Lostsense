@@ -117,6 +117,58 @@ void TestCommittedOperationsPublishOnlyAfterSuccess(TestSuite &suite) {
                "failed effect removal emits nothing");
 }
 
+
+void TestAbilityDamagePublishesCommittedCombatEvents(TestSuite &suite) {
+  constexpr AbilityId Strike{799U};
+  constexpr ClassId EventKnight{798U};
+
+  Combat::Combatant owner{Combat::CombatantId{3100U},
+                          Combat::CombatantKind::Player};
+  Combat::Combatant target{Combat::CombatantId{3200U},
+                           Combat::CombatantKind::Enemy};
+  EffectRuntime ownerEffects{owner, {}};
+  EffectRuntime targetEffects{target, {}};
+  Core::DeterministicRandom random{12U, 5U};
+
+  AbilityDefinition strike;
+  strike.Id = Strike;
+  strike.RequiredClass = EventKnight;
+  strike.TargetRule = AbilityTargetRule::Hostile;
+  strike.DealsDamage = true;
+  strike.Damage.BaseDamage[static_cast<std::size_t>(
+      Combat::DamageType::Physical)] = 500.0;
+  strike.Damage.CanCritical = false;
+  strike.Damage.CanBlock = false;
+
+  AbilityRuntime abilities{owner, ownerEffects, random, EventKnight, {strike}};
+  suite.Expect(abilities.IsValid() && abilities.Unlock(Strike),
+               "damaging event-test ability initializes and unlocks");
+
+  GameplayEventStream events{8U};
+  AbilityTarget hostile{&target, &targetEffects, TargetRelation::Hostile};
+  const AbilityActivationOutcome outcome = GameplayEventAuthority::ActivateAbility(
+      abilities, Strike, hostile, owner.Id(), events);
+
+  suite.Expect(outcome.Result == AbilityActivationResult::Success &&
+                   outcome.DamageResolved && outcome.Damage.AppliedToHealth.BecameDead,
+               "damaging ability commits lethal authoritative damage");
+  suite.Expect(events.Size() == 3U,
+               "lethal ability publishes activation damage and death exactly once");
+  if (events.Size() == 3U) {
+    suite.Expect(events.Events()[0].Type ==
+                         GameplayEventType::AbilityActivated &&
+                     events.Events()[1].Type == GameplayEventType::DamageApplied &&
+                     events.Events()[2].Type == GameplayEventType::CombatantDied,
+                 "ability combat event ordering is deterministic");
+    suite.Expect(events.Events()[1].Ability == Strike &&
+                     events.Events()[1].Source == owner.Id() &&
+                     events.Events()[1].Target == target.Id() &&
+                     events.Events()[1].Value > 0.0 &&
+                     events.Events()[2].Ability == Strike,
+                 "ability damage and death events preserve causal identity");
+  }
+}
+
 void TestInventoryEquipmentAndDeathEventOrdering(TestSuite &suite) {
   RuntimeFixture fixture;
   GameplayEventStream events{32U};
@@ -189,6 +241,7 @@ int main() {
   TestSuite suite{"gameplay.events"};
   TestStreamOrderingCapacityAndRollback(suite);
   TestCommittedOperationsPublishOnlyAfterSuccess(suite);
+  TestAbilityDamagePublishesCommittedCombatEvents(suite);
   TestInventoryEquipmentAndDeathEventOrdering(suite);
   return suite.Finish();
 }
