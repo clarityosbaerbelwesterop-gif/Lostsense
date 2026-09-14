@@ -74,6 +74,7 @@ enum class AbilityActivationResult : std::uint8_t {
   NotUnlocked,
   MissingPrerequisite,
   WrongClass,
+  OwnerDead,
   InvalidTarget,
   InsufficientResource,
   OnCooldown,

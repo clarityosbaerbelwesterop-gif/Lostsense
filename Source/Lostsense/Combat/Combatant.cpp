@@ -96,6 +96,10 @@ DamageApplication Combatant::ApplyDamage(const double amount) noexcept {
 CombatResolution
 Combatant::ResolveAttack(Combatant &target, const DamageSpec &spec,
                          const CombatRolls rolls) const noexcept {
+  if (health_.IsDead()) {
+    return {};
+  }
+
   DamageRequest request;
   request.BaseDamage = CalculateScaledBaseDamage(spec);
   request.Attacker = BuildOffensiveStats();

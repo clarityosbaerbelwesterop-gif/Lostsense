@@ -2,3 +2,10 @@
 /.cache/
 compile_commands.json
 .clangd/
+/Binaries/
+/DerivedDataCache/
+/Intermediate/
+/Saved/
+/.vs/
+*.sln
+*.VC.db

@@ -234,6 +234,29 @@ void TestTargetResourceAndRestrictionFailures(TestSuite &suite) {
                "stun-like effect blocks ability activation");
 }
 
+void TestDeadOwnerCannotActivateAbilities(TestSuite &suite) {
+  Fixture fixture;
+  UnlockCore(fixture, suite);
+  const AbilityTarget hostile{&fixture.Target, &fixture.TargetEffects,
+                              TargetRelation::Hostile};
+  const double targetBefore = fixture.Target.Health().Current();
+  const double resourceBefore = fixture.Owner.Resource().Current();
+  const Core::RandomState randomBefore = fixture.Random.CaptureState();
+
+  suite.Expect(fixture.Owner.ApplyDamage(1000.0).BecameDead,
+               "setup damage kills ability owner");
+  const AbilityActivationOutcome outcome =
+      fixture.Abilities.Activate(Strike, hostile);
+  suite.Expect(outcome.Result == AbilityActivationResult::OwnerDead,
+               "dead owner is rejected before ability execution");
+  suite.ExpectNear(fixture.Target.Health().Current(), targetBefore,
+                   "dead owner cannot damage target through ability runtime");
+  suite.ExpectNear(fixture.Owner.Resource().Current(), resourceBefore,
+                   "dead-owner rejection consumes no resource");
+  suite.Expect(fixture.Random.CaptureState() == randomBefore,
+               "dead-owner rejection consumes no authoritative RNG");
+}
+
 void TestCaptureRestoreAndCorruption(TestSuite &suite) {
   Fixture fixture;
   UnlockCore(fixture, suite);
@@ -351,6 +374,7 @@ int main() {
   TestDefinitionGraphAndOwnership(suite);
   TestActivationDamageCostCooldownAndEffects(suite);
   TestTargetResourceAndRestrictionFailures(suite);
+  TestDeadOwnerCannotActivateAbilities(suite);
   TestCaptureRestoreAndCorruption(suite);
   TestAtomicFailureRollsBackEverything(suite);
   TestRechargeAndRestoreBoundaries(suite);

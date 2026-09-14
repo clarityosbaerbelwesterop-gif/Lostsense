@@ -169,6 +169,35 @@ void TestRandomResolutionIsReproducible(TestSuite &suite) {
                "combat always advances exactly two authoritative samples");
 }
 
+void TestDeadAttackerCannotResolveDamage(TestSuite &suite) {
+  Combatant attacker{CombatantId{30U}, CombatantKind::Player};
+  Combatant target{CombatantId{31U}, CombatantKind::Enemy};
+  FillHealth(target, 100.0);
+
+  suite.Expect(attacker.ApplyDamage(1000.0).BecameDead,
+               "setup damage kills attacker");
+  DamageSpec attack;
+  attack.BaseDamage[Physical] = 50.0;
+  attack.CanCritical = false;
+  attack.CanBlock = false;
+
+  const CombatResolution resolution =
+      attacker.ResolveAttack(target, attack, CombatRolls{});
+  suite.Expect(!resolution.AppliedToHealth.WasValid,
+               "dead attacker cannot produce a valid damage application");
+  suite.ExpectNear(target.Health().Current(), 100.0,
+                   "dead attacker leaves target health unchanged");
+
+  DeterministicRandom random{303U, 9U};
+  DeterministicRandom expected{303U, 9U};
+  static_cast<void>(expected.NextUnit());
+  static_cast<void>(expected.NextUnit());
+  static_cast<void>(attacker.ResolveAttack(target, attack, random));
+  suite.Expect(
+      random.CaptureState() == expected.CaptureState(),
+      "dead deterministic attack still consumes the documented two samples");
+}
+
 void TestCombatantStateRoundTrip(TestSuite &suite) {
   Combatant combatant{CombatantId{20U}, CombatantKind::Player};
   Combatant enemy{CombatantId{21U}, CombatantKind::Enemy};
@@ -205,6 +234,7 @@ int main() {
   TestCriticalBlockResistanceAndPenetration(suite);
   TestDerivedPoolsTrackAttributes(suite);
   TestRandomResolutionIsReproducible(suite);
+  TestDeadAttackerCannotResolveDamage(suite);
   TestCombatantStateRoundTrip(suite);
   return suite.Finish();
 }
