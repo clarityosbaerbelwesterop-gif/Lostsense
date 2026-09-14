@@ -30,9 +30,17 @@ struct SliceRuntime final {
   Inventory InventoryState{Items, 32U};
   EquipmentRuntime Equipment{Items, Player, KnightClass};
   LootRuntime Loot{Items, Tables, Random};
-  CharacterPersistence Persistence{CharacterPersistentId{1U}, KnightClass,
-                                   Player, Random, Effects, Abilities, Skills,
-                                   Loadout, InventoryState, Equipment, Loot};
+  CharacterPersistence Persistence{CharacterPersistentId{1U},
+                                   KnightClass,
+                                   Player,
+                                   Random,
+                                   Effects,
+                                   Abilities,
+                                   Skills,
+                                   Loadout,
+                                   InventoryState,
+                                   Equipment,
+                                   Loot};
 
   [[nodiscard]] bool UnlockCoreActions() {
     return Abilities.Unlock(KnightPrimaryAttack) &&
@@ -94,7 +102,7 @@ void TestKnightSkillAndAbilityLoop(TestSuite &suite) {
   suite.Expect(runtime.AllocateActivePath(),
                "Scar Atlas path unlocks and equips four active abilities");
   suite.Expect(runtime.Loadout.AbilityAt(AbilityLoadoutSlot::Active1) ==
-                   Bellstep &&
+                       Bellstep &&
                    runtime.Loadout.AbilityAt(AbilityLoadoutSlot::Active4) ==
                        AnsweringGuard,
                "active slots use canonical production ability IDs");
@@ -166,7 +174,8 @@ void TestDeterministicSliceLootAndEquipment(TestSuite &suite) {
 
   if (!drop.Drops.empty() && drop.Drops.front().IsItemInstance()) {
     ItemInstance instance = drop.Drops.front().Instance;
-    const ItemDefinition *definition = runtime.Items.FindItem(instance.DefinitionId);
+    const ItemDefinition *definition =
+        runtime.Items.FindItem(instance.DefinitionId);
     suite.Expect(definition != nullptr &&
                      !definition->AllowedEquipmentSlots.empty(),
                  "rolled equipment resolves to equippable production item");
@@ -194,10 +203,10 @@ void TestDeterministicSliceLootAndEquipment(TestSuite &suite) {
   }
 
   LootGenerationOutcome boss = runtime.Loot.Generate(OdranBossLoot, context);
-  suite.Expect(boss.Result == LootGenerationResult::Success &&
-                   boss.Drops.size() == 1U &&
-                   boss.Drops.front().Instance.DefinitionId == OdransClapper,
-               "Odran boss table deterministically produces canonical boss weapon");
+  suite.Expect(
+      boss.Result == LootGenerationResult::Success && boss.Drops.size() == 1U &&
+          boss.Drops.front().Instance.DefinitionId == OdransClapper,
+      "Odran boss table deterministically produces canonical boss weapon");
   if (!boss.Drops.empty()) {
     const ItemInstance clapper = boss.Drops.front().Instance;
     suite.Expect(runtime.InventoryState.AddInstance(clapper) ==
@@ -207,8 +216,9 @@ void TestDeterministicSliceLootAndEquipment(TestSuite &suite) {
                      runtime.InventoryState, clapper.InstanceId, MainHand) ==
                      EquipmentResult::Success,
                  "Odran's Clapper can replace current main-hand item");
-    suite.Expect(runtime.Equipment.HasAbilityMutation(ClappersReturn),
-                 "boss weapon exposes canonical Clapper's Return mutation hook");
+    suite.Expect(
+        runtime.Equipment.HasAbilityMutation(ClappersReturn),
+        "boss weapon exposes canonical Clapper's Return mutation hook");
   }
 }
 
@@ -223,12 +233,12 @@ void TestSliceSaveRoundTrip(TestSuite &suite) {
                "boss loot exists for save/load integration");
   if (!boss.Drops.empty()) {
     const ItemInstance item = boss.Drops.front().Instance;
-    suite.Expect(runtime.InventoryState.AddInstance(item) ==
-                     InventoryResult::Success &&
-                     runtime.Equipment.EquipFromInventory(
-                         runtime.InventoryState, item.InstanceId, MainHand) ==
-                         EquipmentResult::Success,
-                 "boss weapon state is equipped before save");
+    suite.Expect(
+        runtime.InventoryState.AddInstance(item) == InventoryResult::Success &&
+            runtime.Equipment.EquipFromInventory(runtime.InventoryState,
+                                                 item.InstanceId, MainHand) ==
+                EquipmentResult::Success,
+        "boss weapon state is equipped before save");
   }
 
   const CharacterSaveState saved = runtime.Persistence.CaptureState();
@@ -244,12 +254,13 @@ void TestSliceSaveRoundTrip(TestSuite &suite) {
                "first-slice save payload decodes");
 
   static_cast<void>(runtime.Loadout.Unequip(AbilityLoadoutSlot::Active1));
-  static_cast<void>(runtime.Equipment.UnequipToInventory(runtime.InventoryState,
-                                                         MainHand));
+  static_cast<void>(
+      runtime.Equipment.UnequipToInventory(runtime.InventoryState, MainHand));
   suite.Expect(runtime.Persistence.RestoreState(decoded) ==
                    CharacterRestoreResult::Success,
                "first-slice progression/equipment restores atomically");
-  suite.Expect(runtime.Loadout.AbilityAt(AbilityLoadoutSlot::Active1) == Bellstep &&
+  suite.Expect(runtime.Loadout.AbilityAt(AbilityLoadoutSlot::Active1) ==
+                       Bellstep &&
                    runtime.Equipment.HasAbilityMutation(ClappersReturn),
                "save/load restores active ability and boss-weapon mutation");
 }
