@@ -95,3 +95,11 @@ engine/toolchain available, create the in-repository Unreal project and bridge
 input/presentation to this portable authority without duplicating combat, loot,
 progression or persistence rules. Unreal functionality is not claimed until it
 is actually compiled and, where tooling permits, launched.
+
+## Game canon and Unreal transition
+
+The binding game/story/world/content authority now lives under `Design/`. Start with `Design/LOSTSENSE_GAME_AUTHORITY.md` and `Design/VERTICAL_SLICE_AUTHORITY.md`.
+
+The Unreal transition targets Unreal Engine 5.8 and keeps the portable C++ runtime as the gameplay authority. Unreal-specific code is presentation/platform integration; it must not duplicate damage, effects, abilities, progression, item ownership, loot, persistence or event authority.
+
+Truth boundary for the first Unreal source pass: the Work environment used to author it does not contain UnrealEditor or UnrealBuildTool. Unreal project/module code in this repository is therefore **authored source only** until a real UE 5.8 toolchain compiles and launches it.

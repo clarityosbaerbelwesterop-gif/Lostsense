@@ -163,13 +163,34 @@ AbilityActivationOutcome GameplayEventAuthority::ActivateAbility(
     GameplayEventStream &events) {
   AbilityActivationOutcome outcome = runtime.Activate(ability, target);
   if (outcome.Result == AbilityActivationResult::Success) {
-    GameplayEvent event;
-    event.Type = GameplayEventType::AbilityActivated;
-    event.Source = actor;
-    event.Target = target.Combatant == nullptr ? Combat::CombatantId{}
-                                               : target.Combatant->Id();
-    event.Ability = ability;
-    PublishIgnoringBackpressure(events, event);
+    GameplayEvent activation;
+    activation.Type = GameplayEventType::AbilityActivated;
+    activation.Source = actor;
+    activation.Target = target.Combatant == nullptr ? Combat::CombatantId{}
+                                                    : target.Combatant->Id();
+    activation.Ability = ability;
+    PublishIgnoringBackpressure(events, activation);
+
+    if (outcome.DamageResolved && target.Combatant != nullptr &&
+        outcome.Damage.AppliedToHealth.WasValid &&
+        outcome.Damage.AppliedToHealth.Applied > 0.0) {
+      GameplayEvent damage;
+      damage.Type = GameplayEventType::DamageApplied;
+      damage.Source = actor;
+      damage.Target = target.Combatant->Id();
+      damage.Ability = ability;
+      damage.Value = outcome.Damage.AppliedToHealth.Applied;
+      PublishIgnoringBackpressure(events, damage);
+
+      if (outcome.Damage.AppliedToHealth.BecameDead) {
+        GameplayEvent death;
+        death.Type = GameplayEventType::CombatantDied;
+        death.Source = actor;
+        death.Target = target.Combatant->Id();
+        death.Ability = ability;
+        PublishIgnoringBackpressure(events, death);
+      }
+    }
   }
   return outcome;
 }
