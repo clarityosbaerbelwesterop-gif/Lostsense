@@ -21,11 +21,11 @@ MakeAttack(const AbilityId id, const AbilityLoadoutSlot slot,
   ability.TargetRule = AbilityTargetRule::Hostile;
   ability.RequiredClass = KnightClass;
   ability.AllowedLoadoutSlots = AbilityLoadoutSlotBit(slot);
-  ability.Damage.BaseDamage[static_cast<std::size_t>(Combat::DamageType::Physical)] =
-      basePhysical;
   ability.Damage
-      .AttackPowerCoefficients[static_cast<std::size_t>(
-          Combat::DamageType::Physical)] = attackPowerCoefficient;
+      .BaseDamage[static_cast<std::size_t>(Combat::DamageType::Physical)] =
+      basePhysical;
+  ability.Damage.AttackPowerCoefficients[static_cast<std::size_t>(
+      Combat::DamageType::Physical)] = attackPowerCoefficient;
   ability.DealsDamage = true;
   return ability;
 }
@@ -68,11 +68,10 @@ std::vector<EffectDefinition> BuildKnightEffects() {
   guard.MaxStacks = 1U;
   guard.DurationSeconds = 0.25;
   guard.Beneficial = true;
-  guard.AttributeModifiers = {
-      {Stats::CombatAttributes::BlockChance,
-       Stats::ModifierOperation::Additive, 0.30},
-      {Stats::CombatAttributes::BlockMitigation,
-       Stats::ModifierOperation::Additive, 0.15}};
+  guard.AttributeModifiers = {{Stats::CombatAttributes::BlockChance,
+                               Stats::ModifierOperation::Additive, 0.30},
+                              {Stats::CombatAttributes::BlockMitigation,
+                               Stats::ModifierOperation::Additive, 0.15}};
 
   EffectDefinition answering;
   answering.Id = AnsweringGuardWindow;
@@ -81,11 +80,10 @@ std::vector<EffectDefinition> BuildKnightEffects() {
   answering.MaxStacks = 1U;
   answering.DurationSeconds = 2.0;
   answering.Beneficial = true;
-  answering.AttributeModifiers = {
-      {Stats::CombatAttributes::Armor, Stats::ModifierOperation::Additive,
-       12.0},
-      {Stats::CombatAttributes::BlockChance,
-       Stats::ModifierOperation::Additive, 0.20}};
+  answering.AttributeModifiers = {{Stats::CombatAttributes::Armor,
+                                   Stats::ModifierOperation::Additive, 12.0},
+                                  {Stats::CombatAttributes::BlockChance,
+                                   Stats::ModifierOperation::Additive, 0.20}};
 
   return {bellstep, guard, answering};
 }
@@ -118,14 +116,12 @@ std::vector<AbilityDefinition> BuildKnightAbilities() {
       MakeAttack(Bellstep, AbilityLoadoutSlot::Active1, 10.0, 3.0, 6.0, 0.70);
   bellstep.EffectsOnSelf = {BellstepArmor};
 
-  AbilityDefinition breaker =
-      MakeAttack(MeasureBreaker, AbilityLoadoutSlot::Active2, 20.0, 5.0, 18.0,
-                 1.55);
+  AbilityDefinition breaker = MakeAttack(
+      MeasureBreaker, AbilityLoadoutSlot::Active2, 20.0, 5.0, 18.0, 1.55);
   breaker.Prerequisites = {Bellstep};
 
-  AbilityDefinition sweep =
-      MakeAttack(MarchSweep, AbilityLoadoutSlot::Active3, 14.0, 4.0, 10.0,
-                 0.95);
+  AbilityDefinition sweep = MakeAttack(MarchSweep, AbilityLoadoutSlot::Active3,
+                                       14.0, 4.0, 10.0, 0.95);
   sweep.Prerequisites = {Bellstep};
 
   AbilityDefinition answering;
@@ -249,13 +245,10 @@ SkillTreeDefinition BuildKnightScarAtlas() {
 
 ItemCatalog BuildItemCatalog() {
   ItemCatalog catalog;
-  static_cast<void>(
-      catalog.AddRarity({CommonRarity, 1U, 100U, 0U, 0U}));
+  static_cast<void>(catalog.AddRarity({CommonRarity, 1U, 100U, 0U, 0U}));
   static_cast<void>(catalog.AddRarity({RareRarity, 1U, 100U, 1U, 1U}));
-  static_cast<void>(
-      catalog.AddRarity({LegendaryRarity, 1U, 100U, 2U, 2U}));
-  static_cast<void>(
-      catalog.AddRarity({BossUniqueRarity, 1U, 100U, 0U, 0U}));
+  static_cast<void>(catalog.AddRarity({LegendaryRarity, 1U, 100U, 2U, 2U}));
+  static_cast<void>(catalog.AddRarity({BossUniqueRarity, 1U, 100U, 0U, 0U}));
 
   AffixDefinition edge;
   edge.Id = MeasuredEdge;
@@ -351,9 +344,8 @@ ItemCatalog BuildItemCatalog() {
   cuirass.MinimumItemLevel = 1U;
   cuirass.MaximumItemLevel = 100U;
   cuirass.AllowedClasses = {KnightClass};
-  cuirass.BaseModifiers = {
-      {Stats::CombatAttributes::Armor, Stats::ModifierOperation::Additive,
-       18.0}};
+  cuirass.BaseModifiers = {{Stats::CombatAttributes::Armor,
+                            Stats::ModifierOperation::Additive, 18.0}};
   static_cast<void>(catalog.AddItem(cuirass));
 
   ItemDefinition thread;
@@ -378,8 +370,8 @@ LootCatalog BuildLootCatalog() {
                    {MarchSpear, 18U, 1U, 1U, {KnightClass}},
                    {BellwardenCuirass, 18U, 1U, 1U, {KnightClass}},
                    {VaurGoldThread, 18U, 1U, 3U, {}}};
-  enemy.Rarities = {{CommonRarity, 65U}, {RareRarity, 30U},
-                    {LegendaryRarity, 5U}};
+  enemy.Rarities = {
+      {CommonRarity, 65U}, {RareRarity, 30U}, {LegendaryRarity, 5U}};
   static_cast<void>(catalog.AddTable(enemy));
 
   LootTableDefinition elite;
@@ -390,8 +382,8 @@ LootCatalog BuildLootCatalog() {
                    {MarchSpear, 20U, 1U, 1U, {KnightClass}},
                    {TonguelessShield, 20U, 1U, 1U, {KnightClass}},
                    {BellwardenCuirass, 20U, 1U, 1U, {KnightClass}}};
-  elite.Rarities = {{CommonRarity, 25U}, {RareRarity, 55U},
-                    {LegendaryRarity, 20U}};
+  elite.Rarities = {
+      {CommonRarity, 25U}, {RareRarity, 55U}, {LegendaryRarity, 20U}};
   static_cast<void>(catalog.AddTable(elite));
 
   LootTableDefinition odran;
