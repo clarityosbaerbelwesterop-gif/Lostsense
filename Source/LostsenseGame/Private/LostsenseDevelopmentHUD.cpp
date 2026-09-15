@@ -26,6 +26,8 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     return;
   }
 
+  ConsumePresentationEvents();
+
   DrawText(TEXT("LOSTSENSE // DEVELOPMENT COMBAT SLICE"), FLinearColor::White,
            32.0F, 24.0F, nullptr, 1.0F, false);
   DrawMeter(TEXT("VITALITY"), Runtime->GetPlayerHealth(),
@@ -46,6 +48,16 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
   DrawText(TEXT("F5 Save   F9 Load   F10 Reset development encounter"),
            FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 232.0F, nullptr, 0.82F,
            false);
+
+  float EventY = 278.0F;
+  DrawText(TEXT("AUTHORITATIVE EVENT FEED"), FLinearColor::White, 32.0F, EventY,
+           nullptr, 0.72F, false);
+  EventY += 22.0F;
+  for (const FString &Line : RecentEvents) {
+    DrawText(Line, FLinearColor(0.72F, 0.72F, 0.72F), 32.0F, EventY, nullptr,
+             0.68F, false);
+    EventY += 19.0F;
+  }
 
   ALostsenseEnemyCharacter *Boss = nullptr;
   for (TActorIterator<ALostsenseEnemyCharacter> It(GetWorld()); It; ++It) {
@@ -80,4 +92,68 @@ void ALostsenseDevelopmentHUD::DrawMeter(const FString &Label,
            (Width - 4.0F) * Fraction, 18.0F);
   DrawText(FString::Printf(TEXT("%s  %.0f / %.0f"), *Label, Current, Maximum),
            FLinearColor::White, X + 6.0F, Y + 2.0F, nullptr, 0.72F, false);
+}
+
+void ALostsenseDevelopmentHUD::ConsumePresentationEvents() {
+  UGameInstance *GameInstance = GetWorld()->GetGameInstance();
+  ULostsenseRuntimeSubsystem *Runtime =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
+          : nullptr;
+  if (Runtime == nullptr) {
+    return;
+  }
+
+  const TArray<FLostsensePresentationEvent> Events =
+      Runtime->DrainPresentationEvents();
+  for (const FLostsensePresentationEvent &Event : Events) {
+    RecentEvents.Add(FormatPresentationEvent(Event));
+  }
+
+  constexpr int32 MaximumVisibleEvents = 6;
+  if (RecentEvents.Num() > MaximumVisibleEvents) {
+    RecentEvents.RemoveAt(0, RecentEvents.Num() - MaximumVisibleEvents, false);
+  }
+}
+
+FString ALostsenseDevelopmentHUD::FormatPresentationEvent(
+    const FLostsensePresentationEvent &Event) const {
+  switch (Event.Type) {
+  case ELostsensePresentationEventType::DamageApplied:
+    return FString::Printf(TEXT("#%lld damage %.1f  %lld -> %lld"),
+                           Event.Sequence, Event.Value, Event.SourceId,
+                           Event.TargetId);
+  case ELostsensePresentationEventType::CombatantDied:
+    return FString::Printf(TEXT("#%lld combatant %lld defeated"), Event.Sequence,
+                           Event.TargetId);
+  case ELostsensePresentationEventType::AbilityActivated:
+    return FString::Printf(TEXT("#%lld ability %lld activated"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::ItemDropped:
+    return FString::Printf(TEXT("#%lld item %lld dropped x%d"), Event.Sequence,
+                           Event.ContentId, Event.Quantity);
+  case ELostsensePresentationEventType::ItemPickedUp:
+    return FString::Printf(TEXT("#%lld item %lld picked up x%d"), Event.Sequence,
+                           Event.ContentId, Event.Quantity);
+  case ELostsensePresentationEventType::ItemEquipped:
+    return FString::Printf(TEXT("#%lld item %lld equipped"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::SkillAllocated:
+    return FString::Printf(TEXT("#%lld scar node %lld allocated"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::EffectApplied:
+    return FString::Printf(TEXT("#%lld effect %lld applied"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::EffectRemoved:
+    return FString::Printf(TEXT("#%lld effect %lld removed"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::ItemUnequipped:
+    return FString::Printf(TEXT("#%lld item %lld unequipped"), Event.Sequence,
+                           Event.ContentId);
+  case ELostsensePresentationEventType::SkillRefunded:
+    return FString::Printf(TEXT("#%lld scar node %lld refunded"), Event.Sequence,
+                           Event.ContentId);
+  }
+
+  return FString::Printf(TEXT("#%lld gameplay event"), Event.Sequence);
 }
