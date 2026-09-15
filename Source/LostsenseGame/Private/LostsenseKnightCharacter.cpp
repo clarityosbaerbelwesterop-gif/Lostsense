@@ -261,6 +261,12 @@ void ALostsenseKnightCharacter::Dodge(const FInputActionValue &Value) {
 
 void ALostsenseKnightCharacter::GuardStarted(const FInputActionValue &Value) {
   if (Value.Get<bool>()) {
+    if (UGameInstance *GameInstance = GetGameInstance()) {
+      if (ULostsenseRuntimeSubsystem *Runtime =
+              GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()) {
+        static_cast<void>(Runtime->BeginPerfectGuardWindow());
+      }
+    }
     bGuardHeld = true;
     GuardRefreshRemaining = 0.0F;
   }

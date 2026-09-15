@@ -304,6 +304,20 @@ void ULostsenseRuntimeSubsystem::AdvancePlayerTime(const float DeltaSeconds) {
   static_cast<void>(PortableRuntime->Abilities.AdvanceTime(Seconds));
 }
 
+bool ULostsenseRuntimeSubsystem::BeginPerfectGuardWindow() {
+  if (!PortableRuntime.IsValid() || !PortableRuntime->Ready ||
+      PortableRuntime->Player.Health().IsDead()) {
+    return false;
+  }
+  const Lostsense::Gameplay::EffectApplyOutcome Outcome =
+      Lostsense::Gameplay::GameplayEventAuthority::ApplyEffect(
+          PortableRuntime->Effects,
+          Lostsense::Gameplay::FirstSlice::PerfectGuardWindow,
+          PortableRuntime->Player.Id(), PortableRuntime->Events);
+  return Outcome.Result == Lostsense::Gameplay::EffectApplyResult::Applied ||
+         Outcome.Result == Lostsense::Gameplay::EffectApplyResult::Refreshed;
+}
+
 bool ULostsenseRuntimeSubsystem::ActivatePlayerAbility(const uint32 AbilityId) {
   if (!PortableRuntime.IsValid()) {
     return false;
@@ -435,6 +449,8 @@ bool ULostsenseRuntimeSubsystem::ResolveEnemyBasicAttack(
     return false;
   }
 
+  const bool bPerfectGuardWindow = PortableRuntime->Effects.HasEffect(
+      Lostsense::Gameplay::FirstSlice::PerfectGuardWindow);
   const Lostsense::Combat::CombatResolution Resolution = Enemy.ResolveAttack(
       PortableRuntime->Player, Damage, PortableRuntime->Random);
   if (!Resolution.AppliedToHealth.WasValid) {
@@ -447,6 +463,24 @@ bool ULostsenseRuntimeSubsystem::ResolveEnemyBasicAttack(
   DamageEvent.Target = PortableRuntime->Player.Id();
   DamageEvent.Value = Resolution.AppliedToHealth.Applied;
   static_cast<void>(PortableRuntime->Events.Publish(DamageEvent));
+
+  if (bPerfectGuardWindow && Resolution.CalculatedDamage.WasBlocked) {
+    static_cast<void>(PortableRuntime->Player.RestoreResource(8.0));
+    const Lostsense::Gameplay::EffectRuntimeState Effects =
+        PortableRuntime->Effects.CaptureState();
+    const auto Perfect = std::find_if(
+        Effects.ActiveEffects.begin(), Effects.ActiveEffects.end(),
+        [](const Lostsense::Gameplay::ActiveEffectState &Effect) {
+          return Effect.DefinitionId ==
+                 Lostsense::Gameplay::FirstSlice::PerfectGuardWindow;
+        });
+    if (Perfect != Effects.ActiveEffects.end()) {
+      static_cast<void>(
+          Lostsense::Gameplay::GameplayEventAuthority::RemoveEffect(
+              PortableRuntime->Effects, Perfect->InstanceId,
+              PortableRuntime->Events));
+    }
+  }
 
   if (Resolution.AppliedToHealth.BecameDead) {
     Lostsense::Gameplay::GameplayEvent DeathEvent;

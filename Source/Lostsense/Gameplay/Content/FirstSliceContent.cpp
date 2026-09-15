@@ -73,6 +73,19 @@ std::vector<EffectDefinition> BuildKnightEffects() {
                               {Stats::CombatAttributes::BlockMitigation,
                                Stats::ModifierOperation::Additive, 0.15}};
 
+  EffectDefinition perfectGuard;
+  perfectGuard.Id = PerfectGuardWindow;
+  perfectGuard.StackGroup = EffectStackGroupId{50122U};
+  perfectGuard.Stacking = EffectStackingPolicy::RefreshDuration;
+  perfectGuard.MaxStacks = 1U;
+  perfectGuard.DurationSeconds = 0.18;
+  perfectGuard.Beneficial = true;
+  perfectGuard.AttributeModifiers = {{Stats::CombatAttributes::BlockChance,
+                                      Stats::ModifierOperation::Additive, 1.0},
+                                     {Stats::CombatAttributes::BlockMitigation,
+                                      Stats::ModifierOperation::Additive,
+                                      0.25}};
+
   EffectDefinition answering;
   answering.Id = AnsweringGuardWindow;
   answering.StackGroup = EffectStackGroupId{50123U};
@@ -85,7 +98,7 @@ std::vector<EffectDefinition> BuildKnightEffects() {
                                   {Stats::CombatAttributes::BlockChance,
                                    Stats::ModifierOperation::Additive, 0.20}};
 
-  return {bellstep, guard, answering};
+  return {bellstep, guard, perfectGuard, answering};
 }
 
 std::vector<AbilityDefinition> BuildKnightAbilities() {

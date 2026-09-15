@@ -84,6 +84,16 @@ void TestProductionDefinitionsValidate(TestSuite &suite) {
   suite.Expect(tables.Validate(items), "first-slice loot tables validate");
 
   SliceRuntime runtime;
+
+  bool foundPerfectGuard = false;
+  for (const EffectDefinition &effect : BuildKnightEffects()) {
+    if (effect.Id == PerfectGuardWindow) {
+      foundPerfectGuard =
+          effect.DurationSeconds > 0.0 && effect.DurationSeconds <= 0.20;
+    }
+  }
+  suite.Expect(foundPerfectGuard,
+               "perfect guard has a bounded authored timing window");
   suite.Expect(runtime.Effects.IsValid(), "Knight effect definitions validate");
   suite.Expect(runtime.Abilities.IsValid(),
                "Knight ability definitions validate");
