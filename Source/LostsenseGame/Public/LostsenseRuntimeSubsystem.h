@@ -6,12 +6,15 @@
 
 #include "LostsenseRuntimeSubsystem.generated.h"
 
+#include <vector>
+
 namespace Lostsense::Combat {
 class Combatant;
 struct DamageSpec;
 } // namespace Lostsense::Combat
 
 namespace Lostsense::Gameplay {
+struct AbilityTarget;
 class EffectRuntime;
 struct GeneratedLootEntry;
 } // namespace Lostsense::Gameplay
@@ -117,6 +120,10 @@ public:
   bool ActivatePlayerLoadoutSlot(
       int32 SlotIndex, Lostsense::Combat::Combatant *Target = nullptr,
       Lostsense::Gameplay::EffectRuntime *TargetEffects = nullptr);
+  bool ActivatePlayerLoadoutSlotAgainstMany(
+      int32 SlotIndex,
+      const std::vector<Lostsense::Gameplay::AbilityTarget> &Targets);
+  int32 GetLoadoutSlotMaximumTargets(int32 SlotIndex) const;
   bool ResolveEnemyBasicAttack(Lostsense::Combat::Combatant &Enemy,
                                const Lostsense::Combat::DamageSpec &Damage);
   TArray<Lostsense::Gameplay::GeneratedLootEntry>
