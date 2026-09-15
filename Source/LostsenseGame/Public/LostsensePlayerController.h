@@ -11,4 +11,16 @@ class LOSTSENSEGAME_API ALostsensePlayerController final
 
 public:
   ALostsensePlayerController();
+
+protected:
+  virtual void BeginPlay() override;
+  virtual void SetupInputComponent() override;
+
+private:
+  void SaveDevelopmentCharacter();
+  void LoadDevelopmentCharacter();
+  void ResetDevelopmentEncounter();
+  FString DevelopmentSavePath() const;
+
+  FString StartupCharacterSnapshot;
 };
