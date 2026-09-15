@@ -75,9 +75,9 @@ int main() {
           "Odran defeat cannot double-complete");
   Require(restored.Objective(80006U) == ObjectiveState::Locked,
           "return objective waits for Ninth Descent record");
-  Require(restored.CompleteBeat(
-              FirstSliceStoryBeat::NinthDescentRecordRecovered),
-          "Ninth Descent record can be recovered");
+  Require(
+      restored.CompleteBeat(FirstSliceStoryBeat::NinthDescentRecordRecovered),
+      "Ninth Descent record can be recovered");
   Require(restored.Objective(80006U) == ObjectiveState::Active,
           "return objective activates after boss and record");
   Require(restored.CompleteBeat(FirstSliceStoryBeat::BellgraveChanged),
@@ -96,7 +96,7 @@ int main() {
   Require(!FirstSliceStoryCodec::Deserialize(malformed, decoded),
           "trailing story payload is rejected");
   Require(!FirstSliceStoryCodec::Deserialize("LOSTSENSE_STORY 1\nBEATS 2\n",
-                                              decoded),
+                                             decoded),
           "malformed story payload is rejected");
 
   std::cout << "StoryRuntimeTests passed\n";

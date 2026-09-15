@@ -33,7 +33,8 @@ struct ULostsenseStorySubsystem::FStoryRuntime {
 ULostsenseStorySubsystem::ULostsenseStorySubsystem() = default;
 ULostsenseStorySubsystem::~ULostsenseStorySubsystem() = default;
 
-void ULostsenseStorySubsystem::Initialize(FSubsystemCollectionBase &Collection) {
+void ULostsenseStorySubsystem::Initialize(
+    FSubsystemCollectionBase &Collection) {
   Super::Initialize(Collection);
   StoryRuntime = MakeUnique<FStoryRuntime>();
 }
@@ -69,8 +70,7 @@ int32 ULostsenseStorySubsystem::GetCurrentObjectiveId() const {
   if (!IsStoryReady()) {
     return 0;
   }
-  constexpr int32 ObjectiveIds[] = {80001, 80002, 80003,
-                                    80004, 80005, 80006};
+  constexpr int32 ObjectiveIds[] = {80001, 80002, 80003, 80004, 80005, 80006};
   for (const int32 Id : ObjectiveIds) {
     if (GetObjectiveState(Id) == ELostsenseObjectiveState::Active) {
       return Id;
@@ -99,6 +99,6 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   Lostsense::Gameplay::FirstSliceStoryState State;
   const std::string Utf8Payload(TCHAR_TO_UTF8(*Payload));
   return Lostsense::Gameplay::FirstSliceStoryCodec::Deserialize(Utf8Payload,
-                                                                 State) &&
+                                                                State) &&
          StoryRuntime->Story.RestoreState(State);
 }

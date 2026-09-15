@@ -70,12 +70,13 @@ bool FirstSliceStoryRuntime::HasBeat(const FirstSliceStoryBeat beat) const {
 
 ObjectiveState
 FirstSliceStoryRuntime::Objective(const std::uint32_t objectiveId) const {
-  const auto found = std::find_if(
-      state_.Objectives.begin(), state_.Objectives.end(),
-      [objectiveId](const StoryObjectiveState &objective) {
-        return objective.Id == objectiveId;
-      });
-  return found != state_.Objectives.end() ? found->State : ObjectiveState::Locked;
+  const auto found =
+      std::find_if(state_.Objectives.begin(), state_.Objectives.end(),
+                   [objectiveId](const StoryObjectiveState &objective) {
+                     return objective.Id == objectiveId;
+                   });
+  return found != state_.Objectives.end() ? found->State
+                                          : ObjectiveState::Locked;
 }
 
 FirstSliceStoryState FirstSliceStoryRuntime::CaptureState() const {
@@ -115,7 +116,8 @@ bool FirstSliceStoryRuntime::ValidateState(
     if (state.Objectives[index].Id != definitions_[index].Id) {
       return false;
     }
-    const auto rawState = static_cast<std::uint8_t>(state.Objectives[index].State);
+    const auto rawState =
+        static_cast<std::uint8_t>(state.Objectives[index].State);
     if (rawState > static_cast<std::uint8_t>(ObjectiveState::Completed)) {
       return false;
     }
@@ -136,25 +138,31 @@ void FirstSliceStoryRuntime::RefreshObjectives() {
     const bool prerequisitesMet = std::all_of(
         definition.Prerequisites.begin(), definition.Prerequisites.end(),
         [this](const FirstSliceStoryBeat beat) { return HasBeat(beat); });
-    objective.State = prerequisitesMet ? ObjectiveState::Active
-                                       : ObjectiveState::Locked;
+    objective.State =
+        prerequisitesMet ? ObjectiveState::Active : ObjectiveState::Locked;
   }
 }
 
 std::vector<StoryObjectiveDefinition> BuildFirstSliceObjectives() {
   return {
-      {ReturnedObjective, FirstSliceStoryBeat::MetMara,
+      {ReturnedObjective,
+       FirstSliceStoryBeat::MetMara,
        {FirstSliceStoryBeat::ReturnedAwakened}},
-      {BellObjective, FirstSliceStoryBeat::BellgraveDepartureAllowed,
+      {BellObjective,
+       FirstSliceStoryBeat::BellgraveDepartureAllowed,
        {FirstSliceStoryBeat::MetMara, FirstSliceStoryBeat::MetHadrun}},
-      {MarksObjective, FirstSliceStoryBeat::FoundNinthDescentPlate,
+      {MarksObjective,
+       FirstSliceStoryBeat::FoundNinthDescentPlate,
        {FirstSliceStoryBeat::BellgraveDepartureAllowed,
         FirstSliceStoryBeat::EnteredRavelwood}},
-      {ForemanObjective, FirstSliceStoryBeat::EnteredUpperVaur,
+      {ForemanObjective,
+       FirstSliceStoryBeat::EnteredUpperVaur,
        {FirstSliceStoryBeat::FoundNinthDescentPlate}},
-      {ShaftObjective, FirstSliceStoryBeat::EnteredCoinlessShaft,
+      {ShaftObjective,
+       FirstSliceStoryBeat::EnteredCoinlessShaft,
        {FirstSliceStoryBeat::EnteredUpperVaur}},
-      {TonguelessObjective, FirstSliceStoryBeat::BellgraveChanged,
+      {TonguelessObjective,
+       FirstSliceStoryBeat::BellgraveChanged,
        {FirstSliceStoryBeat::OdranDefeated,
         FirstSliceStoryBeat::NinthDescentRecordRecovered}},
   };
@@ -239,12 +247,12 @@ bool FirstSliceStoryCodec::Deserialize(const std::string_view payload,
     std::uint32_t id = 0U;
     std::uint32_t rawState = 0U;
     if (!ParseUnsigned(idToken, id) || !ParseUnsigned(stateToken, rawState) ||
-        id == 0U || rawState > static_cast<std::uint32_t>(ObjectiveState::Completed) ||
+        id == 0U ||
+        rawState > static_cast<std::uint32_t>(ObjectiveState::Completed) ||
         !ids.insert(id).second) {
       return false;
     }
-    candidate.Objectives.push_back(
-        {id, static_cast<ObjectiveState>(rawState)});
+    candidate.Objectives.push_back({id, static_cast<ObjectiveState>(rawState)});
   }
 
   if (!(stream >> token) || token != "END") {

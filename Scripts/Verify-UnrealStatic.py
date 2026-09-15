@@ -203,7 +203,7 @@ def filter_config_and_entrypoint() -> None:
             fail(name, f"missing engine config invariant: {line}")
 
     game_mode = read("Source/LostsenseGame/Private/LostsenseGameMode.cpp")
-    for token in ("ALostsenseKnightCharacter::StaticClass()", "ALostsensePlayerController::StaticClass()", "ALostsenseDevelopmentHUD::StaticClass()", "SpawnDevelopmentArena()"):
+    for token in ("ALostsenseKnightCharacter::StaticClass()", "ALostsensePlayerController::StaticClass()", "ALostsenseDevelopmentHUD::StaticClass()", "SpawnVerticalSliceWorld()"):
         if token not in game_mode:
             fail(name, f"development entrypoint missing: {token}")
 

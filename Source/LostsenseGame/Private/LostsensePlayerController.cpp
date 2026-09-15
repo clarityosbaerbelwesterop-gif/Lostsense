@@ -32,7 +32,8 @@ void ALostsensePlayerController::BeginPlay() {
   if (ULostsenseStorySubsystem *Story =
           GameInstance->GetSubsystem<ULostsenseStorySubsystem>()) {
     static_cast<void>(Story->SaveStoryToText(StartupStorySnapshot));
-    static_cast<void>(Story->CompleteBeat(ELostsenseStoryBeat::ReturnedAwakened));
+    static_cast<void>(
+        Story->CompleteBeat(ELostsenseStoryBeat::ReturnedAwakened));
   }
 }
 
@@ -56,7 +57,8 @@ void ALostsensePlayerController::SetupInputComponent() {
 }
 
 void ALostsensePlayerController::TryInteract() {
-  ALostsenseKnightCharacter *Knight = Cast<ALostsenseKnightCharacter>(GetPawn());
+  ALostsenseKnightCharacter *Knight =
+      Cast<ALostsenseKnightCharacter>(GetPawn());
   UWorld *World = GetWorld();
   if (Knight == nullptr || World == nullptr) {
     return;
@@ -73,14 +75,14 @@ void ALostsensePlayerController::TryInteract() {
       continue;
     }
 
-    ILostsenseInteractable *Interactable = Cast<ILostsenseInteractable>(Candidate);
+    ILostsenseInteractable *Interactable =
+        Cast<ILostsenseInteractable>(Candidate);
     if (Interactable == nullptr || !Interactable->CanInteract(*Knight)) {
       continue;
     }
 
-    const double DistanceSquared =
-        FVector::DistSquared(Knight->GetActorLocation(),
-                             Candidate->GetActorLocation());
+    const double DistanceSquared = FVector::DistSquared(
+        Knight->GetActorLocation(), Candidate->GetActorLocation());
     if (DistanceSquared < BestDistanceSquared) {
       BestDistanceSquared = DistanceSquared;
       BestActor = Candidate;
@@ -148,8 +150,10 @@ void ALostsensePlayerController::LoadDevelopmentCharacter() {
     return;
   }
 
-  const bool bCharacterLoaded = Runtime->LoadCharacterFromText(CharacterPayload);
-  const bool bStoryLoaded = bCharacterLoaded && Story->LoadStoryFromText(StoryPayload);
+  const bool bCharacterLoaded =
+      Runtime->LoadCharacterFromText(CharacterPayload);
+  const bool bStoryLoaded =
+      bCharacterLoaded && Story->LoadStoryFromText(StoryPayload);
   if (!bStoryLoaded) {
     static_cast<void>(Runtime->LoadCharacterFromText(CharacterRollback));
     static_cast<void>(Story->LoadStoryFromText(StoryRollback));

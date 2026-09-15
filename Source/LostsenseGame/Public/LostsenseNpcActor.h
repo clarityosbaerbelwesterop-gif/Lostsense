@@ -9,15 +9,12 @@
 class UStaticMeshComponent;
 
 UENUM(BlueprintType)
-enum class ELostsenseNpcIdentity : uint8 {
-  MaraVenn,
-  HadrunPike,
-  TamsinCoil
-};
+enum class ELostsenseNpcIdentity : uint8 { MaraVenn, HadrunPike, TamsinCoil };
 
 UCLASS()
-class LOSTSENSEGAME_API ALostsenseNpcActor final : public AActor,
-                                                   public ILostsenseInteractable {
+class LOSTSENSEGAME_API ALostsenseNpcActor final
+    : public AActor,
+      public ILostsenseInteractable {
   GENERATED_BODY()
 
 public:
@@ -26,7 +23,8 @@ public:
   void Configure(ELostsenseNpcIdentity identity);
 
   virtual FText GetInteractionPrompt() const override;
-  virtual bool CanInteract(const ALostsenseKnightCharacter &Interactor) const override;
+  virtual bool
+  CanInteract(const ALostsenseKnightCharacter &Interactor) const override;
   virtual bool Interact(ALostsenseKnightCharacter &Interactor) override;
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|NPC")

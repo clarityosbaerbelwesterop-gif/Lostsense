@@ -35,30 +35,29 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
                            const int32 BossPhase) {
   switch (Archetype) {
   case ELostsenseEnemyArchetype::BellMaddenedCarrion:
-    return {48.0, 5.0, 1.0, 1150.0, 145.0, 5.0, 0.65, 330.0F, 0.28F,
-            0.48F, 0.85F};
+    return {48.0, 5.0,    1.0,   1150.0, 145.0, 5.0,
+            0.65, 330.0F, 0.28F, 0.48F,  0.85F};
   case ELostsenseEnemyArchetype::CharterDeserter:
-    return {68.0, 6.0, 5.0, 1100.0, 175.0, 7.0, 0.75, 235.0F, 0.52F,
-            0.72F, 1.15F};
+    return {68.0, 6.0,    5.0,   1100.0, 175.0, 7.0,
+            0.75, 235.0F, 0.52F, 0.72F,  1.15F};
   case ELostsenseEnemyArchetype::EchoMiner:
-    return {82.0, 8.0, 5.0, 1050.0, 185.0, 11.0, 0.90, 185.0F, 0.92F,
-            1.05F, 1.45F};
+    return {82.0, 8.0,    5.0,   1050.0, 185.0, 11.0,
+            0.90, 185.0F, 0.92F, 1.05F,  1.45F};
   case ELostsenseEnemyArchetype::HaulConstruct:
-    return {105.0, 9.0, 9.0, 1300.0, 210.0, 13.0, 0.95, 205.0F, 0.68F,
-            1.35F, 1.55F};
+    return {105.0, 9.0,    9.0,   1300.0, 210.0, 13.0,
+            0.95,  205.0F, 0.68F, 1.35F,  1.55F};
   case ELostsenseEnemyArchetype::ForemanKett:
-    return {155.0, 11.0, 8.0, 1400.0, 195.0, 12.0, 0.95, 220.0F, 0.72F,
-            0.85F, 1.15F};
+    return {155.0, 11.0,   8.0,   1400.0, 195.0, 12.0,
+            0.95,  220.0F, 0.72F, 0.85F,  1.15F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
-      return {280.0, 14.0, 11.0, 1600.0, 215.0, 15.0, 0.90, 285.0F,
-              0.58F, 0.72F, 0.92F};
+      return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
+              0.90,  285.0F, 0.58F, 0.72F,  0.92F};
     }
-    return {280.0, 14.0, 11.0, 1600.0, 215.0, 12.0, 0.90, 225.0F,
-            0.78F, 0.92F, 1.20F};
+    return {280.0, 14.0,   11.0,  1600.0, 215.0, 12.0,
+            0.90,  225.0F, 0.78F, 0.92F,  1.20F};
   }
-  return {65.0, 5.0, 3.0, 1100.0, 165.0, 6.0, 0.75, 210.0F, 0.5F,
-          0.8F, 1.2F};
+  return {65.0, 5.0, 3.0, 1100.0, 165.0, 6.0, 0.75, 210.0F, 0.5F, 0.8F, 1.2F};
 }
 } // namespace
 
@@ -97,11 +96,10 @@ ALostsenseEnemyCharacter::~ALostsenseEnemyCharacter() = default;
 void ALostsenseEnemyCharacter::ConfigureEnemy(const uint64 InCombatantId,
                                               const bool bInElite,
                                               const uint32 InItemLevel) {
-  ConfigureEnemyArchetype(
-      InCombatantId,
-      bInElite ? ELostsenseEnemyArchetype::ForemanKett
-               : ELostsenseEnemyArchetype::CharterDeserter,
-      InItemLevel);
+  ConfigureEnemyArchetype(InCombatantId,
+                          bInElite ? ELostsenseEnemyArchetype::ForemanKett
+                                   : ELostsenseEnemyArchetype::CharterDeserter,
+                          InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
@@ -123,7 +121,8 @@ void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
 void ALostsenseEnemyCharacter::BeginPlay() {
   Super::BeginPlay();
   PortableEnemy = MakeUnique<FPortableEnemy>(PendingCombatantId, Archetype);
-  GetCharacterMovement()->MaxWalkSpeed = TuningFor(Archetype, BossPhase).MoveSpeed;
+  GetCharacterMovement()->MaxWalkSpeed =
+      TuningFor(Archetype, BossPhase).MoveSpeed;
   EnterState(ELostsenseEnemyAiState::Idle);
 }
 
@@ -176,8 +175,8 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
   TickLivingAi(DeltaSeconds, *Runtime, *Player);
 }
 
-void ALostsenseEnemyCharacter::EnterState(
-    const ELostsenseEnemyAiState NewState, const float Duration) {
+void ALostsenseEnemyCharacter::EnterState(const ELostsenseEnemyAiState NewState,
+                                          const float Duration) {
   AiState = NewState;
   StateTimeRemaining = FMath::Max(0.0F, Duration);
   if (NewState != ELostsenseEnemyAiState::Windup) {
@@ -185,9 +184,9 @@ void ALostsenseEnemyCharacter::EnterState(
   }
 }
 
-void ALostsenseEnemyCharacter::TickLivingAi(
-    const float DeltaSeconds, ULostsenseRuntimeSubsystem &Runtime,
-    ACharacter &Player) {
+void ALostsenseEnemyCharacter::TickLivingAi(const float DeltaSeconds,
+                                            ULostsenseRuntimeSubsystem &Runtime,
+                                            ACharacter &Player) {
   const FArchetypeTuning Tuning = TuningFor(Archetype, BossPhase);
   const FVector Delta = Player.GetActorLocation() - GetActorLocation();
   const double Distance = Delta.Size2D();
@@ -264,8 +263,8 @@ void ALostsenseEnemyCharacter::BeginAttack(const double DistanceToPlayer) {
 void ALostsenseEnemyCharacter::ResolveCommittedAttack(
     ULostsenseRuntimeSubsystem &Runtime, const double DistanceToPlayer) {
   const FArchetypeTuning Tuning = TuningFor(Archetype, BossPhase);
-  if (DistanceToPlayer > Tuning.MeleeRange + 45.0 ||
-      PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+  if (DistanceToPlayer > Tuning.MeleeRange + 45.0 || PortableEnemy == nullptr ||
+      PortableEnemy->Combatant.Health().IsDead()) {
     return;
   }
 
@@ -407,7 +406,8 @@ void ALostsenseEnemyCharacter::HandleDefeat(
             ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
             : nullptr;
     if (Story != nullptr) {
-      static_cast<void>(Story->CompleteBeat(ELostsenseStoryBeat::OdranDefeated));
+      static_cast<void>(
+          Story->CompleteBeat(ELostsenseStoryBeat::OdranDefeated));
     }
   }
 

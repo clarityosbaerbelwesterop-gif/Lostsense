@@ -24,23 +24,30 @@ ELostsenseStoryBeat BeatForNpc(const ELostsenseNpcIdentity Identity) {
 FText LineForNpc(const ELostsenseNpcIdentity Identity, const int32 Index) {
   switch (Identity) {
   case ELostsenseNpcIdentity::MaraVenn:
-    return Index == 0
-               ? FText::FromString(TEXT(
-                     "Seven years sealed below, and you still carry the Ninth Descent plate marks. The bell rang this morning. I remember it. The town does not."))
-               : FText::FromString(TEXT(
-                     "Find Hadrun. He knows what the Bellwardens buried, even if he hates admitting it."));
+    return Index == 0 ? FText::FromString(TEXT(
+                            "Seven years sealed below, and you still carry the "
+                            "Ninth Descent plate marks. The bell rang this "
+                            "morning. I remember it. The town does not."))
+                      : FText::FromString(
+                            TEXT("Find Hadrun. He knows what the Bellwardens "
+                                 "buried, even if he hates admitting it."));
   case ELostsenseNpcIdentity::HadrunPike:
-    return Index == 0
-               ? FText::FromString(TEXT(
-                     "If you are truly the Returned, prove you can still hold a measure. Guard the strike, then answer it. After that I open the Ravelwood road."))
-               : FText::FromString(TEXT(
-                     "Weeping Cut reaches the old survey line. Bring back anything marked Ninth Descent."));
+    return Index == 0 ? FText::FromString(TEXT(
+                            "If you are truly the Returned, prove you can "
+                            "still hold a measure. Guard the strike, then "
+                            "answer it. After that I open the Ravelwood road."))
+                      : FText::FromString(
+                            TEXT("Weeping Cut reaches the old survey line. "
+                                 "Bring back anything marked Ninth Descent."));
   case ELostsenseNpcIdentity::TamsinCoil:
     return Index == 0
-               ? FText::FromString(TEXT(
-                     "Bring me what the shaft spits out. I can tell Bellwarden bronze from Charter scrap without asking whose ledger it came from."))
-               : FText::FromString(TEXT(
-                     "The Ninth Cage brake is older than the Charter. That should worry you more than it worries them."));
+               ? FText::FromString(
+                     TEXT("Bring me what the shaft spits out. I can tell "
+                          "Bellwarden bronze from Charter scrap without asking "
+                          "whose ledger it came from."))
+               : FText::FromString(
+                     TEXT("The Ninth Cage brake is older than the Charter. "
+                          "That should worry you more than it worries them."));
   }
   return FText::GetEmpty();
 }
@@ -69,13 +76,15 @@ void ALostsenseNpcActor::Configure(const ELostsenseNpcIdentity identity) {
 }
 
 FText ALostsenseNpcActor::GetInteractionPrompt() const {
-  return FText::Format(FText::FromString(TEXT("Talk to {0}")), GetDisplayName());
+  return FText::Format(FText::FromString(TEXT("Talk to {0}")),
+                       GetDisplayName());
 }
 
 bool ALostsenseNpcActor::CanInteract(
     const ALostsenseKnightCharacter &Interactor) const {
   return bConfigured && !Interactor.IsPendingKillPending() &&
-         FVector::DistSquared(GetActorLocation(), Interactor.GetActorLocation()) <=
+         FVector::DistSquared(GetActorLocation(),
+                              Interactor.GetActorLocation()) <=
              FMath::Square(240.0F);
 }
 
@@ -98,7 +107,9 @@ bool ALostsenseNpcActor::Interact(ALostsenseKnightCharacter &Interactor) {
   return true;
 }
 
-ELostsenseNpcIdentity ALostsenseNpcActor::GetIdentity() const { return Identity; }
+ELostsenseNpcIdentity ALostsenseNpcActor::GetIdentity() const {
+  return Identity;
+}
 
 FText ALostsenseNpcActor::GetDisplayName() const {
   switch (Identity) {

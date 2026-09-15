@@ -42,7 +42,8 @@ struct StoryObjectiveState final {
 
 struct FirstSliceStoryState final {
   std::uint32_t SchemaVersion{1};
-  std::array<bool, static_cast<std::size_t>(FirstSliceStoryBeat::Count)> Beats{};
+  std::array<bool, static_cast<std::size_t>(FirstSliceStoryBeat::Count)>
+      Beats{};
   std::vector<StoryObjectiveState> Objectives{};
 
   friend bool operator==(const FirstSliceStoryState &,
@@ -73,8 +74,7 @@ private:
   bool valid_{false};
 };
 
-[[nodiscard]] std::vector<StoryObjectiveDefinition>
-BuildFirstSliceObjectives();
+[[nodiscard]] std::vector<StoryObjectiveDefinition> BuildFirstSliceObjectives();
 
 class FirstSliceStoryCodec final {
 public:

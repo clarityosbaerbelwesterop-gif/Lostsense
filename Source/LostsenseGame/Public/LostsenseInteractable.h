@@ -17,6 +17,7 @@ class LOSTSENSEGAME_API ILostsenseInteractable {
 
 public:
   virtual FText GetInteractionPrompt() const = 0;
-  virtual bool CanInteract(const ALostsenseKnightCharacter &Interactor) const = 0;
+  virtual bool
+  CanInteract(const ALostsenseKnightCharacter &Interactor) const = 0;
   virtual bool Interact(ALostsenseKnightCharacter &Interactor) = 0;
 };

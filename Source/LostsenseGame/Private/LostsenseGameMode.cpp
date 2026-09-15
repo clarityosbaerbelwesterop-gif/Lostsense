@@ -160,15 +160,15 @@ void SpawnRavelwoodAndWeepingCut(UWorld &World, const FSliceMeshes &Meshes) {
              FVector(5.0F, 2.0F, 0.45F), FRotator(0.0F, -20.0F, 0.0F));
   for (int32 Index = 0; Index < 8; ++Index) {
     const float Y = -1400.0F + static_cast<float>(Index) * 400.0F;
-    SpawnBlock(World, Cube,
-               FVector(5600.0F + static_cast<float>(Index % 3) * 500.0F, Y,
-                       420.0F),
-               FVector(0.45F, 0.45F, 5.0F),
-               FRotator(0.0F, static_cast<float>(Index) * 17.0F, 0.0F));
+    SpawnBlock(
+        World, Cube,
+        FVector(5600.0F + static_cast<float>(Index % 3) * 500.0F, Y, 420.0F),
+        FVector(0.45F, 0.45F, 5.0F),
+        FRotator(0.0F, static_cast<float>(Index) * 17.0F, 0.0F));
   }
 
-  SpawnEnemy(World, Meshes.Cylinder, FVector(5600.0F, -450.0F, 180.0F),
-             1101U, false, 3U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(5600.0F, -450.0F, 180.0F), 1101U,
+             false, 3U);
   SpawnEnemy(World, Meshes.Cylinder, FVector(6300.0F, 420.0F, 210.0F), 1102U,
              false, 3U);
 
@@ -212,10 +212,10 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
                FVector(0.45F, 0.45F, 9.0F));
   }
 
-  SpawnEnemy(World, Meshes.Cylinder, FVector(10400.0F, -250.0F, -650.0F),
-             1301U, false, 5U);
-  SpawnEnemy(World, Meshes.Cylinder, FVector(11100.0F, 350.0F, -1100.0F),
-             1302U, false, 5U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(10400.0F, -250.0F, -650.0F), 1301U,
+             false, 5U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(11100.0F, 350.0F, -1100.0F), 1302U,
+             false, 5U);
 
   // Coinless Shaft macro sequence is authored linearly with a split/secret
   // side crawl before the elite and boss chamber.
@@ -223,8 +223,7 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   for (int32 Room = 0; Room < 7; ++Room) {
     const float X = ShaftX + static_cast<float>(Room) * 950.0F;
     const float Z = -2200.0F - static_cast<float>(Room) * 180.0F;
-    SpawnBlock(World, Cube, FVector(X, 0.0F, Z),
-               FVector(5.2F, 4.2F, 0.45F));
+    SpawnBlock(World, Cube, FVector(X, 0.0F, Z), FVector(5.2F, 4.2F, 0.45F));
     SpawnBlock(World, Cube, FVector(X, 430.0F, Z + 360.0F),
                FVector(5.2F, 0.35F, 3.2F));
     SpawnBlock(World, Cube, FVector(X, -430.0F, Z + 360.0F),
@@ -235,18 +234,17 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(ShaftX + 3600.0F, 1150.0F, -3000.0F),
              FVector(3.0F, 1.0F, 0.3F));
 
-  SpawnEnemy(World, Meshes.Cylinder,
-             FVector(ShaftX + 3600.0F, 0.0F, -2700.0F), 1401U, true, 7U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(ShaftX + 3600.0F, 0.0F, -2700.0F),
+             1401U, true, 7U);
 
   // Odran arena: circular impression approximated by a broad chamber with
   // four resonance plates and two suspended counterweight lines.
   const FVector ArenaCenter(ShaftX + 6650.0F, 0.0F, -3400.0F);
   SpawnBlock(World, Cube, ArenaCenter + FVector(0.0F, 0.0F, -60.0F),
              FVector(9.0F, 9.0F, 0.55F));
-  const FVector PlateOffsets[] = {FVector(650.0F, 0.0F, 20.0F),
-                                  FVector(-650.0F, 0.0F, 20.0F),
-                                  FVector(0.0F, 650.0F, 20.0F),
-                                  FVector(0.0F, -650.0F, 20.0F)};
+  const FVector PlateOffsets[] = {
+      FVector(650.0F, 0.0F, 20.0F), FVector(-650.0F, 0.0F, 20.0F),
+      FVector(0.0F, 650.0F, 20.0F), FVector(0.0F, -650.0F, 20.0F)};
   for (const FVector &Offset : PlateOffsets) {
     SpawnBlock(World, Cube, ArenaCenter + Offset, FVector(1.4F, 1.4F, 0.12F));
   }
