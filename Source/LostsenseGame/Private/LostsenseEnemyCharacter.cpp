@@ -399,15 +399,18 @@ void ALostsenseEnemyCharacter::HandleDefeat(
     }
   }
 
-  if (bBoss) {
-    UGameInstance *GameInstance = GetGameInstance();
-    ULostsenseStorySubsystem *Story =
-        GameInstance != nullptr
-            ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
-            : nullptr;
-    if (Story != nullptr) {
+  UGameInstance *GameInstance = GetGameInstance();
+  ULostsenseStorySubsystem *Story =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
+          : nullptr;
+  if (Story != nullptr) {
+    if (bBoss) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::OdranDefeated));
+    } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
+      static_cast<void>(
+          Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));
     }
   }
 

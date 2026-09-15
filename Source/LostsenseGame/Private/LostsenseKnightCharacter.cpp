@@ -89,7 +89,7 @@ ALostsenseKnightCharacter::ALostsenseKnightCharacter() {
   GameplayMappingContext->MapKey(DodgeAction, EKeys::SpaceBar);
   GameplayMappingContext->MapKey(GuardAction, EKeys::LeftShift);
   GameplayMappingContext->MapKey(ActiveSlot1Action, EKeys::Q);
-  GameplayMappingContext->MapKey(ActiveSlot2Action, EKeys::E);
+  GameplayMappingContext->MapKey(ActiveSlot2Action, EKeys::Two);
   GameplayMappingContext->MapKey(ActiveSlot3Action, EKeys::R);
   GameplayMappingContext->MapKey(ActiveSlot4Action, EKeys::F);
   GameplayMappingContext->MapKey(AdvanceSkillAction, EKeys::K);

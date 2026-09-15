@@ -84,6 +84,12 @@ bool ALostsenseMechanismActor::Interact(ALostsenseKnightCharacter &Interactor) {
     return true;
   }
 
+  if (Kind == ELostsenseMechanismKind::BellCoreRewardLift) {
+    SetActorLocation(GetActorLocation() + FVector(0.0F, 0.0F, 420.0F));
+    bConsumed = true;
+    return true;
+  }
+
   UGameInstance *GameInstance = GetGameInstance();
   ULostsenseStorySubsystem *Story =
       GameInstance != nullptr
@@ -104,7 +110,6 @@ bool ALostsenseMechanismActor::Interact(ALostsenseKnightCharacter &Interactor) {
         Story->CompleteBeat(ELostsenseStoryBeat::NinthDescentRecordRecovered);
     break;
   case ELostsenseMechanismKind::BellCoreRewardLift:
-    bAdvanced = Story->CompleteBeat(ELostsenseStoryBeat::BellgraveChanged);
     break;
   case ELostsenseMechanismKind::Counterweight:
     break;

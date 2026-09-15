@@ -173,6 +173,9 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
            FVector(-950.0F, 700.0F, 110.0F));
   SpawnEnemy(World, Meshes.Cylinder, FVector(1050.0F, -250.0F, 110.0F), 1000U,
              ELostsenseEnemyArchetype::CharterDeserter, 2U);
+  SpawnStoryGate(World, FVector(1800.0F, 0.0F, 140.0F),
+                 ELostsenseStoryBeat::BellgraveChanged,
+                 ELostsenseStoryBeat::NinthDescentRecordRecovered);
   SpawnStoryGate(World, FVector(4950.0F, 0.0F, 180.0F),
                  ELostsenseStoryBeat::EnteredRavelwood,
                  ELostsenseStoryBeat::BellgraveDepartureAllowed);

@@ -23,7 +23,8 @@ FString ObjectiveText(const int32 ObjectiveId) {
   case 80005:
     return TEXT("Enter Coinless Shaft and follow the silent rail gallery");
   case 80006:
-    return TEXT("Recover the Ninth Descent record and return Bellgrave changed");
+    return TEXT(
+        "Recover the Ninth Descent record and return Bellgrave changed");
   default:
     return TEXT("Orient yourself beneath Bellgrave's stabilization bell");
   }
@@ -65,12 +66,13 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
                            Runtime->GetUnspentSkillPoints()),
            FLinearColor::White, 32.0F, 150.0F, nullptr, 0.9F, false);
 
-  const int32 ObjectiveId = Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
+  const int32 ObjectiveId =
+      Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
   DrawText(FString::Printf(TEXT("OBJECTIVE  %s"), *ObjectiveText(ObjectiveId)),
            FLinearColor::White, 32.0F, 182.0F, nullptr, 0.82F, false);
-  DrawText(TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
-           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F,
-           false);
+  DrawText(
+      TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
+      FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F, false);
   DrawText(TEXT("Q/2/R/F Skills   K Scar Atlas   T Equip pickup"),
            FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F,
            false);
