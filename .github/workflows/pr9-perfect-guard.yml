@@ -1,0 +1,152 @@
+name: PR9 perfect guard
+
+"on":
+  push:
+    branches: [work/vertical-slice-world-production]
+
+permissions:
+  contents: write
+
+jobs:
+  implement-verify:
+    if: ${{ !contains(github.event.head_commit.message, '[pr9-perfect-guard]') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/vertical-slice-world-production
+          fetch-depth: 0
+      - name: Implement perfect guard
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          p = Path('Source/Lostsense/Gameplay/Content/FirstSliceContent.cpp')
+          s = p.read_text()
+          anchor = '  EffectDefinition answering;\n  answering.Id = AnsweringGuardWindow;'
+          perfect = dedent('''
+            EffectDefinition perfectGuard;
+            perfectGuard.Id = PerfectGuardWindow;
+            perfectGuard.StackGroup = EffectStackGroupId{50122U};
+            perfectGuard.Stacking = EffectStackingPolicy::RefreshDuration;
+            perfectGuard.MaxStacks = 1U;
+            perfectGuard.DurationSeconds = 0.18;
+            perfectGuard.Beneficial = true;
+            perfectGuard.AttributeModifiers = {
+                {Stats::CombatAttributes::BlockChance,
+                 Stats::ModifierOperation::Additive, 1.0},
+                {Stats::CombatAttributes::BlockMitigation,
+                 Stats::ModifierOperation::Additive, 0.25}};
+
+          ''')
+          if anchor not in s:
+              raise SystemExit('perfect guard content anchor missing')
+          s = s.replace(anchor, perfect + anchor)
+          s = s.replace('  return {bellstep, guard, answering};', '  return {bellstep, guard, perfectGuard, answering};')
+          p.write_text(s)
+
+          p = Path('Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp')
+          s = p.read_text()
+          anchor = 'bool ULostsenseRuntimeSubsystem::ActivatePlayerAbility(const uint32 AbilityId) {'
+          method = dedent('''
+          bool ULostsenseRuntimeSubsystem::BeginPerfectGuardWindow() {
+            if (!PortableRuntime.IsValid() || !PortableRuntime->Ready ||
+                PortableRuntime->Player.Health().IsDead()) {
+              return false;
+            }
+            const Lostsense::Gameplay::EffectApplyOutcome Outcome =
+                Lostsense::Gameplay::GameplayEventAuthority::ApplyEffect(
+                    PortableRuntime->Effects,
+                    Lostsense::Gameplay::FirstSlice::PerfectGuardWindow,
+                    PortableRuntime->Player.Id(), PortableRuntime->Events);
+            return Outcome.Result == Lostsense::Gameplay::EffectApplyResult::Applied ||
+                   Outcome.Result == Lostsense::Gameplay::EffectApplyResult::Refreshed;
+          }
+
+          ''')
+          if anchor not in s or 'BeginPerfectGuardWindow()' in s:
+              raise SystemExit('perfect guard runtime insertion anchor invalid')
+          s = s.replace(anchor, method + anchor)
+
+          old = '  const Lostsense::Combat::CombatResolution Resolution = Enemy.ResolveAttack(\n      PortableRuntime->Player, Damage, PortableRuntime->Random);'
+          new = '  const bool bPerfectGuardWindow = PortableRuntime->Effects.HasEffect(\n      Lostsense::Gameplay::FirstSlice::PerfectGuardWindow);\n  const Lostsense::Combat::CombatResolution Resolution = Enemy.ResolveAttack(\n      PortableRuntime->Player, Damage, PortableRuntime->Random);'
+          if old not in s:
+              raise SystemExit('enemy attack resolution anchor missing')
+          s = s.replace(old, new)
+
+          anchor = '  if (Resolution.AppliedToHealth.BecameDead) {'
+          reward = dedent('''
+            if (bPerfectGuardWindow && Resolution.CalculatedDamage.WasBlocked) {
+              static_cast<void>(PortableRuntime->Player.RestoreResource(8.0));
+              const Lostsense::Gameplay::EffectRuntimeState Effects =
+                  PortableRuntime->Effects.CaptureState();
+              const auto Perfect = std::find_if(
+                  Effects.ActiveEffects.begin(), Effects.ActiveEffects.end(),
+                  [](const Lostsense::Gameplay::ActiveEffectState &Effect) {
+                    return Effect.DefinitionId ==
+                           Lostsense::Gameplay::FirstSlice::PerfectGuardWindow;
+                  });
+              if (Perfect != Effects.ActiveEffects.end()) {
+                static_cast<void>(
+                    Lostsense::Gameplay::GameplayEventAuthority::RemoveEffect(
+                        PortableRuntime->Effects, Perfect->InstanceId,
+                        PortableRuntime->Events));
+              }
+            }
+
+          ''')
+          if anchor not in s:
+              raise SystemExit('perfect guard reward anchor missing')
+          s = s.replace(anchor, reward + anchor, 1)
+          p.write_text(s)
+
+          p = Path('Source/LostsenseGame/Private/LostsenseKnightCharacter.cpp')
+          s = p.read_text()
+          old = '  if (Value.Get<bool>()) {\n    bGuardHeld = true;\n    GuardRefreshRemaining = 0.0F;\n  }'
+          new = '  if (Value.Get<bool>()) {\n    if (UGameInstance *GameInstance = GetGameInstance()) {\n      if (ULostsenseRuntimeSubsystem *Runtime =\n              GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()) {\n        static_cast<void>(Runtime->BeginPerfectGuardWindow());\n      }\n    }\n    bGuardHeld = true;\n    GuardRefreshRemaining = 0.0F;\n  }'
+          if old not in s:
+              raise SystemExit('GuardStarted anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('Tests/Gameplay/FirstSliceContentTests.cpp')
+          s = p.read_text()
+          anchor = '  SliceRuntime runtime;\n  suite.Expect(runtime.Effects.IsValid(), "Knight effect definitions validate");'
+          check = dedent('''
+            bool foundPerfectGuard = false;
+            for (const EffectDefinition &effect : BuildKnightEffects()) {
+              if (effect.Id == PerfectGuardWindow) {
+                foundPerfectGuard = effect.DurationSeconds > 0.0 &&
+                                    effect.DurationSeconds <= 0.20;
+              }
+            }
+          ''')
+          if anchor not in s:
+              raise SystemExit('content test anchor missing')
+          s = s.replace(anchor, '  SliceRuntime runtime;\n' + check + '  suite.Expect(foundPerfectGuard,\n               "perfect guard has a bounded authored timing window");\n  suite.Expect(runtime.Effects.IsValid(), "Knight effect definitions validate");')
+          p.write_text(s)
+          PY
+      - name: Format and verify
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+          clang-format --dry-run --Werror "${files[@]}"
+          python3 Scripts/Verify-UnrealStatic.py
+          git diff --check
+      - name: Portable compiler and tests
+        env:
+          CXX: g++
+        run: |
+          cmake -S . -B build-guard -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-guard --parallel
+          ctest --test-dir build-guard --output-on-failure
+      - name: Commit clean perfect guard
+        run: |
+          rm -rf build-guard
+          git rm .github/workflows/pr9-perfect-guard.yml
+          git add Source Tests
+          git diff --cached --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Add Knight perfect-guard timing [pr9-perfect-guard]"
+          git push origin HEAD:work/vertical-slice-world-production
