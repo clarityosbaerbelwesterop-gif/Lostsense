@@ -70,8 +70,7 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
 void ALostsenseDevelopmentHUD::DrawMeter(const FString &Label,
                                          const double Current,
                                          const double Maximum, const float X,
-                                         const float Y,
-                                         const float Width) const {
+                                         const float Y, const float Width) {
   const double SafeMaximum = FMath::Max(1.0, Maximum);
   const float Fraction = static_cast<float>(
       FMath::Clamp(Current / SafeMaximum, 0.0, 1.0));
