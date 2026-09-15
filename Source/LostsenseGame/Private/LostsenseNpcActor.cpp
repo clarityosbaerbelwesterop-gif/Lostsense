@@ -9,18 +9,6 @@
 #include "UObject/ConstructorHelpers.h"
 
 namespace {
-ELostsenseStoryBeat BeatForNpc(const ELostsenseNpcIdentity Identity) {
-  switch (Identity) {
-  case ELostsenseNpcIdentity::MaraVenn:
-    return ELostsenseStoryBeat::MetMara;
-  case ELostsenseNpcIdentity::HadrunPike:
-    return ELostsenseStoryBeat::MetHadrun;
-  case ELostsenseNpcIdentity::TamsinCoil:
-    return ELostsenseStoryBeat::BellgraveDepartureAllowed;
-  }
-  return ELostsenseStoryBeat::ReturnedAwakened;
-}
-
 FText LineForNpc(const ELostsenseNpcIdentity Identity, const int32 Index) {
   switch (Identity) {
   case ELostsenseNpcIdentity::MaraVenn:
@@ -82,7 +70,7 @@ FText ALostsenseNpcActor::GetInteractionPrompt() const {
 
 bool ALostsenseNpcActor::CanInteract(
     const ALostsenseKnightCharacter &Interactor) const {
-  return bConfigured && !Interactor.IsPendingKillPending() &&
+  return bConfigured && !Interactor.IsActorBeingDestroyed() &&
          FVector::DistSquared(GetActorLocation(),
                               Interactor.GetActorLocation()) <=
              FMath::Square(240.0F);
@@ -102,7 +90,17 @@ bool ALostsenseNpcActor::Interact(ALostsenseKnightCharacter &Interactor) {
     return false;
   }
 
-  static_cast<void>(Story->CompleteBeat(BeatForNpc(Identity)));
+  switch (Identity) {
+  case ELostsenseNpcIdentity::MaraVenn:
+    static_cast<void>(Story->CompleteBeat(ELostsenseStoryBeat::MetMara));
+    break;
+  case ELostsenseNpcIdentity::HadrunPike:
+    static_cast<void>(Story->CompleteBeat(ELostsenseStoryBeat::MetHadrun));
+    break;
+  case ELostsenseNpcIdentity::TamsinCoil:
+    break;
+  }
+
   DialogueIndex = FMath::Min(DialogueIndex + 1, 1);
   return true;
 }
