@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+
 #include "LostsensePlayerController.generated.h"
 
 UCLASS()
@@ -17,10 +18,13 @@ protected:
   virtual void SetupInputComponent() override;
 
 private:
+  void TryInteract();
   void SaveDevelopmentCharacter();
   void LoadDevelopmentCharacter();
   void ResetDevelopmentEncounter();
   FString DevelopmentSavePath() const;
+  FString DevelopmentStorySavePath() const;
 
   FString StartupCharacterSnapshot;
+  FString StartupStorySnapshot;
 };
