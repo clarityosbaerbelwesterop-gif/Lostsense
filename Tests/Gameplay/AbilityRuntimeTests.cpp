@@ -367,6 +367,108 @@ void TestRechargeAndRestoreBoundaries(TestSuite &suite) {
                "restore rejects recharge timer beyond definition");
 }
 
+void TestMultiTargetActivationIsAtomicAndSingleCost(TestSuite &suite) {
+  Fixture fixture;
+  Combat::Combatant secondTarget{Combat::CombatantId{201U},
+                                 Combat::CombatantKind::Enemy};
+  EffectRuntime secondEffects{secondTarget, EffectDefinitions()};
+
+  AbilityDefinition sweep;
+  sweep.Id = {50U};
+  sweep.ResourceCost = 10.0;
+  sweep.CooldownSeconds = 1.0;
+  sweep.TargetRule = AbilityTargetRule::Hostile;
+  sweep.MaximumTargets = 3U;
+  sweep.Damage = PhysicalDamage(12.0);
+  sweep.DealsDamage = true;
+  sweep.EffectsOnTarget = {Burning};
+
+  Core::DeterministicRandom random{99U, 3U};
+  AbilityRuntime runtime{
+      fixture.Owner, fixture.OwnerEffects, random, Knight, {sweep}};
+  suite.Expect(runtime.IsValid() && runtime.Unlock(sweep.Id),
+               "multi-target ability definition unlocks");
+
+  const double resourceBefore = fixture.Owner.Resource().Current();
+  const std::vector<AbilityTarget> targets = {
+      {&fixture.Target, &fixture.TargetEffects, TargetRelation::Hostile},
+      {&secondTarget, &secondEffects, TargetRelation::Hostile}};
+  const auto result = runtime.ActivateMany(sweep.Id, targets);
+  suite.Expect(result.Primary.Result == AbilityActivationResult::Success &&
+                   result.AdditionalTargets.size() == 1U,
+               "multi-target activation resolves every authoritative target");
+  suite.ExpectNear(fixture.Owner.Resource().Current(), resourceBefore - 10.0,
+                   "multi-target activation spends resource once");
+  suite.ExpectNear(fixture.Target.Health().Current(), 88.0,
+                   "primary target receives sweep damage");
+  suite.ExpectNear(secondTarget.Health().Current(), 88.0,
+                   "secondary target receives sweep damage");
+  suite.Expect(fixture.TargetEffects.HasEffect(Burning) &&
+                   secondEffects.HasEffect(Burning),
+               "target effects apply to each multi-target victim");
+  suite.Expect(runtime.ActivateMany(sweep.Id, targets).Primary.Result ==
+                   AbilityActivationResult::OnCooldown,
+               "multi-target activation starts only one cooldown");
+
+  AbilityDefinition atomicSweep = sweep;
+  atomicSweep.Id = {51U};
+  atomicSweep.CooldownSeconds = 0.0;
+  Core::DeterministicRandom rollbackRandom{100U, 3U};
+  AbilityRuntime rollbackRuntime{fixture.Owner,
+                                 fixture.OwnerEffects,
+                                 rollbackRandom,
+                                 Knight,
+                                 {atomicSweep}};
+  suite.Expect(rollbackRuntime.Unlock(atomicSweep.Id),
+               "atomic multi-target test ability unlocks");
+  EffectDefinition onlyStun;
+  onlyStun.Id = Stun;
+  onlyStun.StackGroup = {2U};
+  onlyStun.Stacking = EffectStackingPolicy::RefreshDuration;
+  onlyStun.DurationSeconds = 2.0;
+  EffectRuntime incompatibleSecond{secondTarget, {onlyStun}};
+  const auto ownerBefore = fixture.Owner.CaptureState();
+  const auto firstBefore = fixture.Target.CaptureState();
+  const auto secondBefore = secondTarget.CaptureState();
+  const auto randomBefore = rollbackRandom.CaptureState();
+  const std::vector<AbilityTarget> failingTargets = {
+      {&fixture.Target, &fixture.TargetEffects, TargetRelation::Hostile},
+      {&secondTarget, &incompatibleSecond, TargetRelation::Hostile}};
+  const auto failed =
+      rollbackRuntime.ActivateMany(atomicSweep.Id, failingTargets);
+  suite.Expect(failed.Primary.Result ==
+                   AbilityActivationResult::InternalFailure,
+               "late multi-target effect failure aborts activation");
+  suite.ExpectNear(fixture.Owner.Resource().Current(),
+                   ownerBefore.Resource.Current,
+                   "multi-target failure rolls back single resource cost");
+  suite.ExpectNear(fixture.Target.Health().Current(),
+                   firstBefore.Health.Current,
+                   "multi-target failure rolls back primary damage");
+  suite.ExpectNear(secondTarget.Health().Current(), secondBefore.Health.Current,
+                   "multi-target failure rolls back secondary damage");
+  suite.Expect(rollbackRandom.CaptureState() == randomBefore,
+               "multi-target failure restores authoritative RNG");
+
+  static_cast<void>(secondTarget.ApplyDamage(1000.0));
+  suite.Expect(runtime.AdvanceTime(1.0), "sweep cooldown clears");
+  const double firstHealthBeforeDeadTarget = fixture.Target.Health().Current();
+  suite.Expect(runtime.ActivateMany(sweep.Id, targets).Primary.Result ==
+                   AbilityActivationResult::InvalidTarget,
+               "dead secondary target rejects entire sweep before mutation");
+  suite.ExpectNear(fixture.Target.Health().Current(),
+                   firstHealthBeforeDeadTarget,
+                   "dead-target rejection prevents partial sweep damage");
+
+  const std::vector<AbilityTarget> duplicateTargets = {
+      {&fixture.Target, &fixture.TargetEffects, TargetRelation::Hostile},
+      {&fixture.Target, &fixture.TargetEffects, TargetRelation::Hostile}};
+  suite.Expect(
+      runtime.ActivateMany(sweep.Id, duplicateTargets).Primary.Result ==
+          AbilityActivationResult::InvalidTarget,
+      "duplicate target cannot receive duplicate hit from one sweep");
+}
+
 } // namespace
 
 int main() {
@@ -378,5 +480,6 @@ int main() {
   TestCaptureRestoreAndCorruption(suite);
   TestAtomicFailureRollsBackEverything(suite);
   TestRechargeAndRestoreBoundaries(suite);
+  TestMultiTargetActivationIsAtomicAndSingleCost(suite);
   return suite.Finish();
 }

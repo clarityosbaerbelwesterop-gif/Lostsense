@@ -2,11 +2,34 @@
 
 #include "LostsenseEnemyCharacter.h"
 #include "LostsenseRuntimeSubsystem.h"
+#include "LostsenseStorySubsystem.h"
 
 #include "Engine/Canvas.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
+
+namespace {
+FString ObjectiveText(const int32 ObjectiveId) {
+  switch (ObjectiveId) {
+  case 80001:
+    return TEXT("Find Mara Venn at the bellsmith");
+  case 80002:
+    return TEXT("Meet Hadrun and prove your measure in the guard yard");
+  case 80003:
+    return TEXT("Follow Ravelwood into Weeping Cut; find Ninth Descent marks");
+  case 80004:
+    return TEXT("Descend into the Upper Vaur Goldworks");
+  case 80005:
+    return TEXT("Enter Coinless Shaft and follow the silent rail gallery");
+  case 80006:
+    return TEXT(
+        "Recover the Ninth Descent record and return Bellgrave changed");
+  default:
+    return TEXT("Orient yourself beneath Bellgrave's stabilization bell");
+  }
+}
+} // namespace
 
 void ALostsenseDevelopmentHUD::DrawHUD() {
   Super::DrawHUD();
@@ -20,6 +43,10 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
           : nullptr;
+  ULostsenseStorySubsystem *Story =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
+          : nullptr;
   if (Runtime == nullptr || !Runtime->IsPortableRuntimeReady()) {
     DrawText(TEXT("LOSTSENSE - portable runtime unavailable"),
              FLinearColor::Red, 32.0F, 32.0F, nullptr, 1.0F, false);
@@ -28,7 +55,7 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
 
   ConsumePresentationEvents();
 
-  DrawText(TEXT("LOSTSENSE // DEVELOPMENT COMBAT SLICE"), FLinearColor::White,
+  DrawText(TEXT("LOSTSENSE // BELLGRAVE DESCENT SLICE"), FLinearColor::White,
            32.0F, 24.0F, nullptr, 1.0F, false);
   DrawMeter(TEXT("VITALITY"), Runtime->GetPlayerHealth(),
             Runtime->GetPlayerMaximumHealth(), 32.0F, 58.0F, 330.0F);
@@ -39,17 +66,21 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
                            Runtime->GetUnspentSkillPoints()),
            FLinearColor::White, 32.0F, 150.0F, nullptr, 0.9F, false);
 
-  DrawText(TEXT("LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
-           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 184.0F, nullptr, 0.82F,
+  const int32 ObjectiveId =
+      Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
+  DrawText(FString::Printf(TEXT("OBJECTIVE  %s"), *ObjectiveText(ObjectiveId)),
+           FLinearColor::White, 32.0F, 182.0F, nullptr, 0.82F, false);
+  DrawText(
+      TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
+      FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F, false);
+  DrawText(TEXT("Q/2/R/F Skills   K Scar Atlas   T Equip pickup"),
+           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F,
            false);
-  DrawText(TEXT("Q/E/R/F Skills   K Scar Atlas   T Equip pickup"),
-           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 208.0F, nullptr, 0.82F,
-           false);
-  DrawText(TEXT("F5 Save   F9 Load   F10 Reset development encounter"),
-           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 232.0F, nullptr, 0.82F,
+  DrawText(TEXT("F5 Save   F9 Load   F10 Reset slice"),
+           FLinearColor(0.72F, 0.72F, 0.72F), 32.0F, 260.0F, nullptr, 0.72F,
            false);
 
-  float EventY = 278.0F;
+  float EventY = 302.0F;
   DrawText(TEXT("AUTHORITATIVE EVENT FEED"), FLinearColor::White, 32.0F, EventY,
            nullptr, 0.72F, false);
   EventY += 22.0F;

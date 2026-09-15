@@ -33,6 +33,7 @@ struct AbilityDefinition final {
   std::uint32_t MaximumCharges{1U};
   double RechargeSeconds{0.0};
   AbilityTargetRule TargetRule{AbilityTargetRule::None};
+  std::uint32_t MaximumTargets{1U};
   ClassId RequiredClass{};
   AbilityLoadoutSlotMask AllowedLoadoutSlots{AllAbilityLoadoutSlots};
   bool AllowDuplicateInLoadout{false};
@@ -90,6 +91,11 @@ struct AbilityActivationOutcome final {
   std::vector<EffectApplyOutcome> EffectResults{};
 };
 
+struct MultiTargetAbilityActivationOutcome final {
+  AbilityActivationOutcome Primary{};
+  std::vector<AbilityActivationOutcome> AdditionalTargets{};
+};
+
 class AbilityRuntime final {
 public:
   AbilityRuntime(Combat::Combatant &owner, EffectRuntime &ownerEffects,
@@ -106,6 +112,8 @@ public:
 
   [[nodiscard]] AbilityActivationOutcome Activate(AbilityId id,
                                                   const AbilityTarget &target);
+  [[nodiscard]] MultiTargetAbilityActivationOutcome
+  ActivateMany(AbilityId id, const std::vector<AbilityTarget> &targets);
   [[nodiscard]] bool AdvanceTime(double seconds) noexcept;
 
   [[nodiscard]] AbilityRuntimeState CaptureState() const;

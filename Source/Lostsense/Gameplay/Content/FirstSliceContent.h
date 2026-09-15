@@ -23,6 +23,7 @@ inline constexpr AbilityId AnsweringGuard{40123U};
 
 inline constexpr EffectId BellstepArmor{50120U};
 inline constexpr EffectId GuardStance{50121U};
+inline constexpr EffectId PerfectGuardWindow{50122U};
 inline constexpr EffectId AnsweringGuardWindow{50123U};
 
 inline constexpr AbilityMutationId StandWhereItFalls{60120U};
