@@ -14,7 +14,7 @@ ALostsenseWorldDropActor::ALostsenseWorldDropActor() {
 
   PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
   SetRootComponent(PickupSphere);
-  PickupSphere->InitSphereRadius(75.0F);
+  PickupSphere->SetSphereRadius(125.0F);
   PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
   PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
   PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
@@ -22,7 +22,7 @@ ALostsenseWorldDropActor::ALostsenseWorldDropActor() {
   Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
   Visual->SetupAttachment(PickupSphere);
   Visual->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-  Visual->SetRelativeScale3D(FVector(0.22F));
+  Visual->SetRelativeScale3D(FVector(0.22F, 0.22F, 0.22F));
 
   static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(
       TEXT("/Engine/BasicShapes/Sphere.Sphere"));
@@ -36,25 +36,21 @@ void ALostsenseWorldDropActor::InitializeDrop(
   Drop = MakeUnique<Lostsense::Gameplay::GeneratedLootEntry>(InDrop);
 }
 
-void ALostsenseWorldDropActor::BeginPlay() {
-  Super::BeginPlay();
-  PickupSphere->OnComponentBeginOverlap.AddDynamic(
-      this, &ALostsenseWorldDropActor::OnPickupOverlap);
+FText ALostsenseWorldDropActor::GetInteractionPrompt() const {
+  return FText::FromString(TEXT("Pick up loot"));
 }
 
-void ALostsenseWorldDropActor::OnPickupOverlap(
-    UPrimitiveComponent *OverlappedComponent, AActor *OtherActor,
-    UPrimitiveComponent *OtherComponent, const int32 OtherBodyIndex,
-    const bool bFromSweep, const FHitResult &SweepResult) {
-  static_cast<void>(OverlappedComponent);
-  static_cast<void>(OtherComponent);
-  static_cast<void>(OtherBodyIndex);
-  static_cast<void>(bFromSweep);
-  static_cast<void>(SweepResult);
+bool ALostsenseWorldDropActor::CanInteract(
+    const ALostsenseKnightCharacter &Interactor) const {
+  return Drop != nullptr && !Interactor.IsActorBeingDestroyed() &&
+         FVector::DistSquared(GetActorLocation(),
+                              Interactor.GetActorLocation()) <=
+             FMath::Square(220.0F);
+}
 
-  if (Drop == nullptr ||
-      Cast<ALostsenseKnightCharacter>(OtherActor) == nullptr) {
-    return;
+bool ALostsenseWorldDropActor::Interact(ALostsenseKnightCharacter &Interactor) {
+  if (!CanInteract(Interactor)) {
+    return false;
   }
 
   UGameInstance *GameInstance = GetGameInstance();
@@ -62,7 +58,11 @@ void ALostsenseWorldDropActor::OnPickupOverlap(
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
           : nullptr;
-  if (Runtime != nullptr && Runtime->PickupGeneratedLoot(*Drop)) {
-    Destroy();
+  if (Runtime == nullptr || !Runtime->PickupGeneratedLoot(*Drop)) {
+    return false;
   }
+
+  Drop.Reset();
+  Destroy();
+  return true;
 }
