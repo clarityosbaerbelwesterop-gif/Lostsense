@@ -3,13 +3,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Lostsense/Gameplay/Items/LootRuntime.h"
+#include "LostsenseInteractable.h"
+
 #include "LostsenseWorldDropActor.generated.h"
 
 class USphereComponent;
 class UStaticMeshComponent;
 
 UCLASS()
-class LOSTSENSEGAME_API ALostsenseWorldDropActor final : public AActor {
+class LOSTSENSEGAME_API ALostsenseWorldDropActor final
+    : public AActor,
+      public ILostsenseInteractable {
   GENERATED_BODY()
 
 public:
@@ -17,16 +21,12 @@ public:
 
   void InitializeDrop(const Lostsense::Gameplay::GeneratedLootEntry &InDrop);
 
-protected:
-  virtual void BeginPlay() override;
+  virtual FText GetInteractionPrompt() const override;
+  virtual bool
+  CanInteract(const ALostsenseKnightCharacter &Interactor) const override;
+  virtual bool Interact(ALostsenseKnightCharacter &Interactor) override;
 
 private:
-  UFUNCTION()
-  void OnPickupOverlap(UPrimitiveComponent *OverlappedComponent,
-                       AActor *OtherActor, UPrimitiveComponent *OtherComponent,
-                       int32 OtherBodyIndex, bool bFromSweep,
-                       const FHitResult &SweepResult);
-
   UPROPERTY(VisibleAnywhere, Category = "Lostsense|Loot")
   TObjectPtr<USphereComponent> PickupSphere;
 
