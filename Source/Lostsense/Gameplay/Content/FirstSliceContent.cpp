@@ -123,6 +123,7 @@ std::vector<AbilityDefinition> BuildKnightAbilities() {
   AbilityDefinition sweep = MakeAttack(MarchSweep, AbilityLoadoutSlot::Active3,
                                        14.0, 4.0, 10.0, 0.95);
   sweep.Prerequisites = {Bellstep};
+  sweep.MaximumTargets = 8U;
 
   AbilityDefinition answering;
   answering.Id = AnsweringGuard;

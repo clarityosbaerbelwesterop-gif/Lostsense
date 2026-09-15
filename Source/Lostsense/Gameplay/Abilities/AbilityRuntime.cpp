@@ -262,6 +262,128 @@ AbilityActivationOutcome AbilityRuntime::Activate(const AbilityId id,
   return outcome;
 }
 
+MultiTargetAbilityActivationOutcome
+AbilityRuntime::ActivateMany(const AbilityId id,
+                             const std::vector<AbilityTarget> &targets) {
+  MultiTargetAbilityActivationOutcome outcome;
+  if (!definitionsValid_) {
+    outcome.Primary.Result = AbilityActivationResult::InvalidRuntime;
+    return outcome;
+  }
+  const AbilityDefinition *definition = FindDefinition(id);
+  if (definition == nullptr) {
+    outcome.Primary.Result = AbilityActivationResult::UnknownAbility;
+    return outcome;
+  }
+  if (targets.empty() || targets.size() > definition->MaximumTargets) {
+    outcome.Primary.Result = AbilityActivationResult::InvalidTarget;
+    return outcome;
+  }
+
+  std::set<std::uint64_t> targetIds;
+  for (const AbilityTarget &target : targets) {
+    if (!ValidateTarget(*definition, target)) {
+      outcome.Primary.Result = AbilityActivationResult::InvalidTarget;
+      return outcome;
+    }
+    if (target.Combatant != nullptr &&
+        !targetIds.insert(target.Combatant->Id().Value).second) {
+      outcome.Primary.Result = AbilityActivationResult::InvalidTarget;
+      return outcome;
+    }
+  }
+
+  if (targets.size() == 1U) {
+    outcome.Primary = Activate(id, targets.front());
+    return outcome;
+  }
+
+  struct TargetSnapshot final {
+    Combat::Combatant *Combatant{nullptr};
+    Combat::CombatantState CombatantState{};
+    EffectRuntime *Effects{nullptr};
+    EffectRuntimeState EffectState{};
+    bool HasCombatantState{false};
+    bool HasEffectState{false};
+  };
+
+  const Combat::CombatantState ownerState = owner_.CaptureState();
+  const EffectRuntimeState ownerEffectState = ownerEffects_.CaptureState();
+  const AbilityRuntimeState abilityState = CaptureState();
+  const Core::RandomState randomState = random_.CaptureState();
+  std::vector<TargetSnapshot> snapshots;
+  snapshots.reserve(targets.size());
+  for (const AbilityTarget &target : targets) {
+    TargetSnapshot snapshot;
+    snapshot.Combatant = target.Combatant;
+    snapshot.Effects = target.Effects;
+    if (target.Combatant != nullptr && target.Combatant != &owner_) {
+      snapshot.CombatantState = target.Combatant->CaptureState();
+      snapshot.HasCombatantState = true;
+    }
+    if (target.Effects != nullptr && target.Effects != &ownerEffects_) {
+      snapshot.EffectState = target.Effects->CaptureState();
+      snapshot.HasEffectState = true;
+    }
+    snapshots.push_back(std::move(snapshot));
+  }
+
+  const auto rollbackAll = [&]() {
+    bool ok = true;
+    for (auto it = snapshots.rbegin(); it != snapshots.rend(); ++it) {
+      if (it->HasEffectState) {
+        ok = it->Effects->RestoreState(it->EffectState) && ok;
+      }
+    }
+    ok = ownerEffects_.RestoreState(ownerEffectState) && ok;
+    for (auto it = snapshots.rbegin(); it != snapshots.rend(); ++it) {
+      if (it->HasCombatantState) {
+        ok = it->Combatant->RestoreState(it->CombatantState) && ok;
+      }
+    }
+    ok = owner_.RestoreState(ownerState) && ok;
+    ok = RestoreState(abilityState) && ok;
+    ok = random_.RestoreState(randomState) && ok;
+    return ok;
+  };
+
+  outcome.Primary = Activate(id, targets.front());
+  if (outcome.Primary.Result != AbilityActivationResult::Success) {
+    return outcome;
+  }
+
+  outcome.AdditionalTargets.reserve(targets.size() - 1U);
+  for (std::size_t index = 1U; index < targets.size(); ++index) {
+    const AbilityTarget &target = targets[index];
+    AbilityActivationOutcome targetOutcome;
+    targetOutcome.Result = AbilityActivationResult::Success;
+    if (definition->DealsDamage) {
+      targetOutcome.Damage =
+          owner_.ResolveAttack(*target.Combatant, definition->Damage, random_);
+      targetOutcome.DamageResolved = true;
+    }
+    for (const EffectId effectId : definition->EffectsOnTarget) {
+      if (target.Effects == nullptr) {
+        static_cast<void>(rollbackAll());
+        outcome.Primary.Result = AbilityActivationResult::InternalFailure;
+        outcome.AdditionalTargets.clear();
+        return outcome;
+      }
+      const EffectApplyOutcome effectResult =
+          target.Effects->Apply(effectId, owner_.Id());
+      targetOutcome.EffectResults.push_back(effectResult);
+      if (IsFatalEffectResult(effectResult.Result)) {
+        static_cast<void>(rollbackAll());
+        outcome.Primary.Result = AbilityActivationResult::InternalFailure;
+        outcome.AdditionalTargets.clear();
+        return outcome;
+      }
+    }
+    outcome.AdditionalTargets.push_back(std::move(targetOutcome));
+  }
+  return outcome;
+}
+
 bool AbilityRuntime::AdvanceTime(const double seconds) noexcept {
   if (!definitionsValid_ || !IsFiniteNonNegative(seconds)) {
     return false;
@@ -335,6 +457,7 @@ bool AbilityRuntime::IsDefinitionShapeValid(
       !IsFiniteNonNegative(definition.CooldownSeconds) ||
       definition.MaximumCharges == 0U ||
       definition.MaximumCharges > MaximumConfiguredCharges ||
+      definition.MaximumTargets == 0U || definition.MaximumTargets > 64U ||
       !IsFiniteNonNegative(definition.RechargeSeconds) ||
       !IsTargetRuleValid(definition.TargetRule) ||
       (definition.AllowedLoadoutSlots &
@@ -342,6 +465,11 @@ bool AbilityRuntime::IsDefinitionShapeValid(
     return false;
   }
   if (definition.MaximumCharges > 1U && definition.RechargeSeconds <= 0.0) {
+    return false;
+  }
+  if ((definition.TargetRule == AbilityTargetRule::None ||
+       definition.TargetRule == AbilityTargetRule::Self) &&
+      definition.MaximumTargets != 1U) {
     return false;
   }
   if (definition.TargetRule == AbilityTargetRule::None &&
@@ -442,12 +570,14 @@ bool AbilityRuntime::ValidateTarget(
             target.Effects->OwnerId() == owner_.Id());
   case AbilityTargetRule::Hostile:
     return target.Combatant != nullptr && target.Combatant != &owner_ &&
+           !target.Combatant->Health().IsDead() &&
            target.Relation == TargetRelation::Hostile &&
            (definition.EffectsOnTarget.empty() || target.Effects != nullptr) &&
            (target.Effects == nullptr ||
             target.Effects->OwnerId() == target.Combatant->Id());
   case AbilityTargetRule::Friendly:
     return target.Combatant != nullptr &&
+           !target.Combatant->Health().IsDead() &&
            target.Relation == TargetRelation::Friendly &&
            (definition.EffectsOnTarget.empty() || target.Effects != nullptr) &&
            (target.Effects == nullptr ||
