@@ -6,6 +6,7 @@ compile_commands.json
 /DerivedDataCache/
 /Intermediate/
 /Saved/
+/Artifacts/
 /.vs/
 *.sln
 *.VC.db
