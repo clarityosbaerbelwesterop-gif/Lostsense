@@ -91,6 +91,9 @@ bool FirstSliceStoryRuntime::CompleteBeat(const FirstSliceStoryBeat beat) {
   if (state_.Beats[index]) {
     return false;
   }
+  if (index > 0U && !state_.Beats[index - 1U]) {
+    return false;
+  }
   state_.Beats[index] = true;
   RefreshObjectives();
   return true;
@@ -112,13 +115,35 @@ bool FirstSliceStoryRuntime::ValidateState(
     return false;
   }
 
-  for (std::size_t index = 0; index < definitions_.size(); ++index) {
-    if (state.Objectives[index].Id != definitions_[index].Id) {
+  for (std::size_t index = 1U; index < state.Beats.size(); ++index) {
+    if (state.Beats[index] && !state.Beats[index - 1U]) {
       return false;
     }
-    const auto rawState =
-        static_cast<std::uint8_t>(state.Objectives[index].State);
+  }
+
+  for (std::size_t index = 0; index < definitions_.size(); ++index) {
+    const StoryObjectiveDefinition &definition = definitions_[index];
+    const StoryObjectiveState &objective = state.Objectives[index];
+    if (objective.Id != definition.Id) {
+      return false;
+    }
+    const auto rawState = static_cast<std::uint8_t>(objective.State);
     if (rawState > static_cast<std::uint8_t>(ObjectiveState::Completed)) {
+      return false;
+    }
+
+    const bool completed =
+        state.Beats[static_cast<std::size_t>(definition.CompletionBeat)];
+    const bool prerequisitesMet = std::all_of(
+        definition.Prerequisites.begin(), definition.Prerequisites.end(),
+        [&state](const FirstSliceStoryBeat beat) {
+          return state.Beats[static_cast<std::size_t>(beat)];
+        });
+    const ObjectiveState expected =
+        completed ? ObjectiveState::Completed
+                  : (prerequisitesMet ? ObjectiveState::Active
+                                      : ObjectiveState::Locked);
+    if (objective.State != expected) {
       return false;
     }
   }
