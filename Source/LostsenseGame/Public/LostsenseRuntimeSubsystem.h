@@ -113,6 +113,7 @@ public:
   TArray<FLostsensePresentationEvent> DrainPresentationEvents();
 
   void AdvancePlayerTime(float DeltaSeconds);
+  bool BeginPerfectGuardWindow();
   bool ActivatePlayerAbility(uint32 AbilityId);
   bool ActivatePlayerAbilityAgainst(
       uint32 AbilityId, Lostsense::Combat::Combatant &Target,
