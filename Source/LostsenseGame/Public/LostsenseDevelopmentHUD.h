@@ -13,5 +13,5 @@ public:
 
 private:
   void DrawMeter(const FString &Label, double Current, double Maximum, float X,
-                 float Y, float Width) const;
+                 float Y, float Width);
 };
