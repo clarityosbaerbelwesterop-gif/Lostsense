@@ -56,7 +56,8 @@ bool ALostsenseMechanismActor::CanInteract(
     return false;
   }
 
-  if (Kind != ELostsenseMechanismKind::BellCoreRewardLift) {
+  if (Kind != ELostsenseMechanismKind::BellCoreRewardLift &&
+      Kind != ELostsenseMechanismKind::NinthDescentRecord) {
     return true;
   }
 
@@ -65,7 +66,11 @@ bool ALostsenseMechanismActor::CanInteract(
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
           : nullptr;
-  return Story != nullptr && Story->HasBeat(ELostsenseStoryBeat::OdranDefeated) &&
+  if (Story == nullptr ||
+      !Story->HasBeat(ELostsenseStoryBeat::OdranDefeated)) {
+    return false;
+  }
+  return Kind == ELostsenseMechanismKind::NinthDescentRecord ||
          Story->HasBeat(ELostsenseStoryBeat::NinthDescentRecordRecovered);
 }
 
