@@ -35,6 +35,7 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
         Lostsense::Stats::CombatAttributes::AttackPower, AttackPower));
     static_cast<void>(Combatant.SetBaseAttribute(
         Lostsense::Stats::CombatAttributes::Armor, Armor));
+    static_cast<void>(Combatant.Heal(MaximumHealth));
   }
 };
 
