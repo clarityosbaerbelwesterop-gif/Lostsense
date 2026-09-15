@@ -4,9 +4,9 @@
 #include "Lostsense/Gameplay/Items/LootRuntime.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 
-#include "LostsenseRuntimeSubsystem.generated.h"
-
 #include <vector>
+
+#include "LostsenseRuntimeSubsystem.generated.h"
 
 namespace Lostsense::Combat {
 class Combatant;
