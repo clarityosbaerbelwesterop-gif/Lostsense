@@ -20,6 +20,8 @@ int main() {
   Require(story.IsValid(), "canonical first-slice story must validate");
   Require(story.Objective(80001U) == ObjectiveState::Locked,
           "opening objective waits for Returned awakening");
+  Require(!story.CompleteBeat(FirstSliceStoryBeat::OdranDefeated),
+          "late story beats cannot skip canonical prerequisites");
 
   Require(story.CompleteBeat(FirstSliceStoryBeat::ReturnedAwakened),
           "Returned awakening commits once");
@@ -27,6 +29,8 @@ int main() {
           "story beats are idempotent and cannot double-complete");
   Require(story.Objective(80001U) == ObjectiveState::Active,
           "Returned objective activates after awakening");
+  Require(!story.CompleteBeat(FirstSliceStoryBeat::MetHadrun),
+          "Hadrun cannot precede Mara in the canonical opening");
 
   Require(story.CompleteBeat(FirstSliceStoryBeat::MetMara),
           "Mara interaction advances story");
@@ -91,6 +95,14 @@ int main() {
           "future story schema is rejected transactionally");
   Require(restored.HasBeat(FirstSliceStoryBeat::BellgraveChanged),
           "failed restore does not mutate live story");
+
+  corrupt = checkpoint;
+  corrupt.Beats[static_cast<std::size_t>(FirstSliceStoryBeat::OdranDefeated)] =
+      true;
+  Require(!restored.RestoreState(corrupt),
+          "impossible skipped story state is rejected transactionally");
+  Require(restored.HasBeat(FirstSliceStoryBeat::BellgraveChanged),
+          "impossible restore leaves live story untouched");
 
   std::string malformed = payload + "TRAILING\n";
   Require(!FirstSliceStoryCodec::Deserialize(malformed, decoded),
