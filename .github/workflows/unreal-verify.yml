@@ -1,0 +1,50 @@
+name: Unreal 5.8 verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      engine_root:
+        description: Absolute path to the Unreal Engine 5.8 installation on the self-hosted runner
+        required: true
+        default: 'C:\Program Files\Epic Games\UE_5.8'
+      package:
+        description: Also run BuildCookRun and archive a Development package
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  unreal-58:
+    runs-on: [self-hosted, Windows, X64, unreal-5.8]
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact checkout
+        shell: pwsh
+        run: |
+          Write-Host "Commit: $(git rev-parse HEAD)"
+          git status --short
+          if (git status --porcelain) { throw 'Checkout is not clean.' }
+
+      - name: Build Game and Editor targets and run headless startup smoke
+        shell: pwsh
+        run: |
+          $arguments = @('-EngineRoot', '${{ inputs.engine_root }}')
+          if ('${{ inputs.package }}' -eq 'true') { $arguments += '-Package' }
+          & ./Scripts/Verify-Unreal.ps1 @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload packaged Development build
+        if: ${{ inputs.package }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lostsense-Win64-Development-${{ github.sha }}
+          path: Artifacts/Unreal/**
+          if-no-files-found: error
+          retention-days: 7

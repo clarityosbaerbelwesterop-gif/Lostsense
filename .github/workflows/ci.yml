@@ -59,6 +59,14 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: ctest --test-dir build-sanitize --output-on-failure
 
+  unreal-static:
+    name: Unreal layered static filters
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Unreal project, UHT shape, modules, boundaries and Pixel Streaming readiness
+        run: python3 Scripts/Verify-UnrealStatic.py
+
   format:
     name: clang-format
     runs-on: ubuntu-24.04

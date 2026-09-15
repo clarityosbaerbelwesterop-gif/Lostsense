@@ -152,6 +152,10 @@ AbilityActivationOutcome AbilityRuntime::Activate(const AbilityId id,
     outcome.Result = AbilityActivationResult::WrongClass;
     return outcome;
   }
+  if (owner_.Health().IsDead()) {
+    outcome.Result = AbilityActivationResult::OwnerDead;
+    return outcome;
+  }
   if (ownerEffects_.HasRestriction(EffectRestriction::AbilityActivation)) {
     outcome.Result = AbilityActivationResult::BlockedByEffect;
     return outcome;
