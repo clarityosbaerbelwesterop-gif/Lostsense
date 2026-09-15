@@ -3,8 +3,10 @@
 #include "LostsenseDevelopmentHUD.h"
 #include "LostsenseEnemyCharacter.h"
 #include "LostsenseKnightCharacter.h"
+#include "LostsenseMechanismActor.h"
 #include "LostsenseNpcActor.h"
 #include "LostsensePlayerController.h"
+#include "LostsenseStoryGateActor.h"
 
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
@@ -65,7 +67,8 @@ void SpawnNpc(UWorld &World, UStaticMesh *Cylinder,
 }
 
 void SpawnEnemy(UWorld &World, UStaticMesh *Cylinder, const FVector &Location,
-                const uint64 CombatantId, const bool bElite,
+                const uint64 CombatantId,
+                const ELostsenseEnemyArchetype Archetype,
                 const uint32 ItemLevel) {
   const FTransform Transform(FRotator::ZeroRotator, Location);
   ALostsenseEnemyCharacter *Enemy =
@@ -75,13 +78,45 @@ void SpawnEnemy(UWorld &World, UStaticMesh *Cylinder, const FVector &Location,
   if (Enemy == nullptr) {
     return;
   }
-  Enemy->ConfigureEnemy(CombatantId, bElite, ItemLevel);
+  Enemy->ConfigureEnemyArchetype(CombatantId, Archetype, ItemLevel);
   UGameplayStatics::FinishSpawningActor(Enemy, Transform);
   if (Cylinder != nullptr) {
+    const bool bLarge = Archetype == ELostsenseEnemyArchetype::ForemanKett ||
+                        Archetype == ELostsenseEnemyArchetype::HaulConstruct;
     AttachMarker(World, *Enemy, *Cylinder,
-                 bElite ? FVector(0.72F, 0.72F, 1.15F)
+                 bLarge ? FVector(0.72F, 0.72F, 1.15F)
                         : FVector(0.55F, 0.55F, 0.95F));
   }
+}
+
+void SpawnStoryGate(UWorld &World, const FVector &Location,
+                    const ELostsenseStoryBeat Beat,
+                    const ELostsenseStoryBeat RequiredBeat) {
+  const FTransform Transform(FRotator::ZeroRotator, Location);
+  ALostsenseStoryGateActor *Gate =
+      World.SpawnActorDeferred<ALostsenseStoryGateActor>(
+          ALostsenseStoryGateActor::StaticClass(), Transform, nullptr, nullptr,
+          ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+  if (Gate == nullptr) {
+    return;
+  }
+  Gate->Configure(Beat, RequiredBeat, true);
+  UGameplayStatics::FinishSpawningActor(Gate, Transform);
+}
+
+void SpawnMechanism(UWorld &World, const FVector &Location,
+                    const FVector &Scale, const ELostsenseMechanismKind Kind,
+                    const bool bInitiallyRaised = true) {
+  const FTransform Transform(FRotator::ZeroRotator, Location, Scale);
+  ALostsenseMechanismActor *Mechanism =
+      World.SpawnActorDeferred<ALostsenseMechanismActor>(
+          ALostsenseMechanismActor::StaticClass(), Transform, nullptr, nullptr,
+          ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+  if (Mechanism == nullptr) {
+    return;
+  }
+  Mechanism->Configure(Kind, bInitiallyRaised);
+  UGameplayStatics::FinishSpawningActor(Mechanism, Transform);
 }
 
 void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
@@ -93,8 +128,6 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(0.0F, 0.0F, -55.0F),
              FVector(22.0F, 18.0F, 1.0F));
 
-  // Stabilization belfry: a tall, open four-pier landmark over the Returned
-  // emergence point, with a visible mine throat beneath its rear edge.
   const FVector BelfryPiers[] = {
       FVector(-450.0F, -450.0F, 300.0F), FVector(-450.0F, 450.0F, 300.0F),
       FVector(450.0F, -450.0F, 300.0F), FVector(450.0F, 450.0F, 300.0F)};
@@ -106,7 +139,6 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(0.0F, 0.0F, 690.0F),
              FVector(0.7F, 5.5F, 0.45F));
 
-  // Mara's bellsmith, Hadrun's yard, Tamsin's salvage and Ninth Cage house.
   SpawnBlock(World, Cube, FVector(-1250.0F, -650.0F, 120.0F),
              FVector(3.0F, 2.4F, 1.8F));
   SpawnBlock(World, Cube, FVector(1150.0F, -700.0F, 60.0F),
@@ -118,8 +150,6 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(1250.0F, 700.0F, -240.0F),
              FVector(1.8F, 1.8F, 2.5F));
 
-  // Two offset residential lanes create a settlement silhouette rather than
-  // a single arena plane.
   for (int32 Index = 0; Index < 4; ++Index) {
     const float X = -1900.0F + static_cast<float>(Index) * 520.0F;
     SpawnBlock(World, Cube, FVector(X, 1500.0F, 95.0F),
@@ -128,7 +158,6 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
                FVector(1.7F, 1.4F, 1.5F));
   }
 
-  // Road toward Ravelwood climbs out of the settlement eastward.
   for (int32 Index = 0; Index < 6; ++Index) {
     SpawnBlock(World, Cube,
                FVector(2200.0F + static_cast<float>(Index) * 520.0F, 0.0F,
@@ -142,6 +171,11 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
            FVector(900.0F, -700.0F, 110.0F));
   SpawnNpc(World, Meshes.Cylinder, ELostsenseNpcIdentity::TamsinCoil,
            FVector(-950.0F, 700.0F, 110.0F));
+  SpawnEnemy(World, Meshes.Cylinder, FVector(1050.0F, -250.0F, 110.0F),
+             1000U, ELostsenseEnemyArchetype::CharterDeserter, 2U);
+  SpawnStoryGate(World, FVector(4950.0F, 0.0F, 180.0F),
+                 ELostsenseStoryBeat::EnteredRavelwood,
+                 ELostsenseStoryBeat::BellgraveDepartureAllowed);
 }
 
 void SpawnRavelwoodAndWeepingCut(UWorld &World, const FSliceMeshes &Meshes) {
@@ -150,8 +184,6 @@ void SpawnRavelwoodAndWeepingCut(UWorld &World, const FSliceMeshes &Meshes) {
   }
   UStaticMesh &Cube = *Meshes.Cube;
 
-  // Ravelwood edge: staggered ground, a readable fork and a raised optional
-  // root route. Tall narrow blocks stand in for root pressure, not final art.
   SpawnBlock(World, Cube, FVector(5700.0F, 0.0F, 90.0F),
              FVector(9.0F, 8.0F, 0.6F));
   SpawnBlock(World, Cube, FVector(6500.0F, 900.0F, 210.0F),
@@ -168,12 +200,10 @@ void SpawnRavelwoodAndWeepingCut(UWorld &World, const FSliceMeshes &Meshes) {
   }
 
   SpawnEnemy(World, Meshes.Cylinder, FVector(5600.0F, -450.0F, 180.0F), 1101U,
-             false, 3U);
+             ELostsenseEnemyArchetype::BellMaddenedCarrion, 3U);
   SpawnEnemy(World, Meshes.Cylinder, FVector(6300.0F, 420.0F, 210.0F), 1102U,
-             false, 3U);
+             ELostsenseEnemyArchetype::CharterDeserter, 3U);
 
-  // Weeping Cut descends in offset shelves; the high fork reconnects as a
-  // shortcut above the lower exit.
   for (int32 Index = 0; Index < 7; ++Index) {
     SpawnBlock(World, Cube,
                FVector(7600.0F + static_cast<float>(Index) * 420.0F,
@@ -184,7 +214,13 @@ void SpawnRavelwoodAndWeepingCut(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(8500.0F, 1000.0F, -120.0F),
              FVector(5.0F, 1.4F, 0.35F), FRotator(0.0F, 28.0F, 0.0F));
   SpawnEnemy(World, Meshes.Cylinder, FVector(8500.0F, 0.0F, -220.0F), 1201U,
-             false, 4U);
+             ELostsenseEnemyArchetype::EchoMiner, 4U);
+  SpawnMechanism(World, FVector(9050.0F, 180.0F, -560.0F),
+                 FVector(1.2F, 1.2F, 0.18F),
+                 ELostsenseMechanismKind::NinthDescentPlate);
+  SpawnStoryGate(World, FVector(10000.0F, 0.0F, -620.0F),
+                 ELostsenseStoryBeat::EnteredUpperVaur,
+                 ELostsenseStoryBeat::FoundNinthDescentPlate);
 }
 
 void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
@@ -193,8 +229,6 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   }
   UStaticMesh &Cube = *Meshes.Cube;
 
-  // Upper Vaur: broad vertical shaft with rail/catwalk tiers and visible
-  // support columns. Traversal repeatedly drops below the surface route.
   const float BaseX = 10800.0F;
   for (int32 Tier = 0; Tier < 4; ++Tier) {
     const float Z = -700.0F - static_cast<float>(Tier) * 420.0F;
@@ -213,13 +247,14 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   }
 
   SpawnEnemy(World, Meshes.Cylinder, FVector(10400.0F, -250.0F, -650.0F), 1301U,
-             false, 5U);
+             ELostsenseEnemyArchetype::EchoMiner, 5U);
   SpawnEnemy(World, Meshes.Cylinder, FVector(11100.0F, 350.0F, -1100.0F), 1302U,
-             false, 5U);
+             ELostsenseEnemyArchetype::HaulConstruct, 5U);
 
-  // Coinless Shaft macro sequence is authored linearly with a split/secret
-  // side crawl before the elite and boss chamber.
   const float ShaftX = 14500.0F;
+  SpawnStoryGate(World, FVector(ShaftX - 250.0F, 0.0F, -2100.0F),
+                 ELostsenseStoryBeat::EnteredCoinlessShaft,
+                 ELostsenseStoryBeat::EnteredUpperVaur);
   for (int32 Room = 0; Room < 7; ++Room) {
     const float X = ShaftX + static_cast<float>(Room) * 950.0F;
     const float Z = -2200.0F - static_cast<float>(Room) * 180.0F;
@@ -234,11 +269,19 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnBlock(World, Cube, FVector(ShaftX + 3600.0F, 1150.0F, -3000.0F),
              FVector(3.0F, 1.0F, 0.3F));
 
-  SpawnEnemy(World, Meshes.Cylinder, FVector(ShaftX + 3600.0F, 0.0F, -2700.0F),
-             1401U, true, 7U);
+  SpawnMechanism(World, FVector(ShaftX + 2550.0F, -650.0F, -2350.0F),
+                 FVector(1.1F, 1.1F, 3.0F),
+                 ELostsenseMechanismKind::Counterweight, true);
+  SpawnMechanism(World, FVector(ShaftX + 3050.0F, 650.0F, -2450.0F),
+                 FVector(1.1F, 1.1F, 3.0F),
+                 ELostsenseMechanismKind::Counterweight, false);
+  SpawnEnemy(World, Meshes.Cylinder,
+             FVector(ShaftX + 3300.0F, 300.0F, -2700.0F), 1402U,
+             ELostsenseEnemyArchetype::HaulConstruct, 7U);
+  SpawnEnemy(World, Meshes.Cylinder,
+             FVector(ShaftX + 3600.0F, 0.0F, -2700.0F), 1401U,
+             ELostsenseEnemyArchetype::ForemanKett, 7U);
 
-  // Odran arena: circular impression approximated by a broad chamber with
-  // four resonance plates and two suspended counterweight lines.
   const FVector ArenaCenter(ShaftX + 6650.0F, 0.0F, -3400.0F);
   SpawnBlock(World, Cube, ArenaCenter + FVector(0.0F, 0.0F, -60.0F),
              FVector(9.0F, 9.0F, 0.55F));
@@ -254,6 +297,21 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
              FVector(0.25F, 0.25F, 6.0F));
   SpawnBlock(World, Cube, ArenaCenter + FVector(-900.0F, 0.0F, 500.0F),
              FVector(0.25F, 0.25F, 6.0F));
+  SpawnMechanism(World, ArenaCenter + FVector(900.0F, 0.0F, 500.0F),
+                 FVector(0.9F, 0.9F, 3.0F),
+                 ELostsenseMechanismKind::Counterweight, true);
+  SpawnMechanism(World, ArenaCenter + FVector(-900.0F, 0.0F, 500.0F),
+                 FVector(0.9F, 0.9F, 3.0F),
+                 ELostsenseMechanismKind::Counterweight, true);
+  SpawnStoryGate(World, ArenaCenter + FVector(-1100.0F, 0.0F, 100.0F),
+                 ELostsenseStoryBeat::OdranEncounterStarted,
+                 ELostsenseStoryBeat::EnteredCoinlessShaft);
+  SpawnMechanism(World, ArenaCenter + FVector(300.0F, 420.0F, 90.0F),
+                 FVector(0.8F, 0.8F, 0.25F),
+                 ELostsenseMechanismKind::NinthDescentRecord);
+  SpawnMechanism(World, ArenaCenter + FVector(1350.0F, 0.0F, 40.0F),
+                 FVector(2.0F, 2.0F, 0.35F),
+                 ELostsenseMechanismKind::BellCoreRewardLift);
 
   const FTransform BossTransform(FRotator::ZeroRotator,
                                  ArenaCenter + FVector(0.0F, 0.0F, 120.0F));
