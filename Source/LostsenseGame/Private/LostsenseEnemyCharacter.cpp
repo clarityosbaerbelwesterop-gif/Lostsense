@@ -18,18 +18,22 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
   Lostsense::Combat::Combatant Combatant;
   Lostsense::Gameplay::EffectRuntime Effects;
 
-  FPortableEnemy(const uint64 Id, const bool bIsElite)
+  FPortableEnemy(const uint64 Id, const bool bIsElite, const bool bIsBoss)
       : Combatant{Lostsense::Combat::CombatantId{Id},
-                  bIsElite ? Lostsense::Combat::CombatantKind::Elite
-                           : Lostsense::Combat::CombatantKind::Enemy},
+                  bIsBoss ? Lostsense::Combat::CombatantKind::Boss
+                          : (bIsElite ? Lostsense::Combat::CombatantKind::Elite
+                                     : Lostsense::Combat::CombatantKind::Enemy)},
         Effects{Combatant, {}} {
+    const double MaximumHealth = bIsBoss ? 280.0 : (bIsElite ? 100.0 : 65.0);
+    const double AttackPower = bIsBoss ? 14.0 : (bIsElite ? 9.0 : 5.0);
+    const double Armor = bIsBoss ? 11.0 : (bIsElite ? 7.0 : 3.0);
+
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::MaxHealth,
-        bIsElite ? 100.0 : 65.0));
+        Lostsense::Stats::CombatAttributes::MaxHealth, MaximumHealth));
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::AttackPower, bIsElite ? 9.0 : 5.0));
+        Lostsense::Stats::CombatAttributes::AttackPower, AttackPower));
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::Armor, bIsElite ? 7.0 : 3.0));
+        Lostsense::Stats::CombatAttributes::Armor, Armor));
   }
 };
 
@@ -46,12 +50,23 @@ void ALostsenseEnemyCharacter::ConfigureEnemy(const uint64 InCombatantId,
                                               const uint32 InItemLevel) {
   PendingCombatantId = InCombatantId;
   bElite = bInElite;
+  bBoss = false;
+  ItemLevel = FMath::Max(1U, InItemLevel);
+}
+
+void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
+                                                  const uint32 InItemLevel) {
+  PendingCombatantId = InCombatantId;
+  bElite = false;
+  bBoss = true;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::BeginPlay() {
   Super::BeginPlay();
-  PortableEnemy = MakeUnique<FPortableEnemy>(PendingCombatantId, bElite);
+  PortableEnemy =
+      MakeUnique<FPortableEnemy>(PendingCombatantId, bElite, bBoss);
+  GetCharacterMovement()->MaxWalkSpeed = bBoss ? 225.0F : 260.0F;
 }
 
 void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
@@ -77,25 +92,18 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
 
   AttackCooldownRemaining =
       FMath::Max(0.0F, AttackCooldownRemaining - DeltaSeconds);
+  BossPulseCooldownRemaining =
+      FMath::Max(0.0F, BossPulseCooldownRemaining - DeltaSeconds);
+
+  if (bBoss && BossPhase == 1 && GetMaximumHealth() > 0.0 &&
+      GetCurrentHealth() / GetMaximumHealth() <= 0.65) {
+    BossPhase = 2;
+    BossPulseCooldownRemaining = 0.35F;
+    GetCharacterMovement()->MaxWalkSpeed = 285.0F;
+  }
+
   ACharacter *Player = UGameplayStatics::GetPlayerCharacter(this, 0);
   if (Player == nullptr) {
-    return;
-  }
-
-  const FVector Delta = Player->GetActorLocation() - GetActorLocation();
-  const double Distance = Delta.Size2D();
-  if (Distance > 1100.0) {
-    return;
-  }
-
-  if (Distance > 165.0) {
-    const FVector Direction = Delta.GetSafeNormal2D();
-    AddActorWorldOffset(Direction * 210.0F * DeltaSeconds, true);
-    SetActorRotation(Direction.Rotation());
-    return;
-  }
-
-  if (AttackCooldownRemaining > 0.0F) {
     return;
   }
 
@@ -108,14 +116,40 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
     return;
   }
 
+  const FVector Delta = Player->GetActorLocation() - GetActorLocation();
+  const double Distance = Delta.Size2D();
+  const double AggroRadius = bBoss ? 1550.0 : 1100.0;
+  if (Distance > AggroRadius) {
+    return;
+  }
+
+  if (bBoss && BossPhase >= 2 && TryResolveBossPulse(*Runtime, Distance)) {
+    return;
+  }
+
+  const double MeleeRange = bBoss ? 205.0 : 165.0;
+  if (Distance > MeleeRange) {
+    const FVector Direction = Delta.GetSafeNormal2D();
+    const float MoveSpeed = bBoss && BossPhase >= 2 ? 275.0F : 210.0F;
+    AddActorWorldOffset(Direction * MoveSpeed * DeltaSeconds, true);
+    SetActorRotation(Direction.Rotation());
+    return;
+  }
+
+  if (AttackCooldownRemaining > 0.0F) {
+    return;
+  }
+
   Lostsense::Combat::DamageSpec Damage;
   Damage.BaseDamage[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Physical)] = bElite ? 10.0 : 6.0;
+      Lostsense::Combat::DamageType::Physical)] =
+      bBoss ? (BossPhase >= 2 ? 15.0 : 12.0) : (bElite ? 10.0 : 6.0);
   Damage.AttackPowerCoefficients[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Physical)] = 0.75;
+      Lostsense::Combat::DamageType::Physical)] = bBoss ? 0.90 : 0.75;
   static_cast<void>(
       Runtime->ResolveEnemyBasicAttack(PortableEnemy->Combatant, Damage));
-  AttackCooldownRemaining = bElite ? 1.25F : 1.65F;
+  AttackCooldownRemaining =
+      bBoss ? (BossPhase >= 2 ? 0.95F : 1.20F) : (bElite ? 1.25F : 1.65F);
 }
 
 bool ALostsenseEnemyCharacter::ReceivePlayerAbility(
@@ -150,6 +184,42 @@ bool ALostsenseEnemyCharacter::IsDefeated() const {
   return PortableEnemy != nullptr && PortableEnemy->Combatant.Health().IsDead();
 }
 
+bool ALostsenseEnemyCharacter::IsBoss() const { return bBoss; }
+
+double ALostsenseEnemyCharacter::GetCurrentHealth() const {
+  return PortableEnemy != nullptr ? PortableEnemy->Combatant.Health().Current()
+                                  : 0.0;
+}
+
+double ALostsenseEnemyCharacter::GetMaximumHealth() const {
+  return PortableEnemy != nullptr ? PortableEnemy->Combatant.Health().Maximum()
+                                  : 0.0;
+}
+
+int32 ALostsenseEnemyCharacter::GetBossPhase() const {
+  return bBoss ? BossPhase : 0;
+}
+
+bool ALostsenseEnemyCharacter::TryResolveBossPulse(
+    ULostsenseRuntimeSubsystem &Runtime, const double DistanceToPlayer) {
+  if (!bBoss || BossPhase < 2 || BossPulseCooldownRemaining > 0.0F ||
+      DistanceToPlayer > 560.0) {
+    return false;
+  }
+
+  Lostsense::Combat::DamageSpec Pulse;
+  Pulse.BaseDamage[static_cast<std::size_t>(
+      Lostsense::Combat::DamageType::Arcane)] = 11.0;
+  Pulse.AttackPowerCoefficients[static_cast<std::size_t>(
+      Lostsense::Combat::DamageType::Arcane)] = 0.55;
+  Pulse.CanBlock = false;
+  static_cast<void>(
+      Runtime.ResolveEnemyBasicAttack(PortableEnemy->Combatant, Pulse));
+  BossPulseCooldownRemaining = 3.25F;
+  AttackCooldownRemaining = FMath::Max(AttackCooldownRemaining, 0.65F);
+  return true;
+}
+
 void ALostsenseEnemyCharacter::HandleDefeat(
     ULostsenseRuntimeSubsystem &Runtime) {
   if (bDefeatHandled || PortableEnemy == nullptr) {
@@ -157,11 +227,12 @@ void ALostsenseEnemyCharacter::HandleDefeat(
   }
   bDefeatHandled = true;
 
-  static_cast<void>(Runtime.GrantSkillPoints(1));
+  static_cast<void>(Runtime.GrantSkillPoints(bBoss ? 3 : 1));
 
   const uint32 Table =
-      bElite ? Lostsense::Gameplay::FirstSlice::VaurEliteLoot.Value
-             : Lostsense::Gameplay::FirstSlice::VaurEnemyLoot.Value;
+      bBoss ? Lostsense::Gameplay::FirstSlice::OdranBossLoot.Value
+            : (bElite ? Lostsense::Gameplay::FirstSlice::VaurEliteLoot.Value
+                      : Lostsense::Gameplay::FirstSlice::VaurEnemyLoot.Value);
   const TArray<Lostsense::Gameplay::GeneratedLootEntry> Drops =
       Runtime.GenerateLoot(Table, ItemLevel,
                            PortableEnemy->Combatant.Id().Value);
@@ -185,5 +256,5 @@ void ALostsenseEnemyCharacter::HandleDefeat(
 
   GetCharacterMovement()->DisableMovement();
   SetActorEnableCollision(false);
-  SetLifeSpan(4.0F);
+  SetLifeSpan(bBoss ? 8.0F : 4.0F);
 }
