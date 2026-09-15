@@ -4,6 +4,8 @@
 #include "GameFramework/HUD.h"
 #include "LostsenseDevelopmentHUD.generated.h"
 
+struct FLostsensePresentationEvent;
+
 UCLASS()
 class LOSTSENSEGAME_API ALostsenseDevelopmentHUD final : public AHUD {
   GENERATED_BODY()
@@ -14,4 +16,8 @@ public:
 private:
   void DrawMeter(const FString &Label, double Current, double Maximum, float X,
                  float Y, float Width);
+  void ConsumePresentationEvents();
+  FString FormatPresentationEvent(const FLostsensePresentationEvent &Event) const;
+
+  TArray<FString> RecentEvents;
 };
