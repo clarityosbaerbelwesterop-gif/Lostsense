@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+
 #include "LostsenseGameMode.generated.h"
 
 UCLASS()
@@ -14,5 +15,5 @@ public:
 
 private:
   void EnsurePlayableKnight();
-  void SpawnDevelopmentArena();
+  void SpawnVerticalSliceWorld();
 };
