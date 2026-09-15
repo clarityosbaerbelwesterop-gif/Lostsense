@@ -25,7 +25,8 @@ class LOSTSENSEGAME_API ALostsenseMechanismActor final
 public:
   ALostsenseMechanismActor();
 
-  void Configure(ELostsenseMechanismKind InKind, bool bInInitiallyRaised = true);
+  void Configure(ELostsenseMechanismKind InKind,
+                 bool bInInitiallyRaised = true);
 
   virtual FText GetInteractionPrompt() const override;
   virtual bool

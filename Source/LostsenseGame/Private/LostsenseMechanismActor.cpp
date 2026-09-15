@@ -22,8 +22,8 @@ ALostsenseMechanismActor::ALostsenseMechanismActor() {
   }
 }
 
-void ALostsenseMechanismActor::Configure(
-    const ELostsenseMechanismKind InKind, const bool bInInitiallyRaised) {
+void ALostsenseMechanismActor::Configure(const ELostsenseMechanismKind InKind,
+                                         const bool bInInitiallyRaised) {
   Kind = InKind;
   bRaised = bInInitiallyRaised;
   bConfigured = true;
@@ -36,8 +36,8 @@ FText ALostsenseMechanismActor::GetInteractionPrompt() const {
   case ELostsenseMechanismKind::NinthDescentPlate:
     return FText::FromString(TEXT("Examine Ninth Descent plate"));
   case ELostsenseMechanismKind::Counterweight:
-    return FText::FromString(
-        bRaised ? TEXT("Release counterweight") : TEXT("Restore counterweight"));
+    return FText::FromString(bRaised ? TEXT("Release counterweight")
+                                     : TEXT("Restore counterweight"));
   case ELostsenseMechanismKind::NinthDescentRecord:
     return FText::FromString(TEXT("Recover Ninth Descent record"));
   case ELostsenseMechanismKind::BellCoreRewardLift:
@@ -66,8 +66,7 @@ bool ALostsenseMechanismActor::CanInteract(
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
           : nullptr;
-  if (Story == nullptr ||
-      !Story->HasBeat(ELostsenseStoryBeat::OdranDefeated)) {
+  if (Story == nullptr || !Story->HasBeat(ELostsenseStoryBeat::OdranDefeated)) {
     return false;
   }
   return Kind == ELostsenseMechanismKind::NinthDescentRecord ||
@@ -97,7 +96,8 @@ bool ALostsenseMechanismActor::Interact(ALostsenseKnightCharacter &Interactor) {
   bool bAdvanced = false;
   switch (Kind) {
   case ELostsenseMechanismKind::NinthDescentPlate:
-    bAdvanced = Story->CompleteBeat(ELostsenseStoryBeat::FoundNinthDescentPlate);
+    bAdvanced =
+        Story->CompleteBeat(ELostsenseStoryBeat::FoundNinthDescentPlate);
     break;
   case ELostsenseMechanismKind::NinthDescentRecord:
     bAdvanced =

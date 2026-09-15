@@ -48,8 +48,7 @@ void ALostsenseStoryGateActor::OnGateOverlap(
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
           : nullptr;
-  if (Story == nullptr ||
-      (bRequiresBeat && !Story->HasBeat(RequiredBeat))) {
+  if (Story == nullptr || (bRequiresBeat && !Story->HasBeat(RequiredBeat))) {
     return;
   }
 

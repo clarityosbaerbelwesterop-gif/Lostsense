@@ -16,8 +16,7 @@ class LOSTSENSEGAME_API ALostsenseStoryGateActor final : public AActor {
 public:
   ALostsenseStoryGateActor();
 
-  void Configure(ELostsenseStoryBeat InBeat,
-                 ELostsenseStoryBeat InRequiredBeat,
+  void Configure(ELostsenseStoryBeat InBeat, ELostsenseStoryBeat InRequiredBeat,
                  bool bInRequiresBeat);
 
 protected:

@@ -171,8 +171,8 @@ void SpawnBellgrave(UWorld &World, const FSliceMeshes &Meshes) {
            FVector(900.0F, -700.0F, 110.0F));
   SpawnNpc(World, Meshes.Cylinder, ELostsenseNpcIdentity::TamsinCoil,
            FVector(-950.0F, 700.0F, 110.0F));
-  SpawnEnemy(World, Meshes.Cylinder, FVector(1050.0F, -250.0F, 110.0F),
-             1000U, ELostsenseEnemyArchetype::CharterDeserter, 2U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(1050.0F, -250.0F, 110.0F), 1000U,
+             ELostsenseEnemyArchetype::CharterDeserter, 2U);
   SpawnStoryGate(World, FVector(4950.0F, 0.0F, 180.0F),
                  ELostsenseStoryBeat::EnteredRavelwood,
                  ELostsenseStoryBeat::BellgraveDepartureAllowed);
@@ -278,9 +278,8 @@ void SpawnUpperVaurAndCoinless(UWorld &World, const FSliceMeshes &Meshes) {
   SpawnEnemy(World, Meshes.Cylinder,
              FVector(ShaftX + 3300.0F, 300.0F, -2700.0F), 1402U,
              ELostsenseEnemyArchetype::HaulConstruct, 7U);
-  SpawnEnemy(World, Meshes.Cylinder,
-             FVector(ShaftX + 3600.0F, 0.0F, -2700.0F), 1401U,
-             ELostsenseEnemyArchetype::ForemanKett, 7U);
+  SpawnEnemy(World, Meshes.Cylinder, FVector(ShaftX + 3600.0F, 0.0F, -2700.0F),
+             1401U, ELostsenseEnemyArchetype::ForemanKett, 7U);
 
   const FVector ArenaCenter(ShaftX + 6650.0F, 0.0F, -3400.0F);
   SpawnBlock(World, Cube, ArenaCenter + FVector(0.0F, 0.0F, -60.0F),
