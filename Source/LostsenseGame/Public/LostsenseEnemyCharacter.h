@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Lostsense/Gameplay/Abilities/AbilityRuntime.h"
 
 #include "LostsenseEnemyCharacter.generated.h"
 
@@ -46,6 +47,9 @@ public:
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,
                                 int32 SlotIndex);
+  Lostsense::Gameplay::AbilityTarget BuildAbilityTarget();
+  void FinalizePlayerAbility(ULostsenseRuntimeSubsystem &Runtime);
+  uint64 GetCombatantId() const;
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Enemy")
   bool IsDefeated() const;
