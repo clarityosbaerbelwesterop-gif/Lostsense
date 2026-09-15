@@ -1,0 +1,279 @@
+name: PR9 AoE adapter
+
+"on":
+  push:
+    branches: [work/vertical-slice-world-production]
+
+permissions:
+  contents: write
+
+jobs:
+  wire-and-verify:
+    if: ${{ !contains(github.event.head_commit.message, '[pr9-aoe-adapter]') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/vertical-slice-world-production
+          fetch-depth: 0
+      - name: Wire event and Unreal multi-target adapters
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          p = Path('Source/Lostsense/Gameplay/Events/GameplayEvents.cpp')
+          s = p.read_text()
+          anchor = 'SkillOperationResult GameplayEventAuthority::AllocateSkill('
+          method = dedent('''
+          MultiTargetAbilityActivationOutcome GameplayEventAuthority::ActivateAbilityMany(
+              AbilityRuntime &runtime, const AbilityId ability,
+              const std::vector<AbilityTarget> &targets,
+              const Combat::CombatantId actor, GameplayEventStream &events) {
+            MultiTargetAbilityActivationOutcome outcome =
+                runtime.ActivateMany(ability, targets);
+            if (outcome.Primary.Result != AbilityActivationResult::Success) {
+              return outcome;
+            }
+
+            GameplayEvent activation;
+            activation.Type = GameplayEventType::AbilityActivated;
+            activation.Source = actor;
+            activation.Target = targets.empty() || targets.front().Combatant == nullptr
+                                    ? Combat::CombatantId{}
+                                    : targets.front().Combatant->Id();
+            activation.Ability = ability;
+            PublishIgnoringBackpressure(events, activation);
+
+            const auto publishDamage = [&](const AbilityActivationOutcome &resolved,
+                                           const AbilityTarget &target) {
+              if (!resolved.DamageResolved || target.Combatant == nullptr ||
+                  !resolved.Damage.AppliedToHealth.WasValid ||
+                  resolved.Damage.AppliedToHealth.Applied <= 0.0) {
+                return;
+              }
+              GameplayEvent damage;
+              damage.Type = GameplayEventType::DamageApplied;
+              damage.Source = actor;
+              damage.Target = target.Combatant->Id();
+              damage.Ability = ability;
+              damage.Value = resolved.Damage.AppliedToHealth.Applied;
+              PublishIgnoringBackpressure(events, damage);
+              if (resolved.Damage.AppliedToHealth.BecameDead) {
+                GameplayEvent death;
+                death.Type = GameplayEventType::CombatantDied;
+                death.Source = actor;
+                death.Target = target.Combatant->Id();
+                death.Ability = ability;
+                PublishIgnoringBackpressure(events, death);
+              }
+            };
+
+            publishDamage(outcome.Primary, targets.front());
+            for (std::size_t index = 0U; index < outcome.AdditionalTargets.size();
+                 ++index) {
+              publishDamage(outcome.AdditionalTargets[index], targets[index + 1U]);
+            }
+            return outcome;
+          }
+
+          ''')
+          if anchor not in s or 'GameplayEventAuthority::ActivateAbilityMany' in s:
+              raise SystemExit('event authority insertion anchor invalid')
+          p.write_text(s.replace(anchor, method + anchor))
+
+          p = Path('Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp')
+          s = p.read_text()
+          anchor = 'bool ULostsenseRuntimeSubsystem::ResolveEnemyBasicAttack('
+          method = dedent('''
+          bool ULostsenseRuntimeSubsystem::ActivatePlayerLoadoutSlotAgainstMany(
+              const int32 SlotIndex,
+              const std::vector<Lostsense::Gameplay::AbilityTarget> &Targets) {
+            using namespace Lostsense::Gameplay;
+            if (!PortableRuntime.IsValid() || Targets.empty() || SlotIndex < 0 ||
+                SlotIndex >= static_cast<int32>(AbilityLoadoutSlot::Count)) {
+              return false;
+            }
+            const AbilityLoadoutSlot Slot = static_cast<AbilityLoadoutSlot>(SlotIndex);
+            const AbilityId Ability = PortableRuntime->Loadout.AbilityAt(Slot);
+            const AbilityDefinition *Definition =
+                PortableRuntime->Abilities.FindDefinition(Ability);
+            if (!Ability.IsValid() || Definition == nullptr ||
+                (Definition->TargetRule != AbilityTargetRule::Hostile &&
+                 Definition->TargetRule != AbilityTargetRule::Friendly)) {
+              return false;
+            }
+            const MultiTargetAbilityActivationOutcome Outcome =
+                GameplayEventAuthority::ActivateAbilityMany(
+                    PortableRuntime->Abilities, Ability, Targets,
+                    PortableRuntime->Player.Id(), PortableRuntime->Events);
+            return Outcome.Primary.Result == AbilityActivationResult::Success;
+          }
+
+          int32 ULostsenseRuntimeSubsystem::GetLoadoutSlotMaximumTargets(
+              const int32 SlotIndex) const {
+            using namespace Lostsense::Gameplay;
+            if (!PortableRuntime.IsValid() || SlotIndex < 0 ||
+                SlotIndex >= static_cast<int32>(AbilityLoadoutSlot::Count)) {
+              return 0;
+            }
+            const AbilityId Ability = PortableRuntime->Loadout.AbilityAt(
+                static_cast<AbilityLoadoutSlot>(SlotIndex));
+            const AbilityDefinition *Definition =
+                PortableRuntime->Abilities.FindDefinition(Ability);
+            return Definition == nullptr
+                       ? 0
+                       : static_cast<int32>(Definition->MaximumTargets);
+          }
+
+          ''')
+          if anchor not in s or 'ActivatePlayerLoadoutSlotAgainstMany' in s:
+              raise SystemExit('runtime subsystem insertion anchor invalid')
+          p.write_text(s.replace(anchor, method + anchor))
+
+          p = Path('Source/LostsenseGame/Private/LostsenseEnemyCharacter.cpp')
+          s = p.read_text()
+          anchor = 'bool ALostsenseEnemyCharacter::IsDefeated() const {'
+          method = dedent('''
+          Lostsense::Gameplay::AbilityTarget
+          ALostsenseEnemyCharacter::BuildAbilityTarget() {
+            Lostsense::Gameplay::AbilityTarget Target;
+            if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+              return Target;
+            }
+            Target.Combatant = &PortableEnemy->Combatant;
+            Target.Effects = &PortableEnemy->Effects;
+            Target.Relation = Lostsense::Gameplay::TargetRelation::Hostile;
+            return Target;
+          }
+
+          void ALostsenseEnemyCharacter::FinalizePlayerAbility(
+              ULostsenseRuntimeSubsystem &Runtime) {
+            if (PortableEnemy != nullptr && PortableEnemy->Combatant.Health().IsDead()) {
+              HandleDefeat(Runtime);
+            }
+          }
+
+          uint64 ALostsenseEnemyCharacter::GetCombatantId() const {
+            return PortableEnemy != nullptr ? PortableEnemy->Combatant.Id().Value
+                                            : PendingCombatantId;
+          }
+
+          ''')
+          if anchor not in s or 'BuildAbilityTarget()' in s:
+              raise SystemExit('enemy target adapter insertion anchor invalid')
+          p.write_text(s.replace(anchor, method + anchor))
+
+          p = Path('Source/LostsenseGame/Private/LostsenseKnightCharacter.cpp')
+          s = p.read_text()
+          if '#include <algorithm>' not in s:
+              s = s.replace('#include "Lostsense/Gameplay/Content/FirstSliceContent.h"', '#include "Lostsense/Gameplay/Content/FirstSliceContent.h"\n\n#include <algorithm>\n#include <vector>')
+          old = dedent('''
+          void ALostsenseKnightCharacter::ActivateSlot3(const FInputActionValue &Value) {
+            if (Value.Get<bool>()) {
+              ActivateLoadoutSlotAgainstNearestEnemy(
+                  static_cast<int32>(Lostsense::Gameplay::AbilityLoadoutSlot::Active3));
+            }
+          }
+          ''').strip()
+          new = dedent('''
+          void ALostsenseKnightCharacter::ActivateSlot3(const FInputActionValue &Value) {
+            if (!Value.Get<bool>()) {
+              return;
+            }
+            UGameInstance *GameInstance = GetGameInstance();
+            ULostsenseRuntimeSubsystem *Runtime =
+                GameInstance != nullptr
+                    ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
+                    : nullptr;
+            UWorld *World = GetWorld();
+            const int32 SlotIndex = static_cast<int32>(
+                Lostsense::Gameplay::AbilityLoadoutSlot::Active3);
+            if (Runtime == nullptr || World == nullptr) {
+              return;
+            }
+            const int32 MaximumTargets = Runtime->GetLoadoutSlotMaximumTargets(SlotIndex);
+            if (MaximumTargets <= 1) {
+              ActivateLoadoutSlotAgainstNearestEnemy(SlotIndex);
+              return;
+            }
+
+            struct FCandidate final {
+              ALostsenseEnemyCharacter *Enemy = nullptr;
+              double DistanceSquared = 0.0;
+              uint64 CombatantId = 0U;
+            };
+            std::vector<FCandidate> Candidates;
+            const FVector Origin = GetActorLocation();
+            const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+            constexpr double SweepRange = 430.0;
+            constexpr double MinimumForwardDot = 0.25;
+            for (TActorIterator<ALostsenseEnemyCharacter> It(World); It; ++It) {
+              ALostsenseEnemyCharacter *Enemy = *It;
+              if (Enemy == nullptr || Enemy->IsDefeated()) {
+                continue;
+              }
+              const FVector Delta = Enemy->GetActorLocation() - Origin;
+              const double DistanceSquared = Delta.SizeSquared2D();
+              if (DistanceSquared > SweepRange * SweepRange ||
+                  FVector::DotProduct(Forward, Delta.GetSafeNormal2D()) <
+                      MinimumForwardDot) {
+                continue;
+              }
+              Candidates.push_back(
+                  {Enemy, DistanceSquared, Enemy->GetCombatantId()});
+            }
+            std::sort(Candidates.begin(), Candidates.end(),
+                      [](const FCandidate &Left, const FCandidate &Right) {
+                        if (Left.DistanceSquared != Right.DistanceSquared) {
+                          return Left.DistanceSquared < Right.DistanceSquared;
+                        }
+                        return Left.CombatantId < Right.CombatantId;
+                      });
+            if (Candidates.empty()) {
+              return;
+            }
+
+            const std::size_t Count = std::min(
+                Candidates.size(), static_cast<std::size_t>(MaximumTargets));
+            std::vector<Lostsense::Gameplay::AbilityTarget> Targets;
+            Targets.reserve(Count);
+            for (std::size_t Index = 0U; Index < Count; ++Index) {
+              Targets.push_back(Candidates[Index].Enemy->BuildAbilityTarget());
+            }
+            if (!Runtime->ActivatePlayerLoadoutSlotAgainstMany(SlotIndex, Targets)) {
+              return;
+            }
+            for (std::size_t Index = 0U; Index < Count; ++Index) {
+              Candidates[Index].Enemy->FinalizePlayerAbility(*Runtime);
+            }
+          }
+          ''').strip()
+          if old not in s:
+              raise SystemExit('Knight Active3 implementation anchor missing')
+          p.write_text(s.replace(old, new))
+          PY
+      - name: Format and static verify
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+          clang-format --dry-run --Werror "${files[@]}"
+          python3 Scripts/Verify-UnrealStatic.py
+          git diff --check
+      - name: Portable compiler and regression gate
+        env:
+          CXX: g++
+        run: |
+          cmake -S . -B build-aoe -G Ninja -DCMAKE_BUILD_TYPE=Release -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
+          cmake --build build-aoe --parallel
+          ctest --test-dir build-aoe --output-on-failure
+      - name: Commit clean AoE adapter
+        run: |
+          rm -rf build-aoe
+          git rm .github/workflows/pr9-aoe-adapter.yml
+          git add Source Tests Scripts
+          git diff --cached --check
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Wire March Sweep multi-target acquisition [pr9-aoe-adapter]"
+          git push origin HEAD:work/vertical-slice-world-production
