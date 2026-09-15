@@ -336,6 +336,30 @@ bool ALostsenseEnemyCharacter::ReceivePlayerLoadoutSlot(
   return Activated;
 }
 
+Lostsense::Gameplay::AbilityTarget
+ALostsenseEnemyCharacter::BuildAbilityTarget() {
+  Lostsense::Gameplay::AbilityTarget Target;
+  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+    return Target;
+  }
+  Target.Combatant = &PortableEnemy->Combatant;
+  Target.Effects = &PortableEnemy->Effects;
+  Target.Relation = Lostsense::Gameplay::TargetRelation::Hostile;
+  return Target;
+}
+
+void ALostsenseEnemyCharacter::FinalizePlayerAbility(
+    ULostsenseRuntimeSubsystem &Runtime) {
+  if (PortableEnemy != nullptr && PortableEnemy->Combatant.Health().IsDead()) {
+    HandleDefeat(Runtime);
+  }
+}
+
+uint64 ALostsenseEnemyCharacter::GetCombatantId() const {
+  return PortableEnemy != nullptr ? PortableEnemy->Combatant.Id().Value
+                                  : PendingCombatantId;
+}
+
 bool ALostsenseEnemyCharacter::IsDefeated() const {
   return PortableEnemy != nullptr && PortableEnemy->Combatant.Health().IsDead();
 }

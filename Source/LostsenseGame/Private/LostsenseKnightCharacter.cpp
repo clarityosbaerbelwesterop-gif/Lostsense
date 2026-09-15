@@ -19,6 +19,9 @@
 
 #include "Lostsense/Gameplay/Content/FirstSliceContent.h"
 
+#include <algorithm>
+#include <vector>
+
 namespace {
 UInputAction *CreateDigitalAction(AActor &Owner, const TCHAR *Name) {
   UInputAction *Action = Owner.CreateDefaultSubobject<UInputAction>(Name);
@@ -284,9 +287,73 @@ void ALostsenseKnightCharacter::ActivateSlot2(const FInputActionValue &Value) {
 }
 
 void ALostsenseKnightCharacter::ActivateSlot3(const FInputActionValue &Value) {
-  if (Value.Get<bool>()) {
-    ActivateLoadoutSlotAgainstNearestEnemy(
-        static_cast<int32>(Lostsense::Gameplay::AbilityLoadoutSlot::Active3));
+  if (!Value.Get<bool>()) {
+    return;
+  }
+  UGameInstance *GameInstance = GetGameInstance();
+  ULostsenseRuntimeSubsystem *Runtime =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
+          : nullptr;
+  UWorld *World = GetWorld();
+  const int32 SlotIndex =
+      static_cast<int32>(Lostsense::Gameplay::AbilityLoadoutSlot::Active3);
+  if (Runtime == nullptr || World == nullptr) {
+    return;
+  }
+  const int32 MaximumTargets = Runtime->GetLoadoutSlotMaximumTargets(SlotIndex);
+  if (MaximumTargets <= 1) {
+    ActivateLoadoutSlotAgainstNearestEnemy(SlotIndex);
+    return;
+  }
+
+  struct FCandidate final {
+    ALostsenseEnemyCharacter *Enemy = nullptr;
+    double DistanceSquared = 0.0;
+    uint64 CombatantId = 0U;
+  };
+  std::vector<FCandidate> Candidates;
+  const FVector Origin = GetActorLocation();
+  const FVector Forward = GetActorForwardVector().GetSafeNormal2D();
+  constexpr double SweepRange = 430.0;
+  constexpr double MinimumForwardDot = 0.25;
+  for (TActorIterator<ALostsenseEnemyCharacter> It(World); It; ++It) {
+    ALostsenseEnemyCharacter *Enemy = *It;
+    if (Enemy == nullptr || Enemy->IsDefeated()) {
+      continue;
+    }
+    const FVector Delta = Enemy->GetActorLocation() - Origin;
+    const double DistanceSquared = Delta.SizeSquared2D();
+    if (DistanceSquared > SweepRange * SweepRange ||
+        FVector::DotProduct(Forward, Delta.GetSafeNormal2D()) <
+            MinimumForwardDot) {
+      continue;
+    }
+    Candidates.push_back({Enemy, DistanceSquared, Enemy->GetCombatantId()});
+  }
+  std::sort(Candidates.begin(), Candidates.end(),
+            [](const FCandidate &Left, const FCandidate &Right) {
+              if (Left.DistanceSquared != Right.DistanceSquared) {
+                return Left.DistanceSquared < Right.DistanceSquared;
+              }
+              return Left.CombatantId < Right.CombatantId;
+            });
+  if (Candidates.empty()) {
+    return;
+  }
+
+  const std::size_t Count =
+      std::min(Candidates.size(), static_cast<std::size_t>(MaximumTargets));
+  std::vector<Lostsense::Gameplay::AbilityTarget> Targets;
+  Targets.reserve(Count);
+  for (std::size_t Index = 0U; Index < Count; ++Index) {
+    Targets.push_back(Candidates[Index].Enemy->BuildAbilityTarget());
+  }
+  if (!Runtime->ActivatePlayerLoadoutSlotAgainstMany(SlotIndex, Targets)) {
+    return;
+  }
+  for (std::size_t Index = 0U; Index < Count; ++Index) {
+    Candidates[Index].Enemy->FinalizePlayerAbility(*Runtime);
   }
 }
 

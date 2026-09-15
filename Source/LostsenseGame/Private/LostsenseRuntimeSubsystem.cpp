@@ -388,6 +388,45 @@ bool ULostsenseRuntimeSubsystem::ActivatePlayerLoadoutSlot(
   return IsActivationSuccess(Outcome);
 }
 
+bool ULostsenseRuntimeSubsystem::ActivatePlayerLoadoutSlotAgainstMany(
+    const int32 SlotIndex,
+    const std::vector<Lostsense::Gameplay::AbilityTarget> &Targets) {
+  using namespace Lostsense::Gameplay;
+  if (!PortableRuntime.IsValid() || Targets.empty() || SlotIndex < 0 ||
+      SlotIndex >= static_cast<int32>(AbilityLoadoutSlot::Count)) {
+    return false;
+  }
+  const AbilityLoadoutSlot Slot = static_cast<AbilityLoadoutSlot>(SlotIndex);
+  const AbilityId Ability = PortableRuntime->Loadout.AbilityAt(Slot);
+  const AbilityDefinition *Definition =
+      PortableRuntime->Abilities.FindDefinition(Ability);
+  if (!Ability.IsValid() || Definition == nullptr ||
+      (Definition->TargetRule != AbilityTargetRule::Hostile &&
+       Definition->TargetRule != AbilityTargetRule::Friendly)) {
+    return false;
+  }
+  const MultiTargetAbilityActivationOutcome Outcome =
+      GameplayEventAuthority::ActivateAbilityMany(
+          PortableRuntime->Abilities, Ability, Targets,
+          PortableRuntime->Player.Id(), PortableRuntime->Events);
+  return Outcome.Primary.Result == AbilityActivationResult::Success;
+}
+
+int32 ULostsenseRuntimeSubsystem::GetLoadoutSlotMaximumTargets(
+    const int32 SlotIndex) const {
+  using namespace Lostsense::Gameplay;
+  if (!PortableRuntime.IsValid() || SlotIndex < 0 ||
+      SlotIndex >= static_cast<int32>(AbilityLoadoutSlot::Count)) {
+    return 0;
+  }
+  const AbilityId Ability = PortableRuntime->Loadout.AbilityAt(
+      static_cast<AbilityLoadoutSlot>(SlotIndex));
+  const AbilityDefinition *Definition =
+      PortableRuntime->Abilities.FindDefinition(Ability);
+  return Definition == nullptr ? 0
+                               : static_cast<int32>(Definition->MaximumTargets);
+}
+
 bool ULostsenseRuntimeSubsystem::ResolveEnemyBasicAttack(
     Lostsense::Combat::Combatant &Enemy,
     const Lostsense::Combat::DamageSpec &Damage) {

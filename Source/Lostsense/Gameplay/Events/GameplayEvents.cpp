@@ -195,6 +195,57 @@ AbilityActivationOutcome GameplayEventAuthority::ActivateAbility(
   return outcome;
 }
 
+MultiTargetAbilityActivationOutcome GameplayEventAuthority::ActivateAbilityMany(
+    AbilityRuntime &runtime, const AbilityId ability,
+    const std::vector<AbilityTarget> &targets, const Combat::CombatantId actor,
+    GameplayEventStream &events) {
+  MultiTargetAbilityActivationOutcome outcome =
+      runtime.ActivateMany(ability, targets);
+  if (outcome.Primary.Result != AbilityActivationResult::Success) {
+    return outcome;
+  }
+
+  GameplayEvent activation;
+  activation.Type = GameplayEventType::AbilityActivated;
+  activation.Source = actor;
+  activation.Target = targets.empty() || targets.front().Combatant == nullptr
+                          ? Combat::CombatantId{}
+                          : targets.front().Combatant->Id();
+  activation.Ability = ability;
+  PublishIgnoringBackpressure(events, activation);
+
+  const auto publishDamage = [&](const AbilityActivationOutcome &resolved,
+                                 const AbilityTarget &target) {
+    if (!resolved.DamageResolved || target.Combatant == nullptr ||
+        !resolved.Damage.AppliedToHealth.WasValid ||
+        resolved.Damage.AppliedToHealth.Applied <= 0.0) {
+      return;
+    }
+    GameplayEvent damage;
+    damage.Type = GameplayEventType::DamageApplied;
+    damage.Source = actor;
+    damage.Target = target.Combatant->Id();
+    damage.Ability = ability;
+    damage.Value = resolved.Damage.AppliedToHealth.Applied;
+    PublishIgnoringBackpressure(events, damage);
+    if (resolved.Damage.AppliedToHealth.BecameDead) {
+      GameplayEvent death;
+      death.Type = GameplayEventType::CombatantDied;
+      death.Source = actor;
+      death.Target = target.Combatant->Id();
+      death.Ability = ability;
+      PublishIgnoringBackpressure(events, death);
+    }
+  };
+
+  publishDamage(outcome.Primary, targets.front());
+  for (std::size_t index = 0U; index < outcome.AdditionalTargets.size();
+       ++index) {
+    publishDamage(outcome.AdditionalTargets[index], targets[index + 1U]);
+  }
+  return outcome;
+}
+
 SkillOperationResult GameplayEventAuthority::AllocateSkill(
     SkillTreeRuntime &runtime, const SkillNodeId node,
     const Combat::CombatantId actor, GameplayEventStream &events) {
