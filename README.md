@@ -1,62 +1,69 @@
 # LOSTSENSE
 
 LOSTSENSE is an original, data-driven action RPG in active development. The
-current repository contains its engine-independent C++ gameplay core; it is not
-yet an Unreal Engine project or a playable game build.
+repository now contains both its engine-independent C++ gameplay authority and
+an Unreal Engine 5.8 source-level game adapter. The Unreal source has not yet
+been compiled or launched on a genuine UE 5.8 host, so the repository does not
+claim a runtime-verified, packaged or stream-verified game build yet.
 
-## Current runtime foundation
+## Current gameplay authority
 
-The portable C++20 layer currently provides:
+The portable C++20 layer provides deterministic multi-type combat, attributes,
+health/resources, gameplay effects, abilities, cooldowns/charges, skill graphs,
+ability loadouts, item/rarity/affix definitions, inventory, equipment,
+deterministic loot, typed committed gameplay events and versioned transactional
+character persistence.
 
-- deterministic multi-type damage with armor, resistances, penetration,
-  critical hits, blocking and per-type damage bonuses;
-- a definition-driven attribute set with stable numeric IDs, bounded base
-  values, deterministic additive/multiplicative modifiers and source-based
-  removal;
-- health and resource pools with explicit overkill, overheal, death, revive,
-  underflow and overflow behavior;
-- a reusable combatant model connecting attributes, power scaling, damage,
-  health and resources for players, enemies, elites and bosses;
-- a portable PCG random stream with stable cross-platform output and
-  snapshot/restore support;
-- deterministic gameplay effects with explicit stacking, timed DOT/HOT,
-  status-owned attribute modifiers, immunity, cleanse/dispel, restrictions and
-  transactional state restore; and
-- a data-driven ability runtime with ownership, prerequisites, class and target
-  validation, resource costs, cooldowns/groups, charges/recharge, direct combat
-  resolution, effect application and transactional activation rollback;
-- a validated graph-based skill/build runtime with deterministic allocation and
-  refund, class/exclusive rules, skill-owned AttributeSet modifiers, ability
-  unlock integration and stable mutation/tag extension hooks; and
-- a portable ability loadout with authored slot compatibility, duplicate policy
-  and transactional capture/restore across primary, secondary, four active,
-  dodge, class-mechanic and ultimate slots; and
-- validated item, rarity and affix definitions with persistent rolled item
-  instances, transactional inventory/equipment ownership, exact equipment-owned
-  AttributeSet modifiers, socket/unique hooks and deterministic loot generation
-  driven only by the existing PCG random stream;
-- a bounded typed gameplay event stream with monotonic sequencing, checkpoints,
-  rollback and commit-only adapters around existing gameplay authorities; and
-- versioned aggregate character persistence that composes the existing runtime
-  snapshots, validates cross-system ownership/modifier invariants, restores
-  transactionally, encodes doubles exactly and migrates supported V1 saves to
-  the current V2 schema without raw-memory serialization.
+PR #9 extends that authority with:
 
-Authoritative gameplay randomness is never hidden inside the damage math.
-Callers can provide rolls directly or use `Core::DeterministicRandom`; the
-combatant RNG overload consumes exactly two samples per attack for stable
-stream advancement. Timed gameplay systems advance through explicit simulation
-time rather than wall-clock state.
+- a typed first-slice Story Runtime covering Returned awakening through changed
+  Bellgrave, prerequisite-safe objective progression and bounded deterministic
+  story serialization/restore;
+- atomic multi-target ability semantics with one resource/cooldown commit,
+  duplicate/dead-target rejection and full target/RNG rollback on late failure;
+- March Sweep authored for up to eight targets rather than the old single-target
+  development contract; and
+- a bounded Perfect Guard effect used by the Unreal input adapter while portable
+  combat remains responsible for the actual block result and Resolve reward.
+
+Authoritative gameplay randomness is never hidden inside presentation code.
+Callers can provide rolls directly or use `Core::DeterministicRandom`; timed
+systems advance through explicit simulation time rather than wall-clock state.
+
+## Unreal vertical-slice source
+
+The Unreal Engine 5.8 adapter now source-implements the first production route:
+
+Bellgrave → Ravelwood Edge → Weeping Cut → Upper Vaur Goldworks → Coinless
+Shaft → Odran → changed Bellgrave.
+
+The current source-driven production graybox includes Bellgrave's stabilization
+belfry, Mara Venn's bellsmith, Hadrun Pike's guard yard, Tamsin Coil's salvage
+stall, Ninth Cage lift house, residential lanes and Ravelwood road; a forked
+Ravelwood edge; descending Weeping Cut; vertically tiered Upper Vaur; authored
+Coinless Shaft room progression; and Odran's counterweight chamber.
+
+The slice also contains a reusable interaction contract, Mara/Hadrun/Tamsin NPC
+actors, route story gates, Ninth Descent discoveries, interactive hanging
+counterweights, reward lift logic, explicit-interaction world loot, distinct
+Bell-Maddened Carrion / Charter Deserter / Echo Miner / Haul Construct / Foreman
+Kett archetype tuning, readable AI windup/recovery states, one-shot Odran phase
+transition protection, March Sweep arc acquisition and a first objective-aware
+HUD pass. Graybox geometry and primitive markers are implementation scaffolding,
+not final art.
 
 ## Build and test
 
+Portable verification:
+
 ```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+  -DLOSTSENSE_WARNINGS_AS_ERRORS=ON
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-Enable strict warnings and runtime memory/undefined-behavior checks with:
+Sanitizer verification:
 
 ```bash
 cmake -S . -B build-sanitize \
@@ -67,39 +74,35 @@ cmake --build build-sanitize --parallel
 ctest --test-dir build-sanitize --output-on-failure
 ```
 
-When clang-format is installed, CMake also exposes:
-
-```bash
-cmake --build build --target format-check
-```
-
-GitHub Actions verifies Release builds with GCC and Clang, all correctness
-tests, ASan/UBSan and formatting. No engine or paid service is required for the
-portable core.
+GitHub Actions verifies GCC Release, Clang Release, ASan/UBSan, clang-format and
+layered Unreal source checks. The Unreal filters validate the project descriptor,
+Game/Editor target shape, UHT reflected-header shape, repository includes,
+one-way authority boundaries, production GameMode wiring and Pixel Streaming 2
+readiness. These checks are deliberately not presented as a substitute for UHT,
+UBT, PIE or packaging.
 
 ## Architecture boundary
 
 - `Lostsense::Core` owns portable deterministic utilities.
 - `Lostsense::Stats` owns extensible definitions, base values and modifiers.
 - `Lostsense::Combat` owns damage rules, vital pools and combat resolution.
-- `Lostsense::Gameplay` owns portable effects, abilities, skill/build graphs,
-  loadouts, item/inventory/equipment state, loot, typed committed gameplay
-  events and versioned aggregate persistence while consuming the existing
-  combat, stats and deterministic RNG authorities.
-- Future Unreal modules will adapt these systems to actors, components, input,
-  replication, rendering and assets without moving authoritative rules into
-  engine-only code.
+- `Lostsense::Gameplay` owns effects, abilities, story state, progression,
+  loadouts, items/inventory/equipment, loot, committed gameplay events and
+  persistence.
+- `LostsenseGame` adapts those authorities to Unreal actors, input, interaction,
+  encounter orchestration and presentation. It must not create parallel combat,
+  item ownership, loot RNG, skill ownership or story truth.
 
-The next milestone is the real Unreal integration foundation: verify the actual
-engine/toolchain available, create the in-repository Unreal project and bridge
-input/presentation to this portable authority without duplicating combat, loot,
-progression or persistence rules. Unreal functionality is not claimed until it
-is actually compiled and, where tooling permits, launched.
+## Game canon and Unreal validation boundary
 
-## Game canon and Unreal transition
+Binding game/story/world/content authority lives under `Design/`. Start with
+`Design/LOSTSENSE_GAME_AUTHORITY.md` and `Design/VERTICAL_SLICE_AUTHORITY.md`.
 
-The binding game/story/world/content authority now lives under `Design/`. Start with `Design/LOSTSENSE_GAME_AUTHORITY.md` and `Design/VERTICAL_SLICE_AUTHORITY.md`.
-
-The Unreal transition targets Unreal Engine 5.8 and keeps the portable C++ runtime as the gameplay authority. Unreal-specific code is presentation/platform integration; it must not duplicate damage, effects, abilities, progression, item ownership, loot, persistence or event authority.
-
-Truth boundary for the first Unreal source pass: the Work environment used to author it does not contain UnrealEditor or UnrealBuildTool. Unreal project/module code in this repository is therefore **authored source only** until a real UE 5.8 toolchain compiles and launches it.
+The project targets Unreal Engine 5.8. Pixel Streaming 2 is enabled and a
+packaged-runtime launcher is present for the eventual browser/iPad test path.
+The current execution environment still does not provide `UnrealEditor`,
+`UnrealBuildTool` or `RunUAT`, and no authorized UE 5.8 GPU host/runner is
+currently attached. Therefore current Unreal work is **SOURCE-IMPLEMENTED** and
+static-verified, not **COMPILED**, **RUNTIME-VERIFIED**, **PLAYABLE**,
+**PACKAGED** or **STREAM-VERIFIED**. Those labels become valid only after the
+real engine gates run.
