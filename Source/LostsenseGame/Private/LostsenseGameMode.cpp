@@ -21,7 +21,8 @@ void AttachDevelopmentMarker(UWorld &World, AActor &Owner, UStaticMesh &Mesh,
   }
 
   Marker->GetStaticMeshComponent()->SetStaticMesh(&Mesh);
-  Marker->GetStaticMeshComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+  Marker->GetStaticMeshComponent()->SetCollisionEnabled(
+      ECollisionEnabled::NoCollision);
   Marker->SetActorScale3D(Scale);
   Marker->AttachToActor(&Owner, FAttachmentTransformRules::KeepWorldTransform);
 }

@@ -30,12 +30,15 @@ void ALostsensePlayerController::SetupInputComponent() {
     return;
   }
 
-  InputComponent->BindKey(EKeys::F5, IE_Pressed, this,
-                          &ALostsensePlayerController::SaveDevelopmentCharacter);
-  InputComponent->BindKey(EKeys::F9, IE_Pressed, this,
-                          &ALostsensePlayerController::LoadDevelopmentCharacter);
-  InputComponent->BindKey(EKeys::F10, IE_Pressed, this,
-                          &ALostsensePlayerController::ResetDevelopmentEncounter);
+  InputComponent->BindKey(
+      EKeys::F5, IE_Pressed, this,
+      &ALostsensePlayerController::SaveDevelopmentCharacter);
+  InputComponent->BindKey(
+      EKeys::F9, IE_Pressed, this,
+      &ALostsensePlayerController::LoadDevelopmentCharacter);
+  InputComponent->BindKey(
+      EKeys::F10, IE_Pressed, this,
+      &ALostsensePlayerController::ResetDevelopmentEncounter);
 }
 
 void ALostsensePlayerController::SaveDevelopmentCharacter() {
@@ -45,10 +48,9 @@ void ALostsensePlayerController::SaveDevelopmentCharacter() {
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
           : nullptr;
   FString Payload;
-  const bool bSaved = Runtime != nullptr &&
-                      Runtime->SaveCharacterToText(Payload) &&
-                      FFileHelper::SaveStringToFile(Payload,
-                                                    *DevelopmentSavePath());
+  const bool bSaved =
+      Runtime != nullptr && Runtime->SaveCharacterToText(Payload) &&
+      FFileHelper::SaveStringToFile(Payload, *DevelopmentSavePath());
   ClientMessage(bSaved ? TEXT("Lostsense development save written")
                        : TEXT("Lostsense development save failed"));
 }
@@ -60,10 +62,10 @@ void ALostsensePlayerController::LoadDevelopmentCharacter() {
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
           : nullptr;
   FString Payload;
-  const bool bLoaded = Runtime != nullptr &&
-                       FFileHelper::LoadFileToString(Payload,
-                                                     *DevelopmentSavePath()) &&
-                       Runtime->LoadCharacterFromText(Payload);
+  const bool bLoaded =
+      Runtime != nullptr &&
+      FFileHelper::LoadFileToString(Payload, *DevelopmentSavePath()) &&
+      Runtime->LoadCharacterFromText(Payload);
   ClientMessage(bLoaded ? TEXT("Lostsense development save restored")
                         : TEXT("Lostsense development load failed"));
 }

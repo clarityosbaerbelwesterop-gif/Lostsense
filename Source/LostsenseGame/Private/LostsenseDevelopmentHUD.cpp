@@ -21,8 +21,8 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
           : nullptr;
   if (Runtime == nullptr || !Runtime->IsPortableRuntimeReady()) {
-    DrawText(TEXT("LOSTSENSE - portable runtime unavailable"), FLinearColor::Red,
-             32.0F, 32.0F, nullptr, 1.0F, false);
+    DrawText(TEXT("LOSTSENSE - portable runtime unavailable"),
+             FLinearColor::Red, 32.0F, 32.0F, nullptr, 1.0F, false);
     return;
   }
 
@@ -71,9 +71,10 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     const float Width = FMath::Min(620.0F, Canvas->ClipX - 120.0F);
     const float X = (Canvas->ClipX - Width) * 0.5F;
     const float Y = Canvas->ClipY - 96.0F;
-    DrawText(FString::Printf(TEXT("ODRAN, THE BELL WITHOUT A TONGUE // PHASE %d"),
-                             Boss->GetBossPhase()),
-             FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
+    DrawText(
+        FString::Printf(TEXT("ODRAN, THE BELL WITHOUT A TONGUE // PHASE %d"),
+                        Boss->GetBossPhase()),
+        FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
     DrawMeter(TEXT("BOSS"), Boss->GetCurrentHealth(), Boss->GetMaximumHealth(),
               X, Y, Width);
   }
@@ -84,8 +85,8 @@ void ALostsenseDevelopmentHUD::DrawMeter(const FString &Label,
                                          const double Maximum, const float X,
                                          const float Y, const float Width) {
   const double SafeMaximum = FMath::Max(1.0, Maximum);
-  const float Fraction = static_cast<float>(
-      FMath::Clamp(Current / SafeMaximum, 0.0, 1.0));
+  const float Fraction =
+      static_cast<float>(FMath::Clamp(Current / SafeMaximum, 0.0, 1.0));
 
   DrawRect(FLinearColor(0.06F, 0.06F, 0.06F, 0.88F), X, Y, Width, 22.0F);
   DrawRect(FLinearColor(0.72F, 0.72F, 0.72F, 0.95F), X + 2.0F, Y + 2.0F,
@@ -124,8 +125,8 @@ FString ALostsenseDevelopmentHUD::FormatPresentationEvent(
                            Event.Sequence, Event.Value, Event.SourceId,
                            Event.TargetId);
   case ELostsensePresentationEventType::CombatantDied:
-    return FString::Printf(TEXT("#%lld combatant %lld defeated"), Event.Sequence,
-                           Event.TargetId);
+    return FString::Printf(TEXT("#%lld combatant %lld defeated"),
+                           Event.Sequence, Event.TargetId);
   case ELostsensePresentationEventType::AbilityActivated:
     return FString::Printf(TEXT("#%lld ability %lld activated"), Event.Sequence,
                            Event.ContentId);
@@ -133,14 +134,14 @@ FString ALostsenseDevelopmentHUD::FormatPresentationEvent(
     return FString::Printf(TEXT("#%lld item %lld dropped x%d"), Event.Sequence,
                            Event.ContentId, Event.Quantity);
   case ELostsensePresentationEventType::ItemPickedUp:
-    return FString::Printf(TEXT("#%lld item %lld picked up x%d"), Event.Sequence,
-                           Event.ContentId, Event.Quantity);
+    return FString::Printf(TEXT("#%lld item %lld picked up x%d"),
+                           Event.Sequence, Event.ContentId, Event.Quantity);
   case ELostsensePresentationEventType::ItemEquipped:
     return FString::Printf(TEXT("#%lld item %lld equipped"), Event.Sequence,
                            Event.ContentId);
   case ELostsensePresentationEventType::SkillAllocated:
-    return FString::Printf(TEXT("#%lld scar node %lld allocated"), Event.Sequence,
-                           Event.ContentId);
+    return FString::Printf(TEXT("#%lld scar node %lld allocated"),
+                           Event.Sequence, Event.ContentId);
   case ELostsensePresentationEventType::EffectApplied:
     return FString::Printf(TEXT("#%lld effect %lld applied"), Event.Sequence,
                            Event.ContentId);
@@ -151,8 +152,8 @@ FString ALostsenseDevelopmentHUD::FormatPresentationEvent(
     return FString::Printf(TEXT("#%lld item %lld unequipped"), Event.Sequence,
                            Event.ContentId);
   case ELostsensePresentationEventType::SkillRefunded:
-    return FString::Printf(TEXT("#%lld scar node %lld refunded"), Event.Sequence,
-                           Event.ContentId);
+    return FString::Printf(TEXT("#%lld scar node %lld refunded"),
+                           Event.Sequence, Event.ContentId);
   }
 
   return FString::Printf(TEXT("#%lld gameplay event"), Event.Sequence);

@@ -20,9 +20,10 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
 
   FPortableEnemy(const uint64 Id, const bool bIsElite, const bool bIsBoss)
       : Combatant{Lostsense::Combat::CombatantId{Id},
-                  bIsBoss ? Lostsense::Combat::CombatantKind::Boss
-                          : (bIsElite ? Lostsense::Combat::CombatantKind::Elite
-                                     : Lostsense::Combat::CombatantKind::Enemy)},
+                  bIsBoss
+                      ? Lostsense::Combat::CombatantKind::Boss
+                      : (bIsElite ? Lostsense::Combat::CombatantKind::Elite
+                                  : Lostsense::Combat::CombatantKind::Enemy)},
         Effects{Combatant, {}} {
     const double MaximumHealth = bIsBoss ? 280.0 : (bIsElite ? 100.0 : 65.0);
     const double AttackPower = bIsBoss ? 14.0 : (bIsElite ? 9.0 : 5.0);
@@ -64,8 +65,7 @@ void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
 
 void ALostsenseEnemyCharacter::BeginPlay() {
   Super::BeginPlay();
-  PortableEnemy =
-      MakeUnique<FPortableEnemy>(PendingCombatantId, bElite, bBoss);
+  PortableEnemy = MakeUnique<FPortableEnemy>(PendingCombatantId, bElite, bBoss);
   GetCharacterMovement()->MaxWalkSpeed = bBoss ? 225.0F : 260.0F;
 }
 

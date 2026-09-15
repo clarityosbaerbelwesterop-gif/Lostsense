@@ -17,7 +17,8 @@ private:
   void DrawMeter(const FString &Label, double Current, double Maximum, float X,
                  float Y, float Width);
   void ConsumePresentationEvents();
-  FString FormatPresentationEvent(const FLostsensePresentationEvent &Event) const;
+  FString
+  FormatPresentationEvent(const FLostsensePresentationEvent &Event) const;
 
   TArray<FString> RecentEvents;
 };
