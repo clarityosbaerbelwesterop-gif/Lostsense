@@ -14,6 +14,7 @@ enum class DeepRouteMilestone : std::uint8_t {
   ServiceBrakeRestored,
   RoyalThresholdOpened,
   VentilationNaveStabilized,
+  ActFourClearanceGranted,
   PumpCathedralApproachOpened,
 };
 
