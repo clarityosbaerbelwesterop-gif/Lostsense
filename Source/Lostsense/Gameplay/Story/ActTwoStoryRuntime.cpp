@@ -35,7 +35,8 @@ bool ActTwoStoryRuntime::UnlockFromActOne(
 
 bool ActTwoStoryRuntime::HasBeat(ActTwoStoryBeat beat) const noexcept {
   const auto index = static_cast<std::uint32_t>(beat);
-  return index <= static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved) &&
+  return index <=
+             static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved) &&
          (State_.CompletedMask & Bit(beat)) != 0U;
 }
 
@@ -44,12 +45,14 @@ bool ActTwoStoryRuntime::CompleteBeat(ActTwoStoryBeat beat) {
     return false;
   }
   const auto index = static_cast<std::uint32_t>(beat);
-  if (index > static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved)) {
+  if (index >
+      static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved)) {
     return false;
   }
   if (beat == ActTwoStoryBeat::WitnessRootResolved) {
     return State_.RootDecision != WitnessRootDecision::None &&
-           (State_.CompletedMask & Bit(ActTwoStoryBeat::MotherVeyrDefeated)) != 0U
+                   (State_.CompletedMask &
+                    Bit(ActTwoStoryBeat::MotherVeyrDefeated)) != 0U
                ? (State_.CompletedMask |= Bit(beat), true)
                : false;
   }
@@ -103,7 +106,8 @@ ActTwoStoryRuntime::Objective(std::uint32_t objectiveId) const noexcept {
   if (HasBeat(completionBeat)) {
     return ObjectiveState::Completed;
   }
-  if (objectiveId == 80010U || Objective(objectiveId - 1U) == ObjectiveState::Completed) {
+  if (objectiveId == 80010U ||
+      Objective(objectiveId - 1U) == ObjectiveState::Completed) {
     return ObjectiveState::Active;
   }
   return ObjectiveState::Locked;
@@ -128,7 +132,8 @@ bool ActTwoStoryRuntime::ValidState(const ActTwoStoryState &state) noexcept {
 
   bool gap = false;
   for (std::uint32_t index = 0;
-       index <= static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved);
+       index <=
+       static_cast<std::uint32_t>(ActTwoStoryBeat::WitnessRootResolved);
        ++index) {
     const bool set = (state.CompletedMask & (1U << index)) != 0U;
     if (!set) {
