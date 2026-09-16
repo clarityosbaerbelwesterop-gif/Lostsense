@@ -20,19 +20,21 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
 
-          def replace(path: str, old: str, new: str) -> None:
+          def replace_once(path: str, old: str, new: str) -> None:
               target = Path(path)
-              text = target.read_text(encoding="utf-8")
-              if old not in text:
-                  raise SystemExit(f"expected source block missing: {path}")
-              target.write_text(text.replace(old, new, 1), encoding="utf-8")
+              source = target.read_text(encoding="utf-8")
+              if old not in source:
+                  raise SystemExit(f"expected source marker missing in {path}: {old!r}")
+              target.write_text(source.replace(old, new, 1), encoding="utf-8")
 
-          replace(
-              "Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h",
+          header = "Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h"
+          replace_once(
+              header,
               '  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipFirstInventoryItem();',
               '  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipInventoryItem(int64 ItemInstanceId);\n\n  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipFirstInventoryItem();',
           )
 
+          runtime = "Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp"
           marker = "bool ULostsenseRuntimeSubsystem::EquipFirstInventoryItem() {"
           implementation = r'''bool ULostsenseRuntimeSubsystem::EquipInventoryItem(
               const int64 ItemInstanceId) {
@@ -69,22 +71,30 @@ jobs:
           }
 
           bool ULostsenseRuntimeSubsystem::EquipFirstInventoryItem() {'''
-          replace(
-              "Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp",
-              marker,
-              implementation,
+          replace_once(runtime, marker, implementation)
+
+          controller = "Source/LostsenseGame/Private/LostsensePlayerController.cpp"
+          replace_once(
+              controller,
+              "Runtime->EquipFirstInventoryItem()",
+              "Runtime->EquipInventoryItem(Selected.InstanceId)",
+          )
+          replace_once(
+              controller,
+              'TEXT("Equipped the next compatible inventory item")',
+              'TEXT("Equipped selected inventory item")',
+          )
+          replace_once(
+              controller,
+              'TEXT("No compatible inventory item could be equipped")',
+              'TEXT("Selected inventory item could not be equipped")',
           )
 
-          replace(
-              "Source/LostsenseGame/Private/LostsensePlayerController.cpp",
-              '    const bool bEquipped = Runtime->EquipFirstInventoryItem();\n    ClientMessage(bEquipped ? TEXT("Equipped the next compatible inventory item")\n                            : TEXT("No compatible inventory item could be equipped"));',
-              '    const bool bEquipped = Runtime->EquipInventoryItem(Selected.InstanceId);\n    ClientMessage(bEquipped ? TEXT("Equipped selected inventory item")\n                            : TEXT("Selected inventory item could not be equipped"));',
-          )
-
-          replace(
-              "Scripts/Verify-SliceAcceptance.py",
-              '            "AllocateSkillNode",\n            "SCAR ATLAS // KNIGHT 102",',
-              '            "AllocateSkillNode",\n            "EquipInventoryItem(Selected.InstanceId)",\n            "SCAR ATLAS // KNIGHT 102",',
+          acceptance = "Scripts/Verify-SliceAcceptance.py"
+          replace_once(
+              acceptance,
+              '            "AllocateSkillNode",\n',
+              '            "AllocateSkillNode",\n            "EquipInventoryItem(Selected.InstanceId)",\n',
           )
           PY
       - name: Format changed C++
@@ -93,6 +103,8 @@ jobs:
             Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h \
             Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp \
             Source/LostsenseGame/Private/LostsensePlayerController.cpp
+      - name: Run slice acceptance checks
+        run: python3 Scripts/Verify-SliceAcceptance.py
       - name: Remove one-shot workflow and commit
         run: |
           git config user.name "github-actions[bot]"
