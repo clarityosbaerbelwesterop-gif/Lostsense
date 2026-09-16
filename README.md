@@ -96,6 +96,7 @@ inventory/Scar UI source contract, menu input isolation, enemy/Odran presentatio
 hooks, touch/Pixel Streaming input bridge, counterweight source contract and
 Odran transition/death contract. These checks are deliberately not presented as
 a substitute for UHT, UBT, PIE, packaging or real-device/runtime verification.
+The PR is not treated as merge-ready while any exact-head CI job is red.
 
 ## Architecture boundary
 
