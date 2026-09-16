@@ -8,6 +8,7 @@ class ALostsenseEnemyCharacter;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class ULostsenseInputBridgeLibrary;
 class USpringArmComponent;
 struct FInputActionValue;
 
@@ -25,6 +26,8 @@ protected:
   SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
 private:
+  friend class ULostsenseInputBridgeLibrary;
+
   void MoveForward(const FInputActionValue &Value);
   void MoveBackward(const FInputActionValue &Value);
   void MoveLeft(const FInputActionValue &Value);
