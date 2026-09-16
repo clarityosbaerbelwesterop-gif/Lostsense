@@ -54,10 +54,12 @@ art.
 
 PR #9 now also includes a usable source-level inventory and Scar Atlas menu pass,
 including authored item/node projection, prerequisite and exclusive-oath state,
-Scar allocation and active-slot wiring. Gameplay input is isolated while those
-menus are open. A Blueprint-callable input bridge routes touch/virtual controls
-through the same Knight interaction/combat paths for the future iPad Pixel
-Streaming UI rather than creating parallel touch-only gameplay logic.
+Scar allocation and active-slot wiring. Inventory confirmation equips the
+highlighted recovered gear through gameplay authority rather than falling back
+to the first compatible item. Gameplay input is isolated while those menus are
+open. A Blueprint-callable input bridge routes touch/virtual controls through
+the same Knight interaction/combat paths for the future iPad Pixel Streaming UI
+rather than creating parallel touch-only gameplay logic.
 
 Enemy and boss presentation are separated from gameplay authority through a
 world presentation subsystem that publishes Blueprint-assignable cues for AI
