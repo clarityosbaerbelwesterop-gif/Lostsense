@@ -2,7 +2,7 @@
 
 #include <array>
 #include <charconv>
-#include <limits>
+#include <utility>
 
 namespace Lostsense::Gameplay {
 namespace {
@@ -19,25 +19,13 @@ bool IsAllowed(DeepMechanismId id, DeepMechanismState state) noexcept {
         return state == DeepMechanismState::Locked || state == DeepMechanismState::Available ||
                state == DeepMechanismState::Restored;
     case DeepMechanismId::RoyalPressureDoor:
-    case DeepMechanismId::VaurReturnShortcut:
-        return state == DeepMechanismState::Locked || state == DeepMechanismState::Available ||
-               state == DeepMechanismState::Open;
     case DeepMechanismId::VentilationIntake:
     case DeepMechanismId::ReliefVent:
+    case DeepMechanismId::VaurReturnShortcut:
         return state == DeepMechanismState::Locked || state == DeepMechanismState::Available ||
                state == DeepMechanismState::Open;
     }
     return false;
-}
-
-DeepMechanismState* Slot(DeepRouteState& state, DeepMechanismId id) noexcept {
-    // Kept in one switch so every mutation is validated through SetMechanism.
-    struct Accessor : DeepRouteState {
-        static DeepMechanismState* Get(DeepRouteState&, DeepMechanismId) noexcept;
-    };
-    (void)state;
-    (void)id;
-    return nullptr;
 }
 
 bool ParseUnsigned(std::string_view text, std::uint32_t& value) noexcept {
@@ -126,8 +114,13 @@ bool DeepRouteState::SetMechanism(DeepMechanismId id, DeepMechanismState state) 
     if (slot == nullptr || *slot == DeepMechanismState::Locked) {
         return state == DeepMechanismState::Locked;
     }
+    const auto previous = *slot;
     *slot = state;
-    return ValidState(*this);
+    if (!ValidState(*this)) {
+        *slot = previous;
+        return false;
+    }
+    return true;
 }
 
 DeepMechanismState DeepRouteState::Mechanism(DeepMechanismId id) const noexcept {
