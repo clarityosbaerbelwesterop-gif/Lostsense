@@ -31,6 +31,7 @@ enum class ELostsenseDeepRouteMilestone : uint8 {
   ServiceBrakeRestored,
   RoyalThresholdOpened,
   VentilationNaveStabilized,
+  ActFourClearanceGranted,
   PumpCathedralApproachOpened
 };
 
