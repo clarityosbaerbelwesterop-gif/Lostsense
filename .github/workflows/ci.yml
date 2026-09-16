@@ -68,6 +68,8 @@ jobs:
         run: python3 Scripts/Verify-UnrealStatic.py
       - name: Validate PR9 slice acceptance source contracts
         run: python3 Scripts/Verify-SliceAcceptance.py
+      - name: Validate PR10 Deep Vaur source contracts
+        run: python3 Scripts/Verify-DeepVaurAcceptance.py
 
   format:
     name: clang-format
