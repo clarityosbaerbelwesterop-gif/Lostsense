@@ -1,0 +1,106 @@
+name: PR9 exact inventory selection fix
+
+"on":
+  push:
+    branches: [work/vertical-slice-world-production]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/vertical-slice-world-production
+      - name: Patch selected-item equip path
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace(path: str, old: str, new: str) -> None:
+              target = Path(path)
+              text = target.read_text(encoding="utf-8")
+              if old not in text:
+                  raise SystemExit(f"expected source block missing: {path}")
+              target.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          replace(
+              "Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h",
+              '  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipFirstInventoryItem();',
+              '  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipInventoryItem(int64 ItemInstanceId);\n\n  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")\n  bool EquipFirstInventoryItem();',
+          )
+
+          marker = "bool ULostsenseRuntimeSubsystem::EquipFirstInventoryItem() {"
+          implementation = r'''bool ULostsenseRuntimeSubsystem::EquipInventoryItem(
+              const int64 ItemInstanceId) {
+            if (!PortableRuntime.IsValid() || ItemInstanceId <= 0) {
+              return false;
+            }
+
+            const Lostsense::Gameplay::ItemInstanceId InstanceId{
+                static_cast<std::uint64_t>(ItemInstanceId)};
+            const Lostsense::Gameplay::ItemInstance *Instance =
+                PortableRuntime->InventoryState.FindInstance(InstanceId);
+            if (Instance == nullptr) {
+              return false;
+            }
+
+            const Lostsense::Gameplay::ItemDefinition *Definition =
+                PortableRuntime->Items.FindItem(Instance->DefinitionId);
+            if (Definition == nullptr || Definition->AllowedEquipmentSlots.empty()) {
+              return false;
+            }
+
+            for (const Lostsense::Gameplay::EquipmentSlotId Slot :
+                 Definition->AllowedEquipmentSlots) {
+              const Lostsense::Gameplay::EquipmentResult Result =
+                  Lostsense::Gameplay::GameplayEventAuthority::Equip(
+                      PortableRuntime->Equipment, PortableRuntime->InventoryState,
+                      InstanceId, Slot, PortableRuntime->Player.Id(),
+                      PortableRuntime->Events);
+              if (Result == Lostsense::Gameplay::EquipmentResult::Success) {
+                return true;
+              }
+            }
+            return false;
+          }
+
+          bool ULostsenseRuntimeSubsystem::EquipFirstInventoryItem() {'''
+          replace(
+              "Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp",
+              marker,
+              implementation,
+          )
+
+          replace(
+              "Source/LostsenseGame/Private/LostsensePlayerController.cpp",
+              '    const bool bEquipped = Runtime->EquipFirstInventoryItem();\n    ClientMessage(bEquipped ? TEXT("Equipped the next compatible inventory item")\n                            : TEXT("No compatible inventory item could be equipped"));',
+              '    const bool bEquipped = Runtime->EquipInventoryItem(Selected.InstanceId);\n    ClientMessage(bEquipped ? TEXT("Equipped selected inventory item")\n                            : TEXT("Selected inventory item could not be equipped"));',
+          )
+
+          replace(
+              "Scripts/Verify-SliceAcceptance.py",
+              '            "AllocateSkillNode",\n            "SCAR ATLAS // KNIGHT 102",',
+              '            "AllocateSkillNode",\n            "EquipInventoryItem(Selected.InstanceId)",\n            "SCAR ATLAS // KNIGHT 102",',
+          )
+          PY
+      - name: Format changed C++
+        run: |
+          clang-format -i \
+            Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h \
+            Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp \
+            Source/LostsenseGame/Private/LostsensePlayerController.cpp
+      - name: Remove one-shot workflow and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/pr9-exact-equip-fix.yml
+          git add Source/LostsenseGame/Public/LostsenseRuntimeSubsystem.h \
+                  Source/LostsenseGame/Private/LostsenseRuntimeSubsystem.cpp \
+                  Source/LostsenseGame/Private/LostsensePlayerController.cpp \
+                  Scripts/Verify-SliceAcceptance.py
+          git commit -m "Equip the inventory item selected in the menu"
+          git push origin HEAD:work/vertical-slice-world-production
