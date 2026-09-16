@@ -1,6 +1,6 @@
 # LOSTSENSE — Act II Ravelwood Production Plan
 
-Status: **IMPLEMENTATION PLAN — subordinate to canonical authorities**
+Status: **IMPLEMENTATION ACTIVE — canonical gate first**
 Base: merged PR #10 (`ea17b03ad9ae63027fd66ce46c9a3b8841e17927`)
 
 ## Canonical correction before expansion
