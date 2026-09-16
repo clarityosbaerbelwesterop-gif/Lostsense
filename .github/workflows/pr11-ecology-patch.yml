@@ -1,0 +1,52 @@
+name: PR11 ecology integration
+
+"on":
+  push:
+    branches: [work/act2-ravelwood-production]
+permissions:
+  contents: write
+jobs:
+  integrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/act2-ravelwood-production
+      - name: Integrate Ravelwood enemy roles
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('Source/LostsenseGame/Public/LostsenseEnemyCharacter.h')
+          s=p.read_text().replace('''  RailMarshal,\n  Odran\n''','''  RailMarshal,\n  Rootbound,\n  EchoStag,\n  ThornPenitent,\n  Odran\n''',1)
+          p.write_text(s)
+
+          p=Path('Source/LostsenseGame/Private/LostsenseEnemyCharacter.cpp')
+          s=p.read_text()
+          old='''  case ELostsenseEnemyArchetype::RailMarshal:\n    return {172.0, 13.0,   10.0,  1550.0, 230.0, 15.0,\n            1.00,  275.0F, 0.48F, 0.70F,  0.92F};\n  case ELostsenseEnemyArchetype::Odran:\n'''
+          new='''  case ELostsenseEnemyArchetype::RailMarshal:\n    return {172.0, 13.0,   10.0,  1550.0, 230.0, 15.0,\n            1.00,  275.0F, 0.48F, 0.70F,  0.92F};\n  case ELostsenseEnemyArchetype::Rootbound:\n    return {92.0, 9.0,    7.0,   1280.0, 185.0, 11.0,\n            0.92,  190.0F, 0.70F, 0.90F,  1.05F};\n  case ELostsenseEnemyArchetype::EchoStag:\n    return {126.0, 14.0,   5.0,   1750.0, 300.0, 12.0,\n            1.08,  320.0F, 0.58F, 0.82F,  1.15F};\n  case ELostsenseEnemyArchetype::ThornPenitent:\n    return {108.0, 12.0,   9.0,   1450.0, 235.0, 13.0,\n            0.98,  245.0F, 0.66F, 0.78F,  0.98F};\n  case ELostsenseEnemyArchetype::Odran:\n'''
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('Source/LostsenseGame/Private/LostsenseActTwoWorldSubsystem.cpp')
+          s=p.read_text()
+          s=s.replace('ELostsenseEnemyArchetype::BellMaddenedCarrion, 8U);','ELostsenseEnemyArchetype::Rootbound, 8U);',1)
+          s=s.replace('ELostsenseEnemyArchetype::EchoMiner, 8U);','ELostsenseEnemyArchetype::EchoStag, 8U);',1)
+          insert='''\n  Enemy(InWorld, RootTunnel + FVector(1800.0F, -350.0F, 80.0F), 2110U,\n        ELostsenseEnemyArchetype::ThornPenitent, 9U);\n'''
+          marker='''  StoryActor(InWorld, RootTunnel + FVector(450.0F, 0.0F, 420.0F),\n'''
+          assert marker in s
+          s=s.replace(marker,insert+'\n'+marker,1)
+          p.write_text(s)
+          PY
+      - name: Format
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Source Tests
+          git commit -m "Integrate Ravelwood enemy ecology"
+          git push origin HEAD:work/act2-ravelwood-production
