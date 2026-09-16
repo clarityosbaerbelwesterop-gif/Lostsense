@@ -1,5 +1,6 @@
 #include "LostsenseStorySubsystem.h"
 
+#include "Lostsense/Gameplay/Story/ActTwoStoryRuntime.h"
 #include "Lostsense/Gameplay/Story/StoryRuntime.h"
 #include "Lostsense/Gameplay/World/DeepRouteState.h"
 
@@ -8,11 +9,24 @@
 
 namespace {
 constexpr std::string_view DeepRouteMarker{"LOSTSENSE_DEEP_ROUTE\n"};
+constexpr std::string_view ActTwoMarker{"\nLOSTSENSE_ACT_TWO\n"};
 
 Lostsense::Gameplay::FirstSliceStoryBeat
 ToPortableBeat(const ELostsenseStoryBeat Beat) {
   return static_cast<Lostsense::Gameplay::FirstSliceStoryBeat>(
       static_cast<uint8>(Beat));
+}
+
+Lostsense::Gameplay::ActTwoStoryBeat
+ToPortableActTwoBeat(const ELostsenseActTwoStoryBeat Beat) {
+  return static_cast<Lostsense::Gameplay::ActTwoStoryBeat>(
+      static_cast<uint8>(Beat));
+}
+
+Lostsense::Gameplay::WitnessRootDecision
+ToPortableRootDecision(const ELostsenseWitnessRootDecision Decision) {
+  return static_cast<Lostsense::Gameplay::WitnessRootDecision>(
+      static_cast<uint8>(Decision));
 }
 
 Lostsense::Gameplay::DeepRouteMilestone
@@ -55,6 +69,7 @@ ToPresentationState(const Lostsense::Gameplay::ObjectiveState State) {
 struct ULostsenseStorySubsystem::FStoryRuntime {
   Lostsense::Gameplay::FirstSliceStoryRuntime Story{
       Lostsense::Gameplay::BuildFirstSliceObjectives()};
+  Lostsense::Gameplay::ActTwoStoryRuntime ActTwo;
   Lostsense::Gameplay::DeepRouteState DeepRoute;
 };
 
@@ -85,17 +100,43 @@ bool ULostsenseStorySubsystem::CompleteBeat(const ELostsenseStoryBeat Beat) {
       !StoryRuntime->Story.CompleteBeat(ToPortableBeat(Beat))) {
     return false;
   }
-  if (Beat == ELostsenseStoryBeat::OdranDefeated) {
-    return StoryRuntime->DeepRoute.Complete(
-        Lostsense::Gameplay::DeepRouteMilestone::OdranDefeated);
+  if (Beat == ELostsenseStoryBeat::OdranDefeated &&
+      !StoryRuntime->DeepRoute.Complete(
+          Lostsense::Gameplay::DeepRouteMilestone::OdranDefeated)) {
+    return false;
+  }
+  if (Beat == ELostsenseStoryBeat::BellgraveChanged) {
+    return StoryRuntime->ActTwo.UnlockFromActOne(StoryRuntime->Story);
   }
   return true;
+}
+
+bool ULostsenseStorySubsystem::HasActTwoBeat(
+    const ELostsenseActTwoStoryBeat Beat) const {
+  return IsStoryReady() &&
+         StoryRuntime->ActTwo.HasBeat(ToPortableActTwoBeat(Beat));
+}
+
+bool ULostsenseStorySubsystem::CompleteActTwoBeat(
+    const ELostsenseActTwoStoryBeat Beat) {
+  return IsStoryReady() &&
+         StoryRuntime->ActTwo.CompleteBeat(ToPortableActTwoBeat(Beat));
+}
+
+bool ULostsenseStorySubsystem::ResolveWitnessRoot(
+    const ELostsenseWitnessRootDecision Decision) {
+  return IsStoryReady() && StoryRuntime->ActTwo.ResolveWitnessRoot(
+                               ToPortableRootDecision(Decision));
 }
 
 ELostsenseObjectiveState
 ULostsenseStorySubsystem::GetObjectiveState(const int32 ObjectiveId) const {
   if (!IsStoryReady() || ObjectiveId <= 0) {
     return ELostsenseObjectiveState::Locked;
+  }
+  if (ObjectiveId >= 80010 && ObjectiveId <= 80014) {
+    return ToPresentationState(
+        StoryRuntime->ActTwo.Objective(static_cast<uint32>(ObjectiveId)));
   }
   return ToPresentationState(
       StoryRuntime->Story.Objective(static_cast<uint32>(ObjectiveId)));
@@ -105,7 +146,8 @@ int32 ULostsenseStorySubsystem::GetCurrentObjectiveId() const {
   if (!IsStoryReady()) {
     return 0;
   }
-  constexpr int32 ObjectiveIds[] = {80001, 80002, 80003, 80004, 80005, 80006};
+  constexpr int32 ObjectiveIds[] = {80001, 80002, 80003, 80004, 80005, 80006,
+                                    80010, 80011, 80012, 80013, 80014};
   for (const int32 Id : ObjectiveIds) {
     if (GetObjectiveState(Id) == ELostsenseObjectiveState::Active) {
       return Id;
@@ -148,12 +190,17 @@ bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
     return false;
   }
   std::string StoryPayload;
+  std::string ActTwoPayload;
   if (!Lostsense::Gameplay::FirstSliceStoryCodec::Serialize(
-          StoryRuntime->Story.CaptureState(), StoryPayload)) {
+          StoryRuntime->Story.CaptureState(), StoryPayload) ||
+      !Lostsense::Gameplay::ActTwoStoryCodec::Serialize(
+          StoryRuntime->ActTwo.CaptureState(), ActTwoPayload)) {
     return false;
   }
   StoryPayload.append(DeepRouteMarker);
   StoryPayload.append(StoryRuntime->DeepRoute.Serialize());
+  StoryPayload.append(ActTwoMarker);
+  StoryPayload.append(ActTwoPayload);
   OutPayload = UTF8_TO_TCHAR(StoryPayload.c_str());
   return true;
 }
@@ -164,15 +211,18 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   }
 
   const std::string Utf8Payload(TCHAR_TO_UTF8(*Payload));
-  const auto MarkerPosition = Utf8Payload.find(DeepRouteMarker);
-  if (MarkerPosition == std::string::npos) {
+  const auto DeepPosition = Utf8Payload.find(DeepRouteMarker);
+  if (DeepPosition == std::string::npos) {
     return false;
   }
+  const auto DeepStart = DeepPosition + DeepRouteMarker.size();
+  const auto ActTwoPosition = Utf8Payload.find(ActTwoMarker, DeepStart);
 
-  const std::string_view StoryPayload(Utf8Payload.data(), MarkerPosition);
+  const std::string_view StoryPayload(Utf8Payload.data(), DeepPosition);
   const std::string_view DeepPayload(
-      Utf8Payload.data() + MarkerPosition + DeepRouteMarker.size(),
-      Utf8Payload.size() - MarkerPosition - DeepRouteMarker.size());
+      Utf8Payload.data() + DeepStart,
+      (ActTwoPosition == std::string::npos ? Utf8Payload.size() : ActTwoPosition) -
+          DeepStart);
 
   Lostsense::Gameplay::FirstSliceStoryState StoryCandidate;
   const auto DeepCandidate =
@@ -193,7 +243,29 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     return false;
   }
 
-  if (!StoryRuntime->Story.RestoreState(StoryCandidate)) {
+  Lostsense::Gameplay::ActTwoStoryRuntime ActTwoCandidate;
+  if (ActTwoPosition == std::string::npos) {
+    if (ValidatedStory.HasBeat(
+            Lostsense::Gameplay::FirstSliceStoryBeat::BellgraveChanged) &&
+        !ActTwoCandidate.UnlockFromActOne(ValidatedStory)) {
+      return false;
+    }
+  } else {
+    Lostsense::Gameplay::ActTwoStoryState State;
+    const auto ActTwoStart = ActTwoPosition + ActTwoMarker.size();
+    const std::string_view ActTwoPayload(Utf8Payload.data() + ActTwoStart,
+                                         Utf8Payload.size() - ActTwoStart);
+    if (!Lostsense::Gameplay::ActTwoStoryCodec::Deserialize(ActTwoPayload, State) ||
+        !ActTwoCandidate.RestoreState(State) ||
+        ActTwoCandidate.IsUnlocked() !=
+            ValidatedStory.HasBeat(
+                Lostsense::Gameplay::FirstSliceStoryBeat::BellgraveChanged)) {
+      return false;
+    }
+  }
+
+  if (!StoryRuntime->Story.RestoreState(StoryCandidate) ||
+      !StoryRuntime->ActTwo.RestoreState(ActTwoCandidate.CaptureState())) {
     return false;
   }
   StoryRuntime->DeepRoute = *DeepCandidate;
