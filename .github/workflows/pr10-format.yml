@@ -1,0 +1,32 @@
+name: PR10 format repair
+
+"on":
+  push:
+    branches: [work/deep-vaur-production]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/deep-vaur-production
+      - name: Apply clang-format
+        run: |
+          mapfile -t files < <(find Source Tests -type f \( -name '*.cpp' -o -name '*.h' \) -print | sort)
+          clang-format -i "${files[@]}"
+      - name: Commit formatting repairs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Source Tests
+          if git diff --cached --quiet; then
+            echo "No formatting changes needed"
+            exit 0
+          fi
+          git commit -m "Apply clang-format to PR10 source"
+          git push origin HEAD:work/deep-vaur-production
