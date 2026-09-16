@@ -51,6 +51,7 @@ void ALostsenseActTwoStoryActor::Configure(
     const ELostsenseActTwoInteraction InInteraction) {
   Interaction = InInteraction;
   RestLocation = GetActorLocation();
+  RestScale = GetActorScale3D();
   bConfigured = true;
   SynchronizePresentation();
 }
@@ -127,6 +128,7 @@ void ALostsenseActTwoStoryActor::SynchronizePresentation() {
     return;
   }
   SetActorLocation(RestLocation);
+  SetActorScale3D(RestScale);
   if (!IsCompleted()) {
     return;
   }
@@ -134,6 +136,6 @@ void ALostsenseActTwoStoryActor::SynchronizePresentation() {
     SetActorLocation(RestLocation + FVector(0.0F, 0.0F, 700.0F));
   } else if (Interaction == ELostsenseActTwoInteraction::BlackSapTrace ||
              Interaction == ELostsenseActTwoInteraction::InfectedVillager) {
-    SetActorScale3D(FVector(0.65F));
+    SetActorScale3D(RestScale * 0.65F);
   }
 }
