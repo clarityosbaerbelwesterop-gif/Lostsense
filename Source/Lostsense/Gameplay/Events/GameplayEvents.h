@@ -59,9 +59,6 @@ public:
     return events_;
   }
 
-  // Presentation/event delivery must never become a second gameplay authority.
-  // A full stream therefore reports failure without altering committed
-  // gameplay.
   [[nodiscard]] bool Publish(GameplayEvent event) noexcept;
   [[nodiscard]] GameplayEventCheckpoint Checkpoint() const noexcept;
   [[nodiscard]] bool Rollback(GameplayEventCheckpoint checkpoint) noexcept;
@@ -96,6 +93,11 @@ public:
   ActivateAbility(AbilityRuntime &runtime, AbilityId ability,
                   const AbilityTarget &target, Combat::CombatantId actor,
                   GameplayEventStream &events);
+
+  [[nodiscard]] static MultiTargetAbilityActivationOutcome
+  ActivateAbilityMany(AbilityRuntime &runtime, AbilityId ability,
+                      const std::vector<AbilityTarget> &targets,
+                      Combat::CombatantId actor, GameplayEventStream &events);
 
   [[nodiscard]] static SkillOperationResult
   AllocateSkill(SkillTreeRuntime &runtime, SkillNodeId node,

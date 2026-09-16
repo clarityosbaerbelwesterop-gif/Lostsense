@@ -66,6 +66,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate Unreal project, UHT shape, modules, boundaries and Pixel Streaming readiness
         run: python3 Scripts/Verify-UnrealStatic.py
+      - name: Validate PR9 slice acceptance source contracts
+        run: python3 Scripts/Verify-SliceAcceptance.py
 
   format:
     name: clang-format

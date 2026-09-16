@@ -4,6 +4,8 @@
 #include "Lostsense/Gameplay/Items/LootRuntime.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 
+#include <vector>
+
 #include "LostsenseRuntimeSubsystem.generated.h"
 
 namespace Lostsense::Combat {
@@ -12,6 +14,7 @@ struct DamageSpec;
 } // namespace Lostsense::Combat
 
 namespace Lostsense::Gameplay {
+struct AbilityTarget;
 class EffectRuntime;
 struct GeneratedLootEntry;
 } // namespace Lostsense::Gameplay
@@ -98,6 +101,9 @@ public:
   bool EquipAbilityInSlot(int32 SlotIndex, int32 AbilityId);
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")
+  bool EquipInventoryItem(int64 ItemInstanceId);
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")
   bool EquipFirstInventoryItem();
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Save")
@@ -110,6 +116,7 @@ public:
   TArray<FLostsensePresentationEvent> DrainPresentationEvents();
 
   void AdvancePlayerTime(float DeltaSeconds);
+  bool BeginPerfectGuardWindow();
   bool ActivatePlayerAbility(uint32 AbilityId);
   bool ActivatePlayerAbilityAgainst(
       uint32 AbilityId, Lostsense::Combat::Combatant &Target,
@@ -117,6 +124,10 @@ public:
   bool ActivatePlayerLoadoutSlot(
       int32 SlotIndex, Lostsense::Combat::Combatant *Target = nullptr,
       Lostsense::Gameplay::EffectRuntime *TargetEffects = nullptr);
+  bool ActivatePlayerLoadoutSlotAgainstMany(
+      int32 SlotIndex,
+      const std::vector<Lostsense::Gameplay::AbilityTarget> &Targets);
+  int32 GetLoadoutSlotMaximumTargets(int32 SlotIndex) const;
   bool ResolveEnemyBasicAttack(Lostsense::Combat::Combatant &Enemy,
                                const Lostsense::Combat::DamageSpec &Damage);
   TArray<Lostsense::Gameplay::GeneratedLootEntry>

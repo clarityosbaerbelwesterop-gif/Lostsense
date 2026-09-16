@@ -2,10 +2,12 @@
 
 #include "LostsenseKnightCharacter.h"
 #include "LostsenseRuntimeSubsystem.h"
+#include "LostsenseStorySubsystem.h"
 #include "LostsenseWorldDropActor.h"
 
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -14,34 +16,78 @@
 #include "Lostsense/Gameplay/Effects/EffectRuntime.h"
 #include "Lostsense/Stats/CombatAttributes.h"
 
+namespace {
+struct FArchetypeTuning final {
+  double MaximumHealth;
+  double AttackPower;
+  double Armor;
+  double AggroRadius;
+  double MeleeRange;
+  double BaseDamage;
+  double AttackCoefficient;
+  float MoveSpeed;
+  float WindupSeconds;
+  float RecoverySeconds;
+  float CooldownSeconds;
+};
+
+FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
+                           const int32 BossPhase) {
+  switch (Archetype) {
+  case ELostsenseEnemyArchetype::BellMaddenedCarrion:
+    return {48.0, 5.0,    1.0,   1150.0, 145.0, 5.0,
+            0.65, 330.0F, 0.28F, 0.48F,  0.85F};
+  case ELostsenseEnemyArchetype::CharterDeserter:
+    return {68.0, 6.0,    5.0,   1100.0, 175.0, 7.0,
+            0.75, 235.0F, 0.52F, 0.72F,  1.15F};
+  case ELostsenseEnemyArchetype::EchoMiner:
+    return {82.0, 8.0,    5.0,   1050.0, 185.0, 11.0,
+            0.90, 185.0F, 0.92F, 1.05F,  1.45F};
+  case ELostsenseEnemyArchetype::HaulConstruct:
+    return {105.0, 9.0,    9.0,   1300.0, 210.0, 13.0,
+            0.95,  205.0F, 0.68F, 1.35F,  1.55F};
+  case ELostsenseEnemyArchetype::ForemanKett:
+    return {155.0, 11.0,   8.0,   1400.0, 195.0, 12.0,
+            0.95,  220.0F, 0.72F, 0.85F,  1.15F};
+  case ELostsenseEnemyArchetype::Odran:
+    if (BossPhase >= 2) {
+      return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
+              0.90,  285.0F, 0.58F, 0.72F,  0.92F};
+    }
+    return {280.0, 14.0,   11.0,  1600.0, 215.0, 12.0,
+            0.90,  225.0F, 0.78F, 0.92F,  1.20F};
+  }
+  return {65.0, 5.0, 3.0, 1100.0, 165.0, 6.0, 0.75, 210.0F, 0.5F, 0.8F, 1.2F};
+}
+} // namespace
+
 struct ALostsenseEnemyCharacter::FPortableEnemy {
   Lostsense::Combat::Combatant Combatant;
   Lostsense::Gameplay::EffectRuntime Effects;
 
-  FPortableEnemy(const uint64 Id, const bool bIsElite, const bool bIsBoss)
+  FPortableEnemy(const uint64 Id, const ELostsenseEnemyArchetype Archetype)
       : Combatant{Lostsense::Combat::CombatantId{Id},
-                  bIsBoss
+                  Archetype == ELostsenseEnemyArchetype::Odran
                       ? Lostsense::Combat::CombatantKind::Boss
-                      : (bIsElite ? Lostsense::Combat::CombatantKind::Elite
-                                  : Lostsense::Combat::CombatantKind::Enemy)},
+                      : (Archetype == ELostsenseEnemyArchetype::ForemanKett
+                             ? Lostsense::Combat::CombatantKind::Elite
+                             : Lostsense::Combat::CombatantKind::Enemy)},
         Effects{Combatant, {}} {
-    const double MaximumHealth = bIsBoss ? 280.0 : (bIsElite ? 100.0 : 65.0);
-    const double AttackPower = bIsBoss ? 14.0 : (bIsElite ? 9.0 : 5.0);
-    const double Armor = bIsBoss ? 11.0 : (bIsElite ? 7.0 : 3.0);
-
+    const FArchetypeTuning Tuning = TuningFor(Archetype, 1);
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::MaxHealth, MaximumHealth));
+        Lostsense::Stats::CombatAttributes::MaxHealth, Tuning.MaximumHealth));
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::AttackPower, AttackPower));
+        Lostsense::Stats::CombatAttributes::AttackPower, Tuning.AttackPower));
     static_cast<void>(Combatant.SetBaseAttribute(
-        Lostsense::Stats::CombatAttributes::Armor, Armor));
-    static_cast<void>(Combatant.Heal(MaximumHealth));
+        Lostsense::Stats::CombatAttributes::Armor, Tuning.Armor));
+    static_cast<void>(Combatant.Heal(Tuning.MaximumHealth));
   }
 };
 
 ALostsenseEnemyCharacter::ALostsenseEnemyCharacter() {
   PrimaryActorTick.bCanEverTick = true;
-  GetCharacterMovement()->MaxWalkSpeed = 260.0F;
+  PrimaryActorTick.TickInterval = 0.0F;
+  GetCharacterMovement()->MaxWalkSpeed = 235.0F;
   GetCharacterMovement()->bOrientRotationToMovement = true;
 }
 
@@ -50,63 +96,44 @@ ALostsenseEnemyCharacter::~ALostsenseEnemyCharacter() = default;
 void ALostsenseEnemyCharacter::ConfigureEnemy(const uint64 InCombatantId,
                                               const bool bInElite,
                                               const uint32 InItemLevel) {
+  ConfigureEnemyArchetype(InCombatantId,
+                          bInElite ? ELostsenseEnemyArchetype::ForemanKett
+                                   : ELostsenseEnemyArchetype::CharterDeserter,
+                          InItemLevel);
+}
+
+void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
+    const uint64 InCombatantId, const ELostsenseEnemyArchetype InArchetype,
+    const uint32 InItemLevel) {
   PendingCombatantId = InCombatantId;
-  bElite = bInElite;
-  bBoss = false;
+  Archetype = InArchetype;
+  bElite = InArchetype == ELostsenseEnemyArchetype::ForemanKett;
+  bBoss = InArchetype == ELostsenseEnemyArchetype::Odran;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
                                                   const uint32 InItemLevel) {
-  PendingCombatantId = InCombatantId;
-  bElite = false;
-  bBoss = true;
-  ItemLevel = FMath::Max(1U, InItemLevel);
+  ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Odran,
+                          InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::BeginPlay() {
   Super::BeginPlay();
-  PortableEnemy = MakeUnique<FPortableEnemy>(PendingCombatantId, bElite, bBoss);
-  GetCharacterMovement()->MaxWalkSpeed = bBoss ? 225.0F : 260.0F;
+  PortableEnemy = MakeUnique<FPortableEnemy>(PendingCombatantId, Archetype);
+  GetCharacterMovement()->MaxWalkSpeed =
+      TuningFor(Archetype, BossPhase).MoveSpeed;
+  EnterState(ELostsenseEnemyAiState::Idle);
 }
 
 void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
   Super::Tick(DeltaSeconds);
-
   if (PortableEnemy == nullptr) {
     return;
   }
 
   static_cast<void>(
       PortableEnemy->Effects.AdvanceTime(static_cast<double>(DeltaSeconds)));
-  if (PortableEnemy->Combatant.Health().IsDead()) {
-    UGameInstance *GameInstance = GetGameInstance();
-    ULostsenseRuntimeSubsystem *Runtime =
-        GameInstance != nullptr
-            ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
-            : nullptr;
-    if (Runtime != nullptr) {
-      HandleDefeat(*Runtime);
-    }
-    return;
-  }
-
-  AttackCooldownRemaining =
-      FMath::Max(0.0F, AttackCooldownRemaining - DeltaSeconds);
-  BossPulseCooldownRemaining =
-      FMath::Max(0.0F, BossPulseCooldownRemaining - DeltaSeconds);
-
-  if (bBoss && BossPhase == 1 && GetMaximumHealth() > 0.0 &&
-      GetCurrentHealth() / GetMaximumHealth() <= 0.65) {
-    BossPhase = 2;
-    BossPulseCooldownRemaining = 0.35F;
-    GetCharacterMovement()->MaxWalkSpeed = 285.0F;
-  }
-
-  ACharacter *Player = UGameplayStatics::GetPlayerCharacter(this, 0);
-  if (Player == nullptr) {
-    return;
-  }
 
   UGameInstance *GameInstance = GetGameInstance();
   ULostsenseRuntimeSubsystem *Runtime =
@@ -117,40 +144,170 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
     return;
   }
 
-  const FVector Delta = Player->GetActorLocation() - GetActorLocation();
+  if (PortableEnemy->Combatant.Health().IsDead()) {
+    HandleDefeat(*Runtime);
+    return;
+  }
+
+  AttackCooldownRemaining =
+      FMath::Max(0.0F, AttackCooldownRemaining - DeltaSeconds);
+  BossPulseCooldownRemaining =
+      FMath::Max(0.0F, BossPulseCooldownRemaining - DeltaSeconds);
+  CommandCooldownRemaining =
+      FMath::Max(0.0F, CommandCooldownRemaining - DeltaSeconds);
+  StateTimeRemaining = FMath::Max(0.0F, StateTimeRemaining - DeltaSeconds);
+
+  if (bBoss && !bBossTransitionCommitted && BossPhase == 1 &&
+      GetMaximumHealth() > 0.0 &&
+      GetCurrentHealth() / GetMaximumHealth() <= 0.65) {
+    bBossTransitionCommitted = true;
+    BossPhase = 2;
+    BossPulseCooldownRemaining = 1.4F;
+    GetCharacterMovement()->MaxWalkSpeed = TuningFor(Archetype, 2).MoveSpeed;
+    EnterState(ELostsenseEnemyAiState::Recover, 1.15F);
+    return;
+  }
+
+  ACharacter *Player = UGameplayStatics::GetPlayerCharacter(this, 0);
+  if (Player == nullptr) {
+    return;
+  }
+  TickLivingAi(DeltaSeconds, *Runtime, *Player);
+}
+
+void ALostsenseEnemyCharacter::EnterState(const ELostsenseEnemyAiState NewState,
+                                          const float Duration) {
+  AiState = NewState;
+  StateTimeRemaining = FMath::Max(0.0F, Duration);
+  if (NewState != ELostsenseEnemyAiState::Windup) {
+    bAttackCommitted = false;
+  }
+}
+
+void ALostsenseEnemyCharacter::TickLivingAi(const float DeltaSeconds,
+                                            ULostsenseRuntimeSubsystem &Runtime,
+                                            ACharacter &Player) {
+  const FArchetypeTuning Tuning = TuningFor(Archetype, BossPhase);
+  const FVector Delta = Player.GetActorLocation() - GetActorLocation();
   const double Distance = Delta.Size2D();
-  const double AggroRadius = bBoss ? 1550.0 : 1100.0;
-  if (Distance > AggroRadius) {
+
+  if (AiState == ELostsenseEnemyAiState::Dead) {
+    return;
+  }
+  if (AiState == ELostsenseEnemyAiState::Recover ||
+      AiState == ELostsenseEnemyAiState::Stagger) {
+    if (StateTimeRemaining <= 0.0F) {
+      EnterState(ELostsenseEnemyAiState::Alert);
+    }
+    return;
+  }
+  if (AiState == ELostsenseEnemyAiState::Windup) {
+    SetActorRotation(Delta.GetSafeNormal2D().Rotation());
+    if (StateTimeRemaining <= 0.0F && !bAttackCommitted) {
+      bAttackCommitted = true;
+      EnterState(ELostsenseEnemyAiState::Attack, 0.05F);
+      ResolveCommittedAttack(Runtime, Distance);
+      EnterState(ELostsenseEnemyAiState::Recover, Tuning.RecoverySeconds);
+      AttackCooldownRemaining = Tuning.CooldownSeconds;
+    }
     return;
   }
 
-  if (bBoss && BossPhase >= 2 && TryResolveBossPulse(*Runtime, Distance)) {
+  if (Distance > Tuning.AggroRadius) {
+    EnterState(ELostsenseEnemyAiState::Idle);
+    return;
+  }
+  if (AiState == ELostsenseEnemyAiState::Idle) {
+    EnterState(ELostsenseEnemyAiState::Alert, 0.18F);
+    return;
+  }
+  if (AiState == ELostsenseEnemyAiState::Alert && StateTimeRemaining > 0.0F) {
     return;
   }
 
-  const double MeleeRange = bBoss ? 205.0 : 165.0;
-  if (Distance > MeleeRange) {
+  if (Archetype == ELostsenseEnemyArchetype::ForemanKett &&
+      CommandCooldownRemaining <= 0.0F) {
+    CommandNearbyConstructs();
+    CommandCooldownRemaining = 5.0F;
+    EnterState(ELostsenseEnemyAiState::Recover, 0.55F);
+    return;
+  }
+
+  if (Distance > Tuning.MeleeRange) {
+    EnterState(ELostsenseEnemyAiState::Approach);
     const FVector Direction = Delta.GetSafeNormal2D();
-    const float MoveSpeed = bBoss && BossPhase >= 2 ? 275.0F : 210.0F;
+    float MoveSpeed = Tuning.MoveSpeed;
+    if (Archetype == ELostsenseEnemyArchetype::HaulConstruct &&
+        Distance < 700.0 && AttackCooldownRemaining <= 0.0F) {
+      MoveSpeed *= 1.65F;
+    }
     AddActorWorldOffset(Direction * MoveSpeed * DeltaSeconds, true);
     SetActorRotation(Direction.Rotation());
     return;
   }
 
-  if (AttackCooldownRemaining > 0.0F) {
+  if (AttackCooldownRemaining <= 0.0F) {
+    BeginAttack(Distance);
+  }
+}
+
+void ALostsenseEnemyCharacter::BeginAttack(const double DistanceToPlayer) {
+  const FArchetypeTuning Tuning = TuningFor(Archetype, BossPhase);
+  if (DistanceToPlayer > Tuning.MeleeRange) {
+    return;
+  }
+  ++AttackPatternIndex;
+  EnterState(ELostsenseEnemyAiState::Windup, Tuning.WindupSeconds);
+}
+
+void ALostsenseEnemyCharacter::ResolveCommittedAttack(
+    ULostsenseRuntimeSubsystem &Runtime, const double DistanceToPlayer) {
+  const FArchetypeTuning Tuning = TuningFor(Archetype, BossPhase);
+  if (DistanceToPlayer > Tuning.MeleeRange + 45.0 || PortableEnemy == nullptr ||
+      PortableEnemy->Combatant.Health().IsDead()) {
     return;
   }
 
   Lostsense::Combat::DamageSpec Damage;
   Damage.BaseDamage[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Physical)] =
-      bBoss ? (BossPhase >= 2 ? 15.0 : 12.0) : (bElite ? 10.0 : 6.0);
+      Lostsense::Combat::DamageType::Physical)] = Tuning.BaseDamage;
   Damage.AttackPowerCoefficients[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Physical)] = bBoss ? 0.90 : 0.75;
+      Lostsense::Combat::DamageType::Physical)] = Tuning.AttackCoefficient;
+
+  if (bBoss && BossPhase >= 2 && BossPulseCooldownRemaining <= 0.0F &&
+      AttackPatternIndex % 3 == 0) {
+    Damage.BaseDamage.fill(0.0);
+    Damage.BaseDamage[static_cast<std::size_t>(
+        Lostsense::Combat::DamageType::Arcane)] = 11.0;
+    Damage.AttackPowerCoefficients.fill(0.0);
+    Damage.AttackPowerCoefficients[static_cast<std::size_t>(
+        Lostsense::Combat::DamageType::Arcane)] = 0.55;
+    Damage.CanBlock = false;
+    BossPulseCooldownRemaining = 3.25F;
+  }
+
   static_cast<void>(
-      Runtime->ResolveEnemyBasicAttack(PortableEnemy->Combatant, Damage));
-  AttackCooldownRemaining =
-      bBoss ? (BossPhase >= 2 ? 0.95F : 1.20F) : (bElite ? 1.25F : 1.65F);
+      Runtime.ResolveEnemyBasicAttack(PortableEnemy->Combatant, Damage));
+}
+
+void ALostsenseEnemyCharacter::CommandNearbyConstructs() {
+  UWorld *World = GetWorld();
+  if (World == nullptr) {
+    return;
+  }
+  for (TActorIterator<ALostsenseEnemyCharacter> It(World); It; ++It) {
+    ALostsenseEnemyCharacter *Other = *It;
+    if (Other == nullptr || Other == this || Other->IsDefeated() ||
+        Other->Archetype != ELostsenseEnemyArchetype::HaulConstruct ||
+        FVector::DistSquared(GetActorLocation(), Other->GetActorLocation()) >
+            FMath::Square(900.0)) {
+      continue;
+    }
+    Other->AttackCooldownRemaining = 0.0F;
+    if (Other->AiState == ELostsenseEnemyAiState::Idle) {
+      Other->EnterState(ELostsenseEnemyAiState::Alert, 0.1F);
+    }
+  }
 }
 
 bool ALostsenseEnemyCharacter::ReceivePlayerAbility(
@@ -158,7 +315,6 @@ bool ALostsenseEnemyCharacter::ReceivePlayerAbility(
   if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
     return false;
   }
-
   const bool Activated = Runtime.ActivatePlayerAbilityAgainst(
       AbilityId, PortableEnemy->Combatant, PortableEnemy->Effects);
   if (Activated && PortableEnemy->Combatant.Health().IsDead()) {
@@ -172,13 +328,36 @@ bool ALostsenseEnemyCharacter::ReceivePlayerLoadoutSlot(
   if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
     return false;
   }
-
   const bool Activated = Runtime.ActivatePlayerLoadoutSlot(
       SlotIndex, &PortableEnemy->Combatant, &PortableEnemy->Effects);
   if (Activated && PortableEnemy->Combatant.Health().IsDead()) {
     HandleDefeat(Runtime);
   }
   return Activated;
+}
+
+Lostsense::Gameplay::AbilityTarget
+ALostsenseEnemyCharacter::BuildAbilityTarget() {
+  Lostsense::Gameplay::AbilityTarget Target;
+  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+    return Target;
+  }
+  Target.Combatant = &PortableEnemy->Combatant;
+  Target.Effects = &PortableEnemy->Effects;
+  Target.Relation = Lostsense::Gameplay::TargetRelation::Hostile;
+  return Target;
+}
+
+void ALostsenseEnemyCharacter::FinalizePlayerAbility(
+    ULostsenseRuntimeSubsystem &Runtime) {
+  if (PortableEnemy != nullptr && PortableEnemy->Combatant.Health().IsDead()) {
+    HandleDefeat(Runtime);
+  }
+}
+
+uint64 ALostsenseEnemyCharacter::GetCombatantId() const {
+  return PortableEnemy != nullptr ? PortableEnemy->Combatant.Id().Value
+                                  : PendingCombatantId;
 }
 
 bool ALostsenseEnemyCharacter::IsDefeated() const {
@@ -201,24 +380,12 @@ int32 ALostsenseEnemyCharacter::GetBossPhase() const {
   return bBoss ? BossPhase : 0;
 }
 
-bool ALostsenseEnemyCharacter::TryResolveBossPulse(
-    ULostsenseRuntimeSubsystem &Runtime, const double DistanceToPlayer) {
-  if (!bBoss || BossPhase < 2 || BossPulseCooldownRemaining > 0.0F ||
-      DistanceToPlayer > 560.0) {
-    return false;
-  }
+ELostsenseEnemyArchetype ALostsenseEnemyCharacter::GetArchetype() const {
+  return Archetype;
+}
 
-  Lostsense::Combat::DamageSpec Pulse;
-  Pulse.BaseDamage[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Arcane)] = 11.0;
-  Pulse.AttackPowerCoefficients[static_cast<std::size_t>(
-      Lostsense::Combat::DamageType::Arcane)] = 0.55;
-  Pulse.CanBlock = false;
-  static_cast<void>(
-      Runtime.ResolveEnemyBasicAttack(PortableEnemy->Combatant, Pulse));
-  BossPulseCooldownRemaining = 3.25F;
-  AttackCooldownRemaining = FMath::Max(AttackCooldownRemaining, 0.65F);
-  return true;
+ELostsenseEnemyAiState ALostsenseEnemyCharacter::GetAiState() const {
+  return AiState;
 }
 
 void ALostsenseEnemyCharacter::HandleDefeat(
@@ -227,6 +394,7 @@ void ALostsenseEnemyCharacter::HandleDefeat(
     return;
   }
   bDefeatHandled = true;
+  EnterState(ELostsenseEnemyAiState::Dead);
 
   static_cast<void>(Runtime.GrantSkillPoints(bBoss ? 3 : 1));
 
@@ -252,6 +420,21 @@ void ALostsenseEnemyCharacter::HandleDefeat(
         DropActor->InitializeDrop(Drops[Index]);
         UGameplayStatics::FinishSpawningActor(DropActor, Transform);
       }
+    }
+  }
+
+  UGameInstance *GameInstance = GetGameInstance();
+  ULostsenseStorySubsystem *Story =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
+          : nullptr;
+  if (Story != nullptr) {
+    if (bBoss) {
+      static_cast<void>(
+          Story->CompleteBeat(ELostsenseStoryBeat::OdranDefeated));
+    } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
+      static_cast<void>(
+          Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));
     }
   }
 
