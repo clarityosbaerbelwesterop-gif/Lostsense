@@ -15,6 +15,9 @@ enum class ELostsenseEnemyArchetype : uint8 {
   EchoMiner,
   HaulConstruct,
   ForemanKett,
+  GildedDead,
+  PressureMutant,
+  RailMarshal,
   Odran
 };
 

@@ -24,6 +24,36 @@ enum class ELostsenseStoryBeat : uint8 {
 UENUM(BlueprintType)
 enum class ELostsenseObjectiveState : uint8 { Locked, Active, Completed };
 
+UENUM(BlueprintType)
+enum class ELostsenseDeepRouteMilestone : uint8 {
+  OdranDefeated,
+  LanternRailDiscovered,
+  ServiceBrakeRestored,
+  RoyalThresholdOpened,
+  VentilationNaveStabilized,
+  PumpCathedralApproachOpened
+};
+
+UENUM(BlueprintType)
+enum class ELostsenseDeepMechanism : uint8 {
+  LanternRailSwitch,
+  ServiceCageBrake,
+  RoyalPressureDoor,
+  VentilationIntake,
+  ReliefVent,
+  VaurReturnShortcut
+};
+
+UENUM(BlueprintType)
+enum class ELostsenseDeepMechanismState : uint8 {
+  Locked,
+  Available,
+  Primary,
+  Alternate,
+  Restored,
+  Open
+};
+
 UCLASS()
 class LOSTSENSEGAME_API ULostsenseStorySubsystem final
     : public UGameInstanceSubsystem {
@@ -51,11 +81,31 @@ public:
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story")
   int32 GetCurrentObjectiveId() const;
 
+  UFUNCTION(BlueprintPure, Category = "Lostsense|DeepRoute")
+  bool HasDeepRouteMilestone(ELostsenseDeepRouteMilestone Milestone) const;
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|DeepRoute")
+  bool CompleteDeepRouteMilestone(ELostsenseDeepRouteMilestone Milestone);
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|DeepRoute")
+  ELostsenseDeepMechanismState
+  GetDeepMechanismState(ELostsenseDeepMechanism Mechanism) const;
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|DeepRoute")
+  bool SetDeepMechanismState(ELostsenseDeepMechanism Mechanism,
+                             ELostsenseDeepMechanismState State);
+
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|Save")
   bool SaveStoryToText(FString &OutPayload) const;
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|Save")
   bool LoadStoryFromText(const FString &Payload);
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|DeepRoute|Save")
+  bool SaveDeepRouteToText(FString &OutPayload) const;
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|DeepRoute|Save")
+  bool LoadDeepRouteFromText(const FString &Payload);
 
 private:
   struct FStoryRuntime;

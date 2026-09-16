@@ -49,6 +49,15 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
   case ELostsenseEnemyArchetype::ForemanKett:
     return {155.0, 11.0,   8.0,   1400.0, 195.0, 12.0,
             0.95,  220.0F, 0.72F, 0.85F,  1.15F};
+  case ELostsenseEnemyArchetype::GildedDead:
+    return {118.0, 10.0,   15.0,  1180.0, 205.0, 14.0,
+            0.90,  155.0F, 1.05F, 1.20F,  1.55F};
+  case ELostsenseEnemyArchetype::PressureMutant:
+    return {96.0, 12.0,   4.0,   1320.0, 235.0, 10.0,
+            1.05, 255.0F, 0.62F, 1.05F,  1.10F};
+  case ELostsenseEnemyArchetype::RailMarshal:
+    return {172.0, 13.0,   10.0,  1550.0, 230.0, 15.0,
+            1.00,  275.0F, 0.48F, 0.70F,  0.92F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
@@ -69,7 +78,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
       : Combatant{Lostsense::Combat::CombatantId{Id},
                   Archetype == ELostsenseEnemyArchetype::Odran
                       ? Lostsense::Combat::CombatantKind::Boss
-                      : (Archetype == ELostsenseEnemyArchetype::ForemanKett
+                      : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
+                          Archetype == ELostsenseEnemyArchetype::RailMarshal)
                              ? Lostsense::Combat::CombatantKind::Elite
                              : Lostsense::Combat::CombatantKind::Enemy)},
         Effects{Combatant, {}} {
@@ -107,7 +117,8 @@ void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
     const uint32 InItemLevel) {
   PendingCombatantId = InCombatantId;
   Archetype = InArchetype;
-  bElite = InArchetype == ELostsenseEnemyArchetype::ForemanKett;
+  bElite = InArchetype == ELostsenseEnemyArchetype::ForemanKett ||
+           InArchetype == ELostsenseEnemyArchetype::RailMarshal;
   bBoss = InArchetype == ELostsenseEnemyArchetype::Odran;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
@@ -273,6 +284,16 @@ void ALostsenseEnemyCharacter::ResolveCommittedAttack(
       Lostsense::Combat::DamageType::Physical)] = Tuning.BaseDamage;
   Damage.AttackPowerCoefficients[static_cast<std::size_t>(
       Lostsense::Combat::DamageType::Physical)] = Tuning.AttackCoefficient;
+
+  if (Archetype == ELostsenseEnemyArchetype::PressureMutant &&
+      AttackPatternIndex % 2 == 0) {
+    Damage.BaseDamage[static_cast<std::size_t>(
+        Lostsense::Combat::DamageType::Physical)] = 5.0;
+    Damage.BaseDamage[static_cast<std::size_t>(
+        Lostsense::Combat::DamageType::Arcane)] = 9.0;
+    Damage.AttackPowerCoefficients[static_cast<std::size_t>(
+        Lostsense::Combat::DamageType::Arcane)] = 0.45;
+  }
 
   if (bBoss && BossPhase >= 2 && BossPulseCooldownRemaining <= 0.0F &&
       AttackPatternIndex % 3 == 0) {
