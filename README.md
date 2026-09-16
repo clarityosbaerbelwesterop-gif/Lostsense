@@ -48,9 +48,22 @@ actors, route story gates, Ninth Descent discoveries, interactive hanging
 counterweights, reward lift logic, explicit-interaction world loot, distinct
 Bell-Maddened Carrion / Charter Deserter / Echo Miner / Haul Construct / Foreman
 Kett archetype tuning, readable AI windup/recovery states, one-shot Odran phase
-transition protection, March Sweep arc acquisition and a first objective-aware
-HUD pass. Graybox geometry and primitive markers are implementation scaffolding,
-not final art.
+transition protection, March Sweep arc acquisition and an objective-aware HUD.
+Graybox geometry and primitive markers are implementation scaffolding, not final
+art.
+
+PR #9 now also includes a usable source-level inventory and Scar Atlas menu pass,
+including authored item/node projection, prerequisite and exclusive-oath state,
+Scar allocation and active-slot wiring. Gameplay input is isolated while those
+menus are open. A Blueprint-callable input bridge routes touch/virtual controls
+through the same Knight interaction/combat paths for the future iPad Pixel
+Streaming UI rather than creating parallel touch-only gameplay logic.
+
+Enemy and boss presentation are separated from gameplay authority through a
+world presentation subsystem that publishes Blueprint-assignable cues for AI
+state changes, attack telegraphs, Odran bell gestures, the one-shot phase
+transition and death presentation. Animation, audio and Niagara assets can bind
+to those cues later without moving combat truth into presentation code.
 
 ## Build and test
 
@@ -78,8 +91,11 @@ GitHub Actions verifies GCC Release, Clang Release, ASan/UBSan, clang-format and
 layered Unreal source checks. The Unreal filters validate the project descriptor,
 Game/Editor target shape, UHT reflected-header shape, repository includes,
 one-way authority boundaries, production GameMode wiring and Pixel Streaming 2
-readiness. These checks are deliberately not presented as a substitute for UHT,
-UBT, PIE or packaging.
+readiness. PR #9 additionally has static slice-acceptance gates covering the
+inventory/Scar UI source contract, menu input isolation, enemy/Odran presentation
+hooks, touch/Pixel Streaming input bridge, counterweight source contract and
+Odran transition/death contract. These checks are deliberately not presented as
+a substitute for UHT, UBT, PIE, packaging or real-device/runtime verification.
 
 ## Architecture boundary
 
@@ -104,5 +120,6 @@ The current execution environment still does not provide `UnrealEditor`,
 `UnrealBuildTool` or `RunUAT`, and no authorized UE 5.8 GPU host/runner is
 currently attached. Therefore current Unreal work is **SOURCE-IMPLEMENTED** and
 static-verified, not **COMPILED**, **RUNTIME-VERIFIED**, **PLAYABLE**,
-**PACKAGED** or **STREAM-VERIFIED**. Those labels become valid only after the
-real engine gates run.
+**PACKAGED** or **STREAM-VERIFIED**. Counterweight traversal/combat geometry,
+touch ergonomics and presentation asset binding remain real-engine/device gates.
+Those labels become valid only after the real engine gates run.
