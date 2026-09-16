@@ -145,8 +145,9 @@ void ALostsensePlayerController::MenuConfirm() {
       return;
     }
     const bool bEquipped = Runtime->EquipFirstInventoryItem();
-    ClientMessage(bEquipped ? TEXT("Equipped the next compatible inventory item")
-                            : TEXT("No compatible inventory item could be equipped"));
+    ClientMessage(bEquipped
+                      ? TEXT("Equipped the next compatible inventory item")
+                      : TEXT("No compatible inventory item could be equipped"));
     NormalizeMenuSelection();
     return;
   }
@@ -159,11 +160,12 @@ void ALostsensePlayerController::MenuConfirm() {
   NormalizeMenuSelection();
   const FLostsenseScarMenuEntry &Selected = Entries[MenuSelectionIndex];
   if (!Selected.bAvailable) {
-    ClientMessage(Selected.bAllocated
-                      ? TEXT("Scar node already allocated")
-                      : (Selected.bBlocked
-                             ? TEXT("Scar node blocked by an exclusive oath")
-                             : TEXT("Scar node is locked or needs more points")));
+    ClientMessage(
+        Selected.bAllocated
+            ? TEXT("Scar node already allocated")
+            : (Selected.bBlocked
+                   ? TEXT("Scar node blocked by an exclusive oath")
+                   : TEXT("Scar node is locked or needs more points")));
     return;
   }
 
@@ -178,8 +180,7 @@ void ALostsensePlayerController::MenuConfirm() {
     static_cast<void>(Runtime->EquipAbilityInSlot(
         static_cast<int32>(AbilityLoadoutSlot::Active1),
         static_cast<int32>(Bellstep.Value)));
-  } else if (Selected.NodeId ==
-             static_cast<int32>(MeasureBreakerNode.Value)) {
+  } else if (Selected.NodeId == static_cast<int32>(MeasureBreakerNode.Value)) {
     static_cast<void>(Runtime->EquipAbilityInSlot(
         static_cast<int32>(AbilityLoadoutSlot::Active2),
         static_cast<int32>(MeasureBreaker.Value)));
@@ -187,14 +188,13 @@ void ALostsensePlayerController::MenuConfirm() {
     static_cast<void>(Runtime->EquipAbilityInSlot(
         static_cast<int32>(AbilityLoadoutSlot::Active3),
         static_cast<int32>(MarchSweep.Value)));
-  } else if (Selected.NodeId ==
-             static_cast<int32>(AnsweringGuardNode.Value)) {
+  } else if (Selected.NodeId == static_cast<int32>(AnsweringGuardNode.Value)) {
     static_cast<void>(Runtime->EquipAbilityInSlot(
         static_cast<int32>(AbilityLoadoutSlot::Active4),
         static_cast<int32>(AnsweringGuard.Value)));
   }
-  ClientMessage(FString::Printf(TEXT("Allocated Scar Atlas node: %s"),
-                                *Selected.Name));
+  ClientMessage(
+      FString::Printf(TEXT("Allocated Scar Atlas node: %s"), *Selected.Name));
 }
 
 void ALostsensePlayerController::MenuCancel() {

@@ -179,10 +179,10 @@ bool FLostsenseMenuProjection::CaptureInventory(
     Entry.InstanceId = static_cast<int64>(Equipped.Item.InstanceId.Value);
     Entry.ItemId = static_cast<int32>(Equipped.Item.DefinitionId.Value);
     Entry.bEquipped = true;
-    Entry.Label = FString::Printf(
-        TEXT("[EQUIPPED] %s  // IL %u // %s"),
-        *ItemName(Equipped.Item.DefinitionId), Equipped.Item.ItemLevel,
-        *RarityName(Equipped.Item.Rarity));
+    Entry.Label = FString::Printf(TEXT("[EQUIPPED] %s  // IL %u // %s"),
+                                  *ItemName(Equipped.Item.DefinitionId),
+                                  Equipped.Item.ItemLevel,
+                                  *RarityName(Equipped.Item.Rarity));
     OutEntries.Add(MoveTemp(Entry));
   }
 
@@ -193,10 +193,11 @@ bool FLostsenseMenuProjection::CaptureInventory(
     Entry.ItemId = static_cast<int32>(Instance.DefinitionId.Value);
     Entry.bEquippable =
         Definition != nullptr && !Definition->AllowedEquipmentSlots.empty();
-    Entry.Label = FString::Printf(
-        TEXT("%s%s  // IL %u // %s"), Entry.bEquippable ? TEXT("[GEAR] ") : TEXT(""),
-        *ItemName(Instance.DefinitionId), Instance.ItemLevel,
-        *RarityName(Instance.Rarity));
+    Entry.Label =
+        FString::Printf(TEXT("%s%s  // IL %u // %s"),
+                        Entry.bEquippable ? TEXT("[GEAR] ") : TEXT(""),
+                        *ItemName(Instance.DefinitionId), Instance.ItemLevel,
+                        *RarityName(Instance.Rarity));
     OutEntries.Add(MoveTemp(Entry));
   }
 
@@ -242,21 +243,21 @@ bool FLostsenseMenuProjection::CaptureScarAtlas(
     Entry.PointCost = static_cast<int32>(Node.PointCost);
     Entry.bAllocated = Allocated.contains(Node.Id.Value);
 
-    const bool PrerequisitesMet = std::all_of(
-        Node.Prerequisites.begin(), Node.Prerequisites.end(),
-        [&Allocated](const SkillNodeId Requirement) {
-          return Allocated.contains(Requirement.Value);
-        });
+    const bool PrerequisitesMet =
+        std::all_of(Node.Prerequisites.begin(), Node.Prerequisites.end(),
+                    [&Allocated](const SkillNodeId Requirement) {
+                      return Allocated.contains(Requirement.Value);
+                    });
 
     bool ExclusiveBlocked = false;
     if (!Entry.bAllocated && Node.ExclusiveGroup.IsValid()) {
-      ExclusiveBlocked = std::any_of(
-          Tree.Nodes.begin(), Tree.Nodes.end(),
-          [&Node, &Allocated](const SkillNodeDefinition &Other) {
-            return Other.Id != Node.Id &&
-                   Other.ExclusiveGroup == Node.ExclusiveGroup &&
-                   Allocated.contains(Other.Id.Value);
-          });
+      ExclusiveBlocked =
+          std::any_of(Tree.Nodes.begin(), Tree.Nodes.end(),
+                      [&Node, &Allocated](const SkillNodeDefinition &Other) {
+                        return Other.Id != Node.Id &&
+                               Other.ExclusiveGroup == Node.ExclusiveGroup &&
+                               Allocated.contains(Other.Id.Value);
+                      });
     }
     Entry.bBlocked = ExclusiveBlocked;
     Entry.bAvailable = !Entry.bAllocated && !Entry.bBlocked &&

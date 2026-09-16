@@ -14,8 +14,8 @@ ALostsenseKnightCharacter *KnightFor(APlayerController *Controller) {
              : nullptr;
 }
 
-ALostsensePlayerController *LostsenseControllerFor(
-    APlayerController *Controller) {
+ALostsensePlayerController *
+LostsenseControllerFor(APlayerController *Controller) {
   return Cast<ALostsensePlayerController>(Controller);
 }
 
@@ -52,7 +52,8 @@ void ULostsenseInputBridgeLibrary::Look(APlayerController *Controller,
   Knight->LookY(FInputActionValue(static_cast<float>(Axis.Y)));
 }
 
-void ULostsenseInputBridgeLibrary::PrimaryAttack(APlayerController *Controller) {
+void ULostsenseInputBridgeLibrary::PrimaryAttack(
+    APlayerController *Controller) {
   if (ALostsenseKnightCharacter *Knight = KnightFor(Controller);
       Knight != nullptr && !GameplaySuppressed(Controller)) {
     Knight->PrimaryAttack(FInputActionValue(true));
@@ -80,7 +81,8 @@ void ULostsenseInputBridgeLibrary::GuardPressed(APlayerController *Controller) {
   }
 }
 
-void ULostsenseInputBridgeLibrary::GuardReleased(APlayerController *Controller) {
+void ULostsenseInputBridgeLibrary::GuardReleased(
+    APlayerController *Controller) {
   if (ALostsenseKnightCharacter *Knight = KnightFor(Controller)) {
     Knight->GuardCompleted(FInputActionValue(false));
   }

@@ -88,9 +88,9 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
   DrawText(
       TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
       FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F, false);
-  DrawText(TEXT("Q/2/R/F Skills   I Inventory   Tab Scar Atlas   T Quick Equip"),
-           FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F,
-           false);
+  DrawText(
+      TEXT("Q/2/R/F Skills   I Inventory   Tab Scar Atlas   T Quick Equip"),
+      FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F, false);
   DrawText(TEXT("F5 Save   F9 Load   F10 Reset slice"),
            FLinearColor(0.72F, 0.72F, 0.72F), 32.0F, 260.0F, nullptr, 0.72F,
            false);
@@ -149,25 +149,26 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     DrawText(TEXT("INVENTORY // FIELD LOADOUT"), FLinearColor::White,
              PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
     DrawText(TEXT("Recovered gear, equipped state and materials"),
-             FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F,
-             PanelY + 48.0F, nullptr, 0.72F, false);
+             FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F, PanelY + 48.0F,
+             nullptr, 0.72F, false);
 
     TArray<FLostsenseInventoryMenuEntry> Entries;
     if (FLostsenseMenuProjection::CaptureInventory(*Runtime, Entries)) {
       const int32 StartIndex = FMath::Clamp(
           Selection - 5, 0, FMath::Max(0, Entries.Num() - MaximumRows));
-      const int32 EndIndex = FMath::Min(Entries.Num(), StartIndex + MaximumRows);
+      const int32 EndIndex =
+          FMath::Min(Entries.Num(), StartIndex + MaximumRows);
       for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
         const bool bSelected = Index == Selection;
         if (bSelected) {
           DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
                    RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
         }
-        DrawText(FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "),
-                                 *Entries[Index].Label),
-                 bSelected ? FLinearColor::White
-                           : FLinearColor(0.76F, 0.76F, 0.78F),
-                 PanelX + 26.0F, RowY, nullptr, 0.72F, false);
+        DrawText(
+            FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "),
+                            *Entries[Index].Label),
+            bSelected ? FLinearColor::White : FLinearColor(0.76F, 0.76F, 0.78F),
+            PanelX + 26.0F, RowY, nullptr, 0.72F, false);
         RowY += RowHeight;
       }
     }
@@ -181,8 +182,8 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
            PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
   DrawText(FString::Printf(TEXT("Unspent Scar Points: %d"),
                            Runtime->GetUnspentSkillPoints()),
-           FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F,
-           PanelY + 48.0F, nullptr, 0.72F, false);
+           FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F, PanelY + 48.0F,
+           nullptr, 0.72F, false);
 
   TArray<FLostsenseScarMenuEntry> Entries;
   if (FLostsenseMenuProjection::CaptureScarAtlas(*Runtime, Entries)) {
@@ -196,16 +197,15 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
         DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
                  RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
       }
-      DrawText(
-          FString::Printf(TEXT("%s[%s] %s // %s // COST %d"),
-                          bSelected ? TEXT("> ") : TEXT("  "),
-                          *ScarStateText(Entry), *Entry.Name, *Entry.Category,
-                          Entry.PointCost),
-          bSelected ? FLinearColor::White
-                    : FLinearColor(0.76F, 0.76F, 0.78F),
-          PanelX + 26.0F, RowY, nullptr, 0.68F, false);
-      DrawText(Entry.Detail, FLinearColor(0.56F, 0.56F, 0.60F),
-               PanelX + 46.0F, RowY + 17.0F, nullptr, 0.60F, false);
+      DrawText(FString::Printf(TEXT("%s[%s] %s // %s // COST %d"),
+                               bSelected ? TEXT("> ") : TEXT("  "),
+                               *ScarStateText(Entry), *Entry.Name,
+                               *Entry.Category, Entry.PointCost),
+               bSelected ? FLinearColor::White
+                         : FLinearColor(0.76F, 0.76F, 0.78F),
+               PanelX + 26.0F, RowY, nullptr, 0.68F, false);
+      DrawText(Entry.Detail, FLinearColor(0.56F, 0.56F, 0.60F), PanelX + 46.0F,
+               RowY + 17.0F, nullptr, 0.60F, false);
       RowY += RowHeight;
     }
   }

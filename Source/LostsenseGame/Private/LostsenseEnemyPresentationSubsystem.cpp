@@ -50,8 +50,8 @@ void ULostsenseEnemyPresentationSubsystem::Tick(const float DeltaTime) {
     }
 
     if (Enemy->IsBoss() && CurrentPhase != Observed.BossPhase) {
-      EmitCue(*Enemy,
-              ELostsenseEnemyPresentationCueKind::BossPhaseTransition, 1.15F);
+      EmitCue(*Enemy, ELostsenseEnemyPresentationCueKind::BossPhaseTransition,
+              1.15F);
       Observed.BossPhase = CurrentPhase;
     }
 
