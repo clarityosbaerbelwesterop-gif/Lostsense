@@ -4,7 +4,7 @@
 using namespace Lostsense::Gameplay;
 
 int main() {
-  Lostsense::Tests::TestHarness test;
+  Lostsense::Tests::TestSuite test{"deep route state"};
 
   DeepRouteState route;
   test.Expect(!route.Complete(DeepRouteMilestone::ServiceBrakeRestored),
@@ -77,5 +77,5 @@ int main() {
   test.Expect(!DeepRouteState::Deserialize(std::string(300, 'x')).has_value(),
               "restore rejects oversized payload");
 
-  return test.ExitCode();
+  return test.Finish();
 }
