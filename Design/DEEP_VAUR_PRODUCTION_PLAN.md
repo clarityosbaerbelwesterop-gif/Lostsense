@@ -47,6 +47,8 @@ The Deep Vaur block now has source-authored continuous geometry below Odran: an 
 
 Deep ecology now introduces Gilded Dead as slow high-armor royal holdovers, Pressure Mutants with mixed physical/Arcane pressure bursts, and Rail Marshals as faster elite lane controllers alongside existing Echo Miners and Haul Constructs. These roles differ in armor, movement, range, windup/recovery cadence and attack composition rather than only health totals.
 
+The save/load audit found one presentation divergence risk: a loaded deep-route state could update authority while already-spawned static mechanism Actors retained their old transform. Deep mechanism presentation now periodically reprojects the authoritative state, while rail carts, cages and ventilation movers already derive their targets every tick. Save restore therefore cannot leave the visible route on a stale pre-load mechanism state.
+
 ## Acceptance boundary
 
 This PR can become source/CI merge-ready without a local Unreal host only if that limitation remains explicit. The following remain separate real-engine gates when an authorized UE 5.8 host exists: UHT, UBT, PIE, collision/traversal feel, rail/counterweight/pressure physics, animation/audio/Niagara binding, packaged build and iPad Pixel Streaming acceptance.
