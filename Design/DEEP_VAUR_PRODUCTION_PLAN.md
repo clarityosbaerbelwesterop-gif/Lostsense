@@ -18,11 +18,11 @@ The next production path is:
 - [x] Merge PR #9 only after exact-head CI is green.
 - [x] Re-read world/story/dungeon authority and establish PR #10 from merged main.
 - [x] Add a deterministic deep-route state authority with bounded serialization.
-- [ ] Wire deep-route state into the Unreal story/world adapter and save/load transaction.
-- [ ] Build reusable rail/lift/brake/pressure/shortcut mechanism actors.
-- [ ] Materialize abandoned industrial shafts / Lantern Rail approach.
+- [x] Wire deep-route state into the Unreal story/world adapter and save/load transaction.
+- [x] Build reusable rail/lift/brake/pressure/shortcut mechanism actors.
+- [x] Materialize abandoned industrial shafts / Lantern Rail approach.
 - [ ] Expand deep-mine ecology and mechanism-teaching encounters.
-- [ ] Materialize Royal Deepworks threshold / Pump Cathedral approach.
+- [x] Materialize Royal Deepworks threshold / Pump Cathedral approach.
 - [ ] Add deep-route static acceptance and portable regression gates.
 - [ ] Run exact-head CI, audit failures, repair, repeat until green.
 - [ ] Final PR #10 acceptance review and merge only when the source/CI contract is satisfied.
@@ -40,6 +40,10 @@ The next production path is:
 ## Deep-route authority
 
 `Gameplay/World/DeepRouteState` owns the ordered source-of-truth for the production route after Odran. It rejects skipped milestones, exposes typed mechanism state, bounds its text codec and validates restored combinations. Unreal may project or mutate it only through the adapter; Actor-local flags must not become a second progression authority.
+
+## Current source production
+
+The Deep Vaur block now has source-authored continuous geometry below Odran: an abandoned Lantern Rail exchange with a maintenance branch, a brake-service chamber and moving service cage; a Royal Deepworks threshold with monumental pressure lock; a vertical ventilation nave with safe relief and direct pressure lanes; a persistent Vaur return shortcut; and the Pump Cathedral approach gate. Rail carts, cage movement and ventilation rotors project authoritative mechanism state rather than owning progression.
 
 ## Acceptance boundary
 
