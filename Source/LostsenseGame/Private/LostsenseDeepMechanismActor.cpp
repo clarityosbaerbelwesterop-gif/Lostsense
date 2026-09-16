@@ -39,7 +39,8 @@ ToAuthorityMechanism(const ELostsenseDeepMechanismKind Kind) {
 } // namespace
 
 ALostsenseDeepMechanismActor::ALostsenseDeepMechanismActor() {
-  PrimaryActorTick.bCanEverTick = false;
+  PrimaryActorTick.bCanEverTick = true;
+  PrimaryActorTick.TickInterval = 0.1F;
   Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
   SetRootComponent(Visual);
   Visual->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -199,6 +200,11 @@ bool ALostsenseDeepMechanismActor::Interact(
     SynchronizePresentation();
   }
   return bChanged;
+}
+
+void ALostsenseDeepMechanismActor::Tick(const float DeltaSeconds) {
+  Super::Tick(DeltaSeconds);
+  SynchronizePresentation();
 }
 
 void ALostsenseDeepMechanismActor::SynchronizePresentation() {
