@@ -18,6 +18,9 @@ enum class ELostsenseEnemyArchetype : uint8 {
   GildedDead,
   PressureMutant,
   RailMarshal,
+  Rootbound,
+  EchoStag,
+  ThornPenitent,
   Odran
 };
 

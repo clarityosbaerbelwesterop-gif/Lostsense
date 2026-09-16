@@ -70,6 +70,7 @@ add_library(
   Source/Lostsense/Gameplay/Persistence/CharacterPersistence.cpp
   Source/Lostsense/Gameplay/Persistence/SaveCodec.cpp
   Source/Lostsense/Gameplay/Story/StoryRuntime.cpp
+  Source/Lostsense/Gameplay/Story/ActTwoStoryRuntime.cpp
   Source/Lostsense/Gameplay/World/DeepRouteState.cpp)
 target_include_directories(lostsense_gameplay PUBLIC Source)
 target_link_libraries(lostsense_gameplay PUBLIC lostsense_combat
@@ -140,6 +141,9 @@ if(BUILD_TESTING)
   lostsense_add_gameplay_test(lostsense_deep_route_state_tests
                               Tests/Gameplay/DeepRouteStateTests.cpp
                               gameplay.deep_route_state)
+  lostsense_add_gameplay_test(lostsense_act_two_story_tests
+                              Tests/Gameplay/ActTwoStoryRuntimeTests.cpp
+                              gameplay.act_two_story)
 endif()
 
 find_program(LOSTSENSE_CLANG_FORMAT NAMES clang-format clang-format-18)

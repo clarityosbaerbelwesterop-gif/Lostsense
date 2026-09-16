@@ -80,6 +80,7 @@ bool DeepRouteState::Complete(DeepRouteMilestone milestone) {
       return false;
     }
     break;
+  case DeepRouteMilestone::ActFourClearanceGranted:
   case DeepRouteMilestone::PumpCathedralApproachOpened:
     break;
   }
@@ -102,6 +103,7 @@ bool DeepRouteState::Complete(DeepRouteMilestone milestone) {
   case DeepRouteMilestone::VentilationNaveStabilized:
     ReturnShortcut_ = DeepMechanismState::Available;
     break;
+  case DeepRouteMilestone::ActFourClearanceGranted:
   case DeepRouteMilestone::PumpCathedralApproachOpened:
     break;
   }

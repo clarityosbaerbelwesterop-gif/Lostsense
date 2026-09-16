@@ -22,6 +22,20 @@ enum class ELostsenseStoryBeat : uint8 {
 };
 
 UENUM(BlueprintType)
+enum class ELostsenseActTwoStoryBeat : uint8 {
+  BlackSapTrailFound,
+  DomaIreMet,
+  InfectedVillagerStabilized,
+  GiltfenRootTunnelOpened,
+  ThornChoirDiscovered,
+  MotherVeyrDefeated,
+  WitnessRootResolved
+};
+
+UENUM(BlueprintType)
+enum class ELostsenseWitnessRootDecision : uint8 { None, Preserve, Burn };
+
+UENUM(BlueprintType)
 enum class ELostsenseObjectiveState : uint8 { Locked, Active, Completed };
 
 UENUM(BlueprintType)
@@ -31,6 +45,7 @@ enum class ELostsenseDeepRouteMilestone : uint8 {
   ServiceBrakeRestored,
   RoyalThresholdOpened,
   VentilationNaveStabilized,
+  ActFourClearanceGranted,
   PumpCathedralApproachOpened
 };
 
@@ -74,6 +89,15 @@ public:
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Story")
   bool CompleteBeat(ELostsenseStoryBeat Beat);
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|Story|ActII")
+  bool HasActTwoBeat(ELostsenseActTwoStoryBeat Beat) const;
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|ActII")
+  bool CompleteActTwoBeat(ELostsenseActTwoStoryBeat Beat);
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|ActII")
+  bool ResolveWitnessRoot(ELostsenseWitnessRootDecision Decision);
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story")
   ELostsenseObjectiveState GetObjectiveState(int32 ObjectiveId) const;

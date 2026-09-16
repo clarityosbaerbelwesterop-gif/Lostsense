@@ -58,6 +58,15 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
   case ELostsenseEnemyArchetype::RailMarshal:
     return {172.0, 13.0,   10.0,  1550.0, 230.0, 15.0,
             1.00,  275.0F, 0.48F, 0.70F,  0.92F};
+  case ELostsenseEnemyArchetype::Rootbound:
+    return {92.0, 9.0,    7.0,   1280.0, 185.0, 11.0,
+            0.92, 190.0F, 0.70F, 0.90F,  1.05F};
+  case ELostsenseEnemyArchetype::EchoStag:
+    return {126.0, 14.0,   5.0,   1750.0, 300.0, 12.0,
+            1.08,  320.0F, 0.58F, 0.82F,  1.15F};
+  case ELostsenseEnemyArchetype::ThornPenitent:
+    return {108.0, 12.0,   9.0,   1450.0, 235.0, 13.0,
+            0.98,  245.0F, 0.66F, 0.78F,  0.98F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,

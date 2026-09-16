@@ -102,7 +102,7 @@ bool ALostsenseDeepMechanismActor::CanInteract(
 
   if (Kind == ELostsenseDeepMechanismKind::PumpCathedralApproachGate) {
     return Story->HasDeepRouteMilestone(
-               ELostsenseDeepRouteMilestone::VentilationNaveStabilized) &&
+               ELostsenseDeepRouteMilestone::ActFourClearanceGranted) &&
            !Story->HasDeepRouteMilestone(
                ELostsenseDeepRouteMilestone::PumpCathedralApproachOpened);
   }

@@ -49,8 +49,12 @@ int main() {
   test.Expect(route.SetMechanism(DeepMechanismId::VaurReturnShortcut,
                                  DeepMechanismState::Open),
               "return shortcut persists after stabilization");
+  test.Expect(!route.Complete(DeepRouteMilestone::PumpCathedralApproachOpened),
+              "Pump Cathedral cannot open before Act IV clearance");
+  test.Expect(route.Complete(DeepRouteMilestone::ActFourClearanceGranted),
+              "future campaign authority can grant Act IV clearance");
   test.Expect(route.Complete(DeepRouteMilestone::PumpCathedralApproachOpened),
-              "Pump Cathedral approach can open");
+              "Pump Cathedral approach opens only after campaign clearance");
 
   const auto encoded = route.Serialize();
   const auto restored = DeepRouteState::Deserialize(encoded);
