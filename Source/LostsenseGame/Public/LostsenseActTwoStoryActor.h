@@ -48,4 +48,5 @@ private:
 
   bool bConfigured = false;
   FVector RestLocation = FVector::ZeroVector;
+  FVector RestScale = FVector::OneVector;
 };
