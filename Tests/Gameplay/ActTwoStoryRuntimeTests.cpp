@@ -14,7 +14,8 @@ int main() {
               "Black Sap is locked before Act I completion");
 
   for (std::uint32_t index = 0;
-       index <= static_cast<std::uint32_t>(FirstSliceStoryBeat::BellgraveChanged);
+       index <=
+       static_cast<std::uint32_t>(FirstSliceStoryBeat::BellgraveChanged);
        ++index) {
     test.Expect(actOne.CompleteBeat(static_cast<FirstSliceStoryBeat>(index)),
                 "Act I canonical beats complete in order");
@@ -56,7 +57,8 @@ int main() {
               "Act II state deserializes");
   ActTwoStoryRuntime restoredRuntime;
   test.Expect(restoredRuntime.RestoreState(restored) &&
-                  restoredRuntime.RootDecision() == WitnessRootDecision::Preserve,
+                  restoredRuntime.RootDecision() ==
+                      WitnessRootDecision::Preserve,
               "Act II root decision round trips deterministically");
 
   ActTwoStoryState impossible{true, 0b101U, WitnessRootDecision::None};
