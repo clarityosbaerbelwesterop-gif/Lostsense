@@ -81,7 +81,8 @@ bool ULostsenseStorySubsystem::HasBeat(const ELostsenseStoryBeat Beat) const {
 }
 
 bool ULostsenseStorySubsystem::CompleteBeat(const ELostsenseStoryBeat Beat) {
-  if (!IsStoryReady() || !StoryRuntime->Story.CompleteBeat(ToPortableBeat(Beat))) {
+  if (!IsStoryReady() ||
+      !StoryRuntime->Story.CompleteBeat(ToPortableBeat(Beat))) {
     return false;
   }
   if (Beat == ELostsenseStoryBeat::OdranDefeated) {
@@ -121,8 +122,8 @@ bool ULostsenseStorySubsystem::HasDeepRouteMilestone(
 
 bool ULostsenseStorySubsystem::CompleteDeepRouteMilestone(
     const ELostsenseDeepRouteMilestone Milestone) {
-  return IsStoryReady() && StoryRuntime->DeepRoute.Complete(
-                               ToPortableMilestone(Milestone));
+  return IsStoryReady() &&
+         StoryRuntime->DeepRoute.Complete(ToPortableMilestone(Milestone));
 }
 
 ELostsenseDeepMechanismState ULostsenseStorySubsystem::GetDeepMechanismState(
@@ -137,9 +138,9 @@ ELostsenseDeepMechanismState ULostsenseStorySubsystem::GetDeepMechanismState(
 bool ULostsenseStorySubsystem::SetDeepMechanismState(
     const ELostsenseDeepMechanism Mechanism,
     const ELostsenseDeepMechanismState State) {
-  return IsStoryReady() && StoryRuntime->DeepRoute.SetMechanism(
-                               ToPortableMechanism(Mechanism),
-                               ToPortableMechanismState(State));
+  return IsStoryReady() &&
+         StoryRuntime->DeepRoute.SetMechanism(ToPortableMechanism(Mechanism),
+                                              ToPortableMechanismState(State));
 }
 
 bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
@@ -177,7 +178,7 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   const auto DeepCandidate =
       Lostsense::Gameplay::DeepRouteState::Deserialize(DeepPayload);
   if (!Lostsense::Gameplay::FirstSliceStoryCodec::Deserialize(StoryPayload,
-                                                               StoryCandidate) ||
+                                                              StoryCandidate) ||
       !DeepCandidate.has_value()) {
     return false;
   }

@@ -20,9 +20,9 @@ ALostsenseDeepMoverActor::ALostsenseDeepMoverActor() {
   }
 }
 
-void ALostsenseDeepMoverActor::Configure(
-    const ELostsenseDeepMoverKind InKind, const FVector InPrimaryOffset,
-    const FVector InAlternateOffset) {
+void ALostsenseDeepMoverActor::Configure(const ELostsenseDeepMoverKind InKind,
+                                         const FVector InPrimaryOffset,
+                                         const FVector InAlternateOffset) {
   Kind = InKind;
   Origin = GetActorLocation();
   PrimaryOffset = InPrimaryOffset;

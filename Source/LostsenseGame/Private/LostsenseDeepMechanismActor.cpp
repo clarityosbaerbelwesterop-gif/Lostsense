@@ -16,8 +16,8 @@ ULostsenseStorySubsystem *StoryFor(const AActor &Actor) {
              : nullptr;
 }
 
-ELostsenseDeepMechanism ToAuthorityMechanism(
-    const ELostsenseDeepMechanismKind Kind) {
+ELostsenseDeepMechanism
+ToAuthorityMechanism(const ELostsenseDeepMechanismKind Kind) {
   switch (Kind) {
   case ELostsenseDeepMechanismKind::LanternRailSwitch:
     return ELostsenseDeepMechanism::LanternRailSwitch;
@@ -64,9 +64,9 @@ FText ALostsenseDeepMechanismActor::GetInteractionPrompt() const {
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
   switch (Kind) {
   case ELostsenseDeepMechanismKind::LanternRailSwitch:
-    if (Story != nullptr &&
-        Story->GetDeepMechanismState(ELostsenseDeepMechanism::LanternRailSwitch) ==
-            ELostsenseDeepMechanismState::Alternate) {
+    if (Story != nullptr && Story->GetDeepMechanismState(
+                                ELostsenseDeepMechanism::LanternRailSwitch) ==
+                                ELostsenseDeepMechanismState::Alternate) {
       return FText::FromString(TEXT("Route rail to main descent"));
     }
     return FText::FromString(TEXT("Route rail to maintenance gallery"));
@@ -149,28 +149,27 @@ bool ALostsenseDeepMechanismActor::Interact(
     break;
   }
   case ELostsenseDeepMechanismKind::ServiceCageBrake:
-    bChanged = Story->SetDeepMechanismState(
-                   ELostsenseDeepMechanism::ServiceCageBrake,
-                   ELostsenseDeepMechanismState::Restored) &&
-               Story->CompleteDeepRouteMilestone(
-                   ELostsenseDeepRouteMilestone::ServiceBrakeRestored);
+    bChanged =
+        Story->SetDeepMechanismState(ELostsenseDeepMechanism::ServiceCageBrake,
+                                     ELostsenseDeepMechanismState::Restored) &&
+        Story->CompleteDeepRouteMilestone(
+            ELostsenseDeepRouteMilestone::ServiceBrakeRestored);
     break;
   case ELostsenseDeepMechanismKind::RoyalPressureDoor:
-    bChanged = Story->SetDeepMechanismState(
-                   ELostsenseDeepMechanism::RoyalPressureDoor,
-                   ELostsenseDeepMechanismState::Open) &&
-               Story->CompleteDeepRouteMilestone(
-                   ELostsenseDeepRouteMilestone::RoyalThresholdOpened);
+    bChanged =
+        Story->SetDeepMechanismState(ELostsenseDeepMechanism::RoyalPressureDoor,
+                                     ELostsenseDeepMechanismState::Open) &&
+        Story->CompleteDeepRouteMilestone(
+            ELostsenseDeepRouteMilestone::RoyalThresholdOpened);
     break;
   case ELostsenseDeepMechanismKind::VentilationIntake:
-    bChanged = Story->SetDeepMechanismState(
-        ELostsenseDeepMechanism::VentilationIntake,
-        ELostsenseDeepMechanismState::Open);
+    bChanged =
+        Story->SetDeepMechanismState(ELostsenseDeepMechanism::VentilationIntake,
+                                     ELostsenseDeepMechanismState::Open);
     break;
   case ELostsenseDeepMechanismKind::ReliefVent:
-    bChanged = Story->SetDeepMechanismState(
-        ELostsenseDeepMechanism::ReliefVent,
-        ELostsenseDeepMechanismState::Open);
+    bChanged = Story->SetDeepMechanismState(ELostsenseDeepMechanism::ReliefVent,
+                                            ELostsenseDeepMechanismState::Open);
     break;
   case ELostsenseDeepMechanismKind::VaurReturnShortcut:
     bChanged = Story->SetDeepMechanismState(
@@ -184,7 +183,8 @@ bool ALostsenseDeepMechanismActor::Interact(
   }
 
   const bool bVentilationOpen =
-      Story->GetDeepMechanismState(ELostsenseDeepMechanism::VentilationIntake) ==
+      Story->GetDeepMechanismState(
+          ELostsenseDeepMechanism::VentilationIntake) ==
           ELostsenseDeepMechanismState::Open &&
       Story->GetDeepMechanismState(ELostsenseDeepMechanism::ReliefVent) ==
           ELostsenseDeepMechanismState::Open;

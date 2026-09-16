@@ -27,7 +27,8 @@ AStaticMeshActor *SpawnBlock(UWorld &World, UStaticMesh &Mesh,
   return Actor;
 }
 
-void SpawnEnemy(UWorld &World, const FVector &Location, const uint64 CombatantId,
+void SpawnEnemy(UWorld &World, const FVector &Location,
+                const uint64 CombatantId,
                 const ELostsenseEnemyArchetype Archetype,
                 const uint32 ItemLevel) {
   const FTransform Transform(FRotator::ZeroRotator, Location);
@@ -82,8 +83,7 @@ void SpawnLanternRail(UWorld &World, UStaticMesh &Cube) {
   for (int32 Segment = 0; Segment < 8; ++Segment) {
     const float X = Entry.X + static_cast<float>(Segment) * 620.0F;
     const float Z = Entry.Z - static_cast<float>(Segment) * 85.0F;
-    SpawnBlock(World, Cube, FVector(X, 0.0F, Z),
-               FVector(3.5F, 2.8F, 0.32F));
+    SpawnBlock(World, Cube, FVector(X, 0.0F, Z), FVector(3.5F, 2.8F, 0.32F));
     SpawnBlock(World, Cube, FVector(X, 1150.0F, Z + 360.0F),
                FVector(3.2F, 0.9F, 0.24F));
     if (Segment % 2 == 0) {
@@ -103,8 +103,7 @@ void SpawnLanternRail(UWorld &World, UStaticMesh &Cube) {
   SpawnMover(World, Entry + FVector(900.0F, 0.0F, 130.0F),
              FVector(1.8F, 1.2F, 0.55F),
              ELostsenseDeepMoverKind::LanternRailCart,
-             FVector(1800.0F, 0.0F, -240.0F),
-             FVector(1200.0F, 850.0F, 160.0F));
+             FVector(1800.0F, 0.0F, -240.0F), FVector(1200.0F, 850.0F, 160.0F));
 
   SpawnEnemy(World, Entry + FVector(1250.0F, -350.0F, 120.0F), 1501U,
              ELostsenseEnemyArchetype::EchoMiner, 8U);
@@ -114,7 +113,8 @@ void SpawnLanternRail(UWorld &World, UStaticMesh &Cube) {
              ELostsenseEnemyArchetype::EchoMiner, 9U);
 
   // Brake service chamber. Once restored, the cage physically descends to the
-  // Royal threshold and the authoritative route state unlocks the pressure door.
+  // Royal threshold and the authoritative route state unlocks the pressure
+  // door.
   const FVector BrakeRoom = Entry + FVector(4300.0F, 0.0F, -620.0F);
   SpawnBlock(World, Cube, BrakeRoom, FVector(5.0F, 4.0F, 0.4F));
   SpawnBlock(World, Cube, BrakeRoom + FVector(0.0F, 0.0F, 650.0F),
@@ -126,7 +126,7 @@ void SpawnLanternRail(UWorld &World, UStaticMesh &Cube) {
              FVector(2.2F, 2.2F, 0.28F), ELostsenseDeepMoverKind::ServiceCage,
              FVector(0.0F, 0.0F, -1250.0F));
   SpawnEnemy(World, BrakeRoom + FVector(450.0F, 500.0F, 120.0F), 1510U,
-             ELostsenseEnemyArchetype::ForemanKett, 9U);
+             ELostsenseEnemyArchetype::RailMarshal, 9U);
 }
 
 void SpawnRoyalThreshold(UWorld &World, UStaticMesh &Cube) {
@@ -168,21 +168,21 @@ void SpawnRoyalThreshold(UWorld &World, UStaticMesh &Cube) {
   // changing authored topology.
   for (int32 Step = 0; Step < 5; ++Step) {
     SpawnBlock(World, Cube,
-               Nave + FVector(static_cast<float>(Step) * 620.0F,
-                              1350.0F, -120.0F - static_cast<float>(Step) * 80.0F),
+               Nave + FVector(static_cast<float>(Step) * 620.0F, 1350.0F,
+                              -120.0F - static_cast<float>(Step) * 80.0F),
                FVector(3.4F, 1.0F, 0.25F));
     SpawnBlock(World, Cube,
-               Nave + FVector(static_cast<float>(Step) * 620.0F,
-                              -350.0F, -260.0F - static_cast<float>(Step) * 95.0F),
+               Nave + FVector(static_cast<float>(Step) * 620.0F, -350.0F,
+                              -260.0F - static_cast<float>(Step) * 95.0F),
                FVector(3.4F, 1.8F, 0.25F));
   }
 
   SpawnEnemy(World, Nave + FVector(400.0F, -450.0F, 120.0F), 1601U,
-             ELostsenseEnemyArchetype::HaulConstruct, 10U);
+             ELostsenseEnemyArchetype::GildedDead, 10U);
   SpawnEnemy(World, Nave + FVector(1300.0F, 500.0F, 80.0F), 1602U,
-             ELostsenseEnemyArchetype::EchoMiner, 10U);
+             ELostsenseEnemyArchetype::PressureMutant, 10U);
   SpawnEnemy(World, Nave + FVector(2100.0F, -250.0F, -80.0F), 1603U,
-             ELostsenseEnemyArchetype::ForemanKett, 11U);
+             ELostsenseEnemyArchetype::RailMarshal, 11U);
 
   SpawnMechanism(World, Nave + FVector(2500.0F, 1500.0F, 120.0F),
                  FVector(0.55F, 2.2F, 3.2F),
