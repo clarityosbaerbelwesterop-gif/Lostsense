@@ -59,8 +59,32 @@ bool DeepRouteState::Complete(DeepRouteMilestone milestone) {
       return false;
     }
   }
-  CompletedMask_ |= bit;
 
+  switch (milestone) {
+  case DeepRouteMilestone::OdranDefeated:
+  case DeepRouteMilestone::LanternRailDiscovered:
+    break;
+  case DeepRouteMilestone::ServiceBrakeRestored:
+    if (ServiceBrake_ != DeepMechanismState::Restored) {
+      return false;
+    }
+    break;
+  case DeepRouteMilestone::RoyalThresholdOpened:
+    if (PressureDoor_ != DeepMechanismState::Open) {
+      return false;
+    }
+    break;
+  case DeepRouteMilestone::VentilationNaveStabilized:
+    if (VentilationIntake_ != DeepMechanismState::Open ||
+        ReliefVent_ != DeepMechanismState::Open) {
+      return false;
+    }
+    break;
+  case DeepRouteMilestone::PumpCathedralApproachOpened:
+    break;
+  }
+
+  CompletedMask_ |= bit;
   switch (milestone) {
   case DeepRouteMilestone::OdranDefeated:
     RailSwitch_ = DeepMechanismState::Available;
@@ -121,6 +145,14 @@ bool DeepRouteState::SetMechanism(DeepMechanismId id,
   if (slot == nullptr || *slot == DeepMechanismState::Locked) {
     return state == DeepMechanismState::Locked;
   }
+
+  if (id != DeepMechanismId::LanternRailSwitch &&
+      (*slot == DeepMechanismState::Restored ||
+       *slot == DeepMechanismState::Open) &&
+      state != *slot) {
+    return false;
+  }
+
   const auto previous = *slot;
   *slot = state;
   if (!ValidState(*this)) {
@@ -259,13 +291,26 @@ bool DeepRouteState::ValidState(const DeepRouteState &state) noexcept {
       state.PressureDoor_ != DeepMechanismState::Locked) {
     return false;
   }
+  if (state.IsComplete(DeepRouteMilestone::ServiceBrakeRestored) &&
+      state.ServiceBrake_ != DeepMechanismState::Restored) {
+    return false;
+  }
   if (!state.IsComplete(DeepRouteMilestone::RoyalThresholdOpened) &&
       (state.VentilationIntake_ != DeepMechanismState::Locked ||
        state.ReliefVent_ != DeepMechanismState::Locked)) {
     return false;
   }
+  if (state.IsComplete(DeepRouteMilestone::RoyalThresholdOpened) &&
+      state.PressureDoor_ != DeepMechanismState::Open) {
+    return false;
+  }
   if (!state.IsComplete(DeepRouteMilestone::VentilationNaveStabilized) &&
       state.ReturnShortcut_ != DeepMechanismState::Locked) {
+    return false;
+  }
+  if (state.IsComplete(DeepRouteMilestone::VentilationNaveStabilized) &&
+      (state.VentilationIntake_ != DeepMechanismState::Open ||
+       state.ReliefVent_ != DeepMechanismState::Open)) {
     return false;
   }
   return true;
