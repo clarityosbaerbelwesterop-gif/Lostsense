@@ -13,7 +13,19 @@ The next production path is:
 
 **Upper Vaur Goldworks → abandoned industrial shafts / Lantern Rail approach → Royal Deepworks threshold → Pump Cathedral approach → later Crown Excavation / King's Bore.**
 
-This block prepares the geography and systems required for Act IV without skipping the campaign's authored order.
+## Ordered implementation checklist
+
+- [x] Merge PR #9 only after exact-head CI is green.
+- [x] Re-read world/story/dungeon authority and establish PR #10 from merged main.
+- [x] Add a deterministic deep-route state authority with bounded serialization.
+- [ ] Wire deep-route state into the Unreal story/world adapter and save/load transaction.
+- [ ] Build reusable rail/lift/brake/pressure/shortcut mechanism actors.
+- [ ] Materialize abandoned industrial shafts / Lantern Rail approach.
+- [ ] Expand deep-mine ecology and mechanism-teaching encounters.
+- [ ] Materialize Royal Deepworks threshold / Pump Cathedral approach.
+- [ ] Add deep-route static acceptance and portable regression gates.
+- [ ] Run exact-head CI, audit failures, repair, repeat until green.
+- [ ] Final PR #10 acceptance review and merge only when the source/CI contract is satisfied.
 
 ## Production pillars
 
@@ -25,79 +37,9 @@ This block prepares the geography and systems required for Act IV without skippi
 6. **Persistent consequences.** Restored lifts, opened shortcuts and pressure states must be representable by authoritative persistent world/story state rather than transient actor-only booleans where progression depends on them.
 7. **No false runtime claims.** Source/static completion is not UE 5.8 UHT/UBT/PIE/package/Pixel Streaming verification.
 
-## Implementation sequence
+## Deep-route authority
 
-### A. Deep-route state
-
-- Extend the typed story/world progression model only where required for durable deep-route gates.
-- Add stable IDs for restored mechanisms and discovered deep-route anchors.
-- Preserve transactional save/load behavior and reject impossible restored states.
-
-### B. Mine-network mechanisms
-
-Build reusable source-level mechanism contracts for:
-
-- cage lift call/send/locked states;
-- rail switch routing and cart hazard lanes;
-- brake restoration;
-- ventilation/pressure valves;
-- pressure doors and relief vents;
-- authored shortcut unlocks.
-
-Mechanisms must expose presentation state without making presentation authoritative.
-
-### C. Abandoned industrial shafts / Lantern Rail approach
-
-Materialize a coherent route beneath the existing Upper Vaur slice:
-
-- descending rail exchange;
-- derailed maintenance gallery;
-- lift/brake service chamber;
-- worker staging alcoves and abandoned shift evidence;
-- optional repair crawl / shortcut;
-- first royal masonry intrusion visible before the threshold.
-
-Combat spaces must retain traversal exits and not become sealed rectangles without geographic justification.
-
-### D. Deep-mine ecology
-
-Expand existing ecology with deeper variants and roles rather than health-only reskins:
-
-- Echo Miner pressure groups;
-- Haul Construct route denial / charge geometry;
-- royal-era gilded dead at the transition;
-- pressure-mutant foreshadowing near ventilation failures;
-- an elite encounter that teaches rail/pressure interaction before Pump Cathedral.
-
-All attacks remain readable through explicit windup/attack/recovery presentation hooks.
-
-### E. Royal Deepworks threshold / Pump Cathedral approach
-
-Create the first Royal Deepworks production graybox showing the material and scale transition:
-
-- monumental pump intake;
-- pressure lock sequence;
-- vertical ventilation nave;
-- safe relief route versus dangerous high-pressure shortcut;
-- visible deeper bore infrastructure;
-- authored return shortcut toward the Vaur network.
-
-Do not prematurely implement the entire Act IV boss chain in one undifferentiated commit.
-
-### F. Verification and repair
-
-Every implementation slice must preserve:
-
-- GCC Release + warnings-as-errors;
-- Clang Release + warnings-as-errors;
-- ASan/UBSan;
-- clang-format;
-- Unreal layered static filters;
-- portable deterministic tests;
-- new deep-route persistence/mechanism regression tests;
-- source acceptance checks for authored route/mechanism integration.
-
-Any discovered state divergence, duplicate authority, unsafe restore path, non-deterministic gameplay ordering or input collision is fixed before the block is treated as complete.
+`Gameplay/World/DeepRouteState` owns the ordered source-of-truth for the production route after Odran. It rejects skipped milestones, exposes typed mechanism state, bounds its text codec and validates restored combinations. Unreal may project or mutate it only through the adapter; Actor-local flags must not become a second progression authority.
 
 ## Acceptance boundary
 
