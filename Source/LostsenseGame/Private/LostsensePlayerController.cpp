@@ -144,10 +144,10 @@ void ALostsensePlayerController::MenuConfirm() {
                         : TEXT("Selected entry is not equippable"));
       return;
     }
-    const bool bEquipped = Runtime->EquipFirstInventoryItem();
+    const bool bEquipped = Runtime->EquipInventoryItem(Selected.InstanceId);
     ClientMessage(bEquipped
-                      ? TEXT("Equipped the next compatible inventory item")
-                      : TEXT("No compatible inventory item could be equipped"));
+                      ? TEXT("Equipped selected inventory item")
+                      : TEXT("Selected inventory item could not be equipped"));
     NormalizeMenuSelection();
     return;
   }

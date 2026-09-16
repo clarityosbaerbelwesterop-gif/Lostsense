@@ -101,6 +101,9 @@ public:
   bool EquipAbilityInSlot(int32 SlotIndex, int32 AbilityId);
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")
+  bool EquipInventoryItem(int64 ItemInstanceId);
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Inventory")
   bool EquipFirstInventoryItem();
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Save")

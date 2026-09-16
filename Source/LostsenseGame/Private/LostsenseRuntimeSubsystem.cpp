@@ -233,6 +233,40 @@ bool ULostsenseRuntimeSubsystem::EquipAbilityInSlot(const int32 SlotIndex,
          Lostsense::Gameplay::LoadoutResult::Success;
 }
 
+bool ULostsenseRuntimeSubsystem::EquipInventoryItem(
+    const int64 ItemInstanceId) {
+  if (!PortableRuntime.IsValid() || ItemInstanceId <= 0) {
+    return false;
+  }
+
+  const Lostsense::Gameplay::ItemInstanceId InstanceId{
+      static_cast<std::uint64_t>(ItemInstanceId)};
+  const Lostsense::Gameplay::ItemInstance *Instance =
+      PortableRuntime->InventoryState.FindInstance(InstanceId);
+  if (Instance == nullptr) {
+    return false;
+  }
+
+  const Lostsense::Gameplay::ItemDefinition *Definition =
+      PortableRuntime->Items.FindItem(Instance->DefinitionId);
+  if (Definition == nullptr || Definition->AllowedEquipmentSlots.empty()) {
+    return false;
+  }
+
+  for (const Lostsense::Gameplay::EquipmentSlotId Slot :
+       Definition->AllowedEquipmentSlots) {
+    const Lostsense::Gameplay::EquipmentResult Result =
+        Lostsense::Gameplay::GameplayEventAuthority::Equip(
+            PortableRuntime->Equipment, PortableRuntime->InventoryState,
+            InstanceId, Slot, PortableRuntime->Player.Id(),
+            PortableRuntime->Events);
+    if (Result == Lostsense::Gameplay::EquipmentResult::Success) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool ULostsenseRuntimeSubsystem::EquipFirstInventoryItem() {
   if (!PortableRuntime.IsValid()) {
     return false;

@@ -59,6 +59,7 @@ def main() -> int:
             "CaptureInventory",
             "CaptureScarAtlas",
             "AllocateSkillNode",
+            "EquipInventoryItem(Selected.InstanceId)",
             "SCAR ATLAS // KNIGHT 102",
             "INVENTORY // FIELD LOADOUT",
         ),
