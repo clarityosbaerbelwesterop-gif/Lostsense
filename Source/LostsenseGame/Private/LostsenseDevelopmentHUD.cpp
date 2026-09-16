@@ -1,6 +1,8 @@
 #include "LostsenseDevelopmentHUD.h"
 
 #include "LostsenseEnemyCharacter.h"
+#include "LostsenseMenuProjection.h"
+#include "LostsensePlayerController.h"
 #include "LostsenseRuntimeSubsystem.h"
 #include "LostsenseStorySubsystem.h"
 
@@ -28,6 +30,19 @@ FString ObjectiveText(const int32 ObjectiveId) {
   default:
     return TEXT("Orient yourself beneath Bellgrave's stabilization bell");
   }
+}
+
+FString ScarStateText(const FLostsenseScarMenuEntry &Entry) {
+  if (Entry.bAllocated) {
+    return TEXT("ALLOCATED");
+  }
+  if (Entry.bBlocked) {
+    return TEXT("OATH LOCKED");
+  }
+  if (Entry.bAvailable) {
+    return TEXT("AVAILABLE");
+  }
+  return TEXT("LOCKED");
 }
 } // namespace
 
@@ -73,7 +88,7 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
   DrawText(
       TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
       FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F, false);
-  DrawText(TEXT("Q/2/R/F Skills   K Scar Atlas   T Equip pickup"),
+  DrawText(TEXT("Q/2/R/F Skills   I Inventory   Tab Scar Atlas   T Quick Equip"),
            FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F,
            false);
   DrawText(TEXT("F5 Save   F9 Load   F10 Reset slice"),
@@ -109,6 +124,94 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     DrawMeter(TEXT("BOSS"), Boss->GetCurrentHealth(), Boss->GetMaximumHealth(),
               X, Y, Width);
   }
+
+  const ALostsensePlayerController *Controller =
+      Cast<ALostsensePlayerController>(GetOwningPlayerController());
+  if (Controller == nullptr || !Controller->IsGameplayInputSuppressed()) {
+    return;
+  }
+
+  const float PanelWidth = FMath::Min(610.0F, Canvas->ClipX - 64.0F);
+  const float PanelHeight = FMath::Min(650.0F, Canvas->ClipY - 96.0F);
+  const float PanelX = FMath::Max(32.0F, Canvas->ClipX - PanelWidth - 32.0F);
+  const float PanelY = 48.0F;
+  DrawRect(FLinearColor(0.025F, 0.025F, 0.03F, 0.96F), PanelX, PanelY,
+           PanelWidth, PanelHeight);
+  DrawRect(FLinearColor(0.28F, 0.28F, 0.30F, 0.96F), PanelX, PanelY, 5.0F,
+           PanelHeight);
+
+  const int32 Selection = Controller->GetMenuSelectionIndex();
+  float RowY = PanelY + 82.0F;
+  constexpr float RowHeight = 38.0F;
+  constexpr int32 MaximumRows = 12;
+
+  if (Controller->IsInventoryMenuOpen()) {
+    DrawText(TEXT("INVENTORY // FIELD LOADOUT"), FLinearColor::White,
+             PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
+    DrawText(TEXT("Recovered gear, equipped state and materials"),
+             FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F,
+             PanelY + 48.0F, nullptr, 0.72F, false);
+
+    TArray<FLostsenseInventoryMenuEntry> Entries;
+    if (FLostsenseMenuProjection::CaptureInventory(*Runtime, Entries)) {
+      const int32 StartIndex = FMath::Clamp(
+          Selection - 5, 0, FMath::Max(0, Entries.Num() - MaximumRows));
+      const int32 EndIndex = FMath::Min(Entries.Num(), StartIndex + MaximumRows);
+      for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
+        const bool bSelected = Index == Selection;
+        if (bSelected) {
+          DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
+                   RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
+        }
+        DrawText(FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "),
+                                 *Entries[Index].Label),
+                 bSelected ? FLinearColor::White
+                           : FLinearColor(0.76F, 0.76F, 0.78F),
+                 PanelX + 26.0F, RowY, nullptr, 0.72F, false);
+        RowY += RowHeight;
+      }
+    }
+    DrawText(TEXT("UP/DOWN Browse   ENTER/E Equip compatible gear   ESC Close"),
+             FLinearColor(0.72F, 0.72F, 0.74F), PanelX + 24.0F,
+             PanelY + PanelHeight - 34.0F, nullptr, 0.68F, false);
+    return;
+  }
+
+  DrawText(TEXT("SCAR ATLAS // KNIGHT 102"), FLinearColor::White,
+           PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
+  DrawText(FString::Printf(TEXT("Unspent Scar Points: %d"),
+                           Runtime->GetUnspentSkillPoints()),
+           FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F,
+           PanelY + 48.0F, nullptr, 0.72F, false);
+
+  TArray<FLostsenseScarMenuEntry> Entries;
+  if (FLostsenseMenuProjection::CaptureScarAtlas(*Runtime, Entries)) {
+    const int32 StartIndex = FMath::Clamp(
+        Selection - 5, 0, FMath::Max(0, Entries.Num() - MaximumRows));
+    const int32 EndIndex = FMath::Min(Entries.Num(), StartIndex + MaximumRows);
+    for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
+      const FLostsenseScarMenuEntry &Entry = Entries[Index];
+      const bool bSelected = Index == Selection;
+      if (bSelected) {
+        DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
+                 RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
+      }
+      DrawText(
+          FString::Printf(TEXT("%s[%s] %s // %s // COST %d"),
+                          bSelected ? TEXT("> ") : TEXT("  "),
+                          *ScarStateText(Entry), *Entry.Name, *Entry.Category,
+                          Entry.PointCost),
+          bSelected ? FLinearColor::White
+                    : FLinearColor(0.76F, 0.76F, 0.78F),
+          PanelX + 26.0F, RowY, nullptr, 0.68F, false);
+      DrawText(Entry.Detail, FLinearColor(0.56F, 0.56F, 0.60F),
+               PanelX + 46.0F, RowY + 17.0F, nullptr, 0.60F, false);
+      RowY += RowHeight;
+    }
+  }
+  DrawText(TEXT("UP/DOWN Navigate   ENTER/E Allocate   ESC Close"),
+           FLinearColor(0.72F, 0.72F, 0.74F), PanelX + 24.0F,
+           PanelY + PanelHeight - 34.0F, nullptr, 0.68F, false);
 }
 
 void ALostsenseDevelopmentHUD::DrawMeter(const FString &Label,
