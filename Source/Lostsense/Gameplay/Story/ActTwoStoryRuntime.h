@@ -37,8 +37,11 @@ public:
   [[nodiscard]] WitnessRootDecision RootDecision() const noexcept {
     return State_.RootDecision;
   }
-  [[nodiscard]] ObjectiveState Objective(std::uint32_t objectiveId) const noexcept;
-  [[nodiscard]] ActTwoStoryState CaptureState() const noexcept { return State_; }
+  [[nodiscard]] ObjectiveState
+  Objective(std::uint32_t objectiveId) const noexcept;
+  [[nodiscard]] ActTwoStoryState CaptureState() const noexcept {
+    return State_;
+  }
   [[nodiscard]] bool RestoreState(const ActTwoStoryState &state) noexcept;
 
 private:
