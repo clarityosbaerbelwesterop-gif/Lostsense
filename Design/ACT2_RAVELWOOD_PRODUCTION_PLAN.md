@@ -1,6 +1,6 @@
 # LOSTSENSE — Act II Ravelwood Production Plan
 
-Status: **IMPLEMENTATION ACTIVE — canonical gate first**
+Status: **IMPLEMENTATION ACTIVE — ecology and acceptance pass**
 Base: merged PR #10 (`ea17b03ad9ae63027fd66ce46c9a3b8841e17927`)
 
 ## Canonical correction before expansion
@@ -19,16 +19,20 @@ Primary production geography:
 
 ## Ordered checklist
 
-- [ ] Seal the PR10 Pump Cathedral threshold behind future Act IV campaign clearance.
-- [ ] Add deterministic Act II story/objective authority gated by completed Act I.
-- [ ] Extend transactional story save/load to include Act II without breaking PR9/PR10 state.
-- [ ] Materialize deeper Ravelwood authored geography and Morrowstep social anchor.
-- [ ] Add Black Sap / infected-villager interaction mechanics without forcing lethal resolution.
-- [ ] Add root-memory traversal and authored root-tunnel route toward Giltfen.
+- [x] Seal the PR10 Pump Cathedral threshold behind future Act IV campaign clearance.
+- [x] Add deterministic Act II story/objective authority gated by completed Act I.
+- [x] Extend transactional story save/load to include Act II without breaking PR9/PR10 state.
+- [x] Materialize deeper Ravelwood authored geography and Morrowstep social anchor.
+- [x] Add Black Sap / infected-villager interaction mechanics without forcing lethal resolution.
+- [x] Add root-memory traversal and authored root-tunnel route toward Giltfen.
 - [ ] Expand Act II enemy ecology: Rootbound, echo-stag pressure and thorn penitents.
-- [ ] Materialize Thorn Choir Abbey approach and campaign gate, not the final boss encounter prematurely.
-- [ ] Add portable regression and static source acceptance gates.
+- [x] Materialize Thorn Choir Abbey approach and campaign gate, not the final boss encounter prematurely.
+- [x] Add portable regression and static source acceptance gates.
 - [ ] Run exact-head CI, audit, repair and merge only when green.
+
+## Current production shape
+
+Act II now begins only after changed Bellgrave. The portable authority owns ordered quest progression and the preserve/burn witness-root decision, while the Unreal adapter includes Act II in the same transactional story payload used by existing save/load. Deeper Ravelwood extends physically from the Act I edge into a stilted Morrowstep social anchor, an explicitly nonlethal infected-villager interaction, a remembered root road toward Giltfen and a sealed Thorn Choir threshold. Mother Veyr's final encounter is intentionally not faked in this foundation pass.
 
 ## Boundaries
 
