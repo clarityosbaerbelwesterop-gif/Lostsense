@@ -11,10 +11,11 @@
 #include "Kismet/GameplayStatics.h"
 
 namespace {
-AStaticMeshActor *Block(UWorld &World, UStaticMesh &Mesh, const FVector &Location,
-                        const FVector &Scale,
+AStaticMeshActor *Block(UWorld &World, UStaticMesh &Mesh,
+                        const FVector &Location, const FVector &Scale,
                         const FRotator &Rotation = FRotator::ZeroRotator) {
-  AStaticMeshActor *Actor = World.SpawnActor<AStaticMeshActor>(Location, Rotation);
+  AStaticMeshActor *Actor =
+      World.SpawnActor<AStaticMeshActor>(Location, Rotation);
   if (Actor == nullptr) {
     return nullptr;
   }
@@ -30,8 +31,8 @@ void StoryActor(UWorld &World, const FVector &Location, const FVector &Scale,
   const FTransform Transform(FRotator::ZeroRotator, Location, Scale);
   ALostsenseActTwoStoryActor *Actor =
       World.SpawnActorDeferred<ALostsenseActTwoStoryActor>(
-          ALostsenseActTwoStoryActor::StaticClass(), Transform, nullptr, nullptr,
-          ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+          ALostsenseActTwoStoryActor::StaticClass(), Transform, nullptr,
+          nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
   if (Actor == nullptr) {
     return;
   }
@@ -90,8 +91,8 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   for (int32 Platform = 0; Platform < 5; ++Platform) {
     const FVector Center =
         Morrowstep + FVector(static_cast<float>(Platform) * 620.0F,
-                            static_cast<float>((Platform % 2) * 700 - 350),
-                            static_cast<float>(Platform % 3) * 120.0F);
+                             static_cast<float>((Platform % 2) * 700 - 350),
+                             static_cast<float>(Platform % 3) * 120.0F);
     Block(InWorld, *Cube, Center, FVector(3.4F, 2.6F, 0.24F));
     Block(InWorld, *Cube, Center + FVector(0.0F, 0.0F, -520.0F),
           FVector(0.35F, 0.35F, 5.2F));
@@ -103,12 +104,13 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
              ELostsenseActTwoInteraction::InfectedVillager);
 
   Enemy(InWorld, Ravelwood + FVector(2300.0F, -400.0F, 220.0F), 2101U,
-        ELostsenseEnemyArchetype::BellMaddenedCarrion, 8U);
+        ELostsenseEnemyArchetype::Rootbound, 8U);
   Enemy(InWorld, Ravelwood + FVector(3200.0F, 600.0F, 260.0F), 2102U,
-        ELostsenseEnemyArchetype::EchoMiner, 8U);
+        ELostsenseEnemyArchetype::EchoStag, 8U);
 
   // The remembered road is a physical root tunnel: a sealed root mass moves
-  // only after the nonlethal villager beat, then the route bends toward Giltfen.
+  // only after the nonlethal villager beat, then the route bends toward
+  // Giltfen.
   const FVector RootTunnel(17600.0F, 9600.0F, 250.0F);
   for (int32 Segment = 0; Segment < 6; ++Segment) {
     Block(InWorld, *Cube,
@@ -117,6 +119,10 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
                                -static_cast<float>(Segment) * 55.0F),
           FVector(3.6F, 2.0F, 0.25F));
   }
+
+  Enemy(InWorld, RootTunnel + FVector(1800.0F, -350.0F, 80.0F), 2110U,
+        ELostsenseEnemyArchetype::ThornPenitent, 9U);
+
   StoryActor(InWorld, RootTunnel + FVector(450.0F, 0.0F, 420.0F),
              FVector(0.65F, 3.2F, 4.5F),
              ELostsenseActTwoInteraction::GiltfenRootTunnel);

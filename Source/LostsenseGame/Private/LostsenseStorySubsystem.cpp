@@ -219,10 +219,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   const auto ActTwoPosition = Utf8Payload.find(ActTwoMarker, DeepStart);
 
   const std::string_view StoryPayload(Utf8Payload.data(), DeepPosition);
-  const std::string_view DeepPayload(
-      Utf8Payload.data() + DeepStart,
-      (ActTwoPosition == std::string::npos ? Utf8Payload.size() : ActTwoPosition) -
-          DeepStart);
+  const std::string_view DeepPayload(Utf8Payload.data() + DeepStart,
+                                     (ActTwoPosition == std::string::npos
+                                          ? Utf8Payload.size()
+                                          : ActTwoPosition) -
+                                         DeepStart);
 
   Lostsense::Gameplay::FirstSliceStoryState StoryCandidate;
   const auto DeepCandidate =
@@ -255,7 +256,8 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     const auto ActTwoStart = ActTwoPosition + ActTwoMarker.size();
     const std::string_view ActTwoPayload(Utf8Payload.data() + ActTwoStart,
                                          Utf8Payload.size() - ActTwoStart);
-    if (!Lostsense::Gameplay::ActTwoStoryCodec::Deserialize(ActTwoPayload, State) ||
+    if (!Lostsense::Gameplay::ActTwoStoryCodec::Deserialize(ActTwoPayload,
+                                                            State) ||
         !ActTwoCandidate.RestoreState(State) ||
         ActTwoCandidate.IsUnlocked() !=
             ValidatedStory.HasBeat(

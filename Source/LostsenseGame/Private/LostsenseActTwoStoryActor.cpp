@@ -16,7 +16,8 @@ ULostsenseStorySubsystem *StoryFor(const AActor &Actor) {
              : nullptr;
 }
 
-ELostsenseActTwoStoryBeat BeatFor(const ELostsenseActTwoInteraction Interaction) {
+ELostsenseActTwoStoryBeat
+BeatFor(const ELostsenseActTwoInteraction Interaction) {
   switch (Interaction) {
   case ELostsenseActTwoInteraction::BlackSapTrace:
     return ELostsenseActTwoStoryBeat::BlackSapTrailFound;
