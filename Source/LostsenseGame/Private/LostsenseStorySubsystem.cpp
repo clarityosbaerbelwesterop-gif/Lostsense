@@ -4,8 +4,11 @@
 #include "Lostsense/Gameplay/World/DeepRouteState.h"
 
 #include <string>
+#include <string_view>
 
 namespace {
+constexpr std::string_view DeepRouteMarker{"LOSTSENSE_DEEP_ROUTE\n"};
+
 Lostsense::Gameplay::FirstSliceStoryBeat
 ToPortableBeat(const ELostsenseStoryBeat Beat) {
   return static_cast<Lostsense::Gameplay::FirstSliceStoryBeat>(
@@ -143,12 +146,14 @@ bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
   if (!IsStoryReady()) {
     return false;
   }
-  std::string Payload;
+  std::string StoryPayload;
   if (!Lostsense::Gameplay::FirstSliceStoryCodec::Serialize(
-          StoryRuntime->Story.CaptureState(), Payload)) {
+          StoryRuntime->Story.CaptureState(), StoryPayload)) {
     return false;
   }
-  OutPayload = UTF8_TO_TCHAR(Payload.c_str());
+  StoryPayload.append(DeepRouteMarker);
+  StoryPayload.append(StoryRuntime->DeepRoute.Serialize());
+  OutPayload = UTF8_TO_TCHAR(StoryPayload.c_str());
   return true;
 }
 
@@ -156,11 +161,42 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   if (!IsStoryReady()) {
     return false;
   }
-  Lostsense::Gameplay::FirstSliceStoryState State;
+
   const std::string Utf8Payload(TCHAR_TO_UTF8(*Payload));
-  return Lostsense::Gameplay::FirstSliceStoryCodec::Deserialize(Utf8Payload,
-                                                                State) &&
-         StoryRuntime->Story.RestoreState(State);
+  const auto MarkerPosition = Utf8Payload.find(DeepRouteMarker);
+  if (MarkerPosition == std::string::npos) {
+    return false;
+  }
+
+  const std::string_view StoryPayload(Utf8Payload.data(), MarkerPosition);
+  const std::string_view DeepPayload(
+      Utf8Payload.data() + MarkerPosition + DeepRouteMarker.size(),
+      Utf8Payload.size() - MarkerPosition - DeepRouteMarker.size());
+
+  Lostsense::Gameplay::FirstSliceStoryState StoryCandidate;
+  const auto DeepCandidate =
+      Lostsense::Gameplay::DeepRouteState::Deserialize(DeepPayload);
+  if (!Lostsense::Gameplay::FirstSliceStoryCodec::Deserialize(StoryPayload,
+                                                               StoryCandidate) ||
+      !DeepCandidate.has_value()) {
+    return false;
+  }
+
+  Lostsense::Gameplay::FirstSliceStoryRuntime ValidatedStory{
+      Lostsense::Gameplay::BuildFirstSliceObjectives()};
+  if (!ValidatedStory.RestoreState(StoryCandidate) ||
+      ValidatedStory.HasBeat(
+          Lostsense::Gameplay::FirstSliceStoryBeat::OdranDefeated) !=
+          DeepCandidate->IsComplete(
+              Lostsense::Gameplay::DeepRouteMilestone::OdranDefeated)) {
+    return false;
+  }
+
+  if (!StoryRuntime->Story.RestoreState(StoryCandidate)) {
+    return false;
+  }
+  StoryRuntime->DeepRoute = *DeepCandidate;
+  return true;
 }
 
 bool ULostsenseStorySubsystem::SaveDeepRouteToText(FString &OutPayload) const {
@@ -177,13 +213,13 @@ bool ULostsenseStorySubsystem::LoadDeepRouteFromText(const FString &Payload) {
     return false;
   }
   const std::string Utf8Payload(TCHAR_TO_UTF8(*Payload));
-  const auto Candidate = Lostsense::Gameplay::DeepRouteState::Deserialize(Utf8Payload);
-  if (!Candidate.has_value()) {
-    return false;
-  }
-  if (Candidate->IsComplete(Lostsense::Gameplay::DeepRouteMilestone::OdranDefeated) !=
-      StoryRuntime->Story.HasBeat(
-          Lostsense::Gameplay::FirstSliceStoryBeat::OdranDefeated)) {
+  const auto Candidate =
+      Lostsense::Gameplay::DeepRouteState::Deserialize(Utf8Payload);
+  if (!Candidate.has_value() ||
+      Candidate->IsComplete(
+          Lostsense::Gameplay::DeepRouteMilestone::OdranDefeated) !=
+          StoryRuntime->Story.HasBeat(
+              Lostsense::Gameplay::FirstSliceStoryBeat::OdranDefeated)) {
     return false;
   }
   StoryRuntime->DeepRoute = *Candidate;
