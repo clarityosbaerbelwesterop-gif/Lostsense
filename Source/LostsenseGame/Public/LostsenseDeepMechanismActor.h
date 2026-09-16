@@ -38,6 +38,9 @@ public:
   UFUNCTION(BlueprintPure, Category = "Lostsense|DeepRoute")
   ELostsenseDeepMechanismKind GetMechanismKind() const { return Kind; }
 
+protected:
+  virtual void Tick(float DeltaSeconds) override;
+
 private:
   void SynchronizePresentation();
 
