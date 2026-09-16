@@ -59,6 +59,7 @@ private:
   void ResetDevelopmentEncounter();
   int32 CurrentMenuEntryCount() const;
   void NormalizeMenuSelection();
+  void ApplyMenuInputMode();
   FString DevelopmentSavePath() const;
   FString DevelopmentStorySavePath() const;
 

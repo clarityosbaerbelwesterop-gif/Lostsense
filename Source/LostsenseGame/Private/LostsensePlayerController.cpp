@@ -1,5 +1,6 @@
 #include "LostsensePlayerController.h"
 
+#include "LostsenseInputBridgeLibrary.h"
 #include "LostsenseInteractable.h"
 #include "LostsenseKnightCharacter.h"
 #include "LostsenseMenuProjection.h"
@@ -8,6 +9,7 @@
 
 #include "Engine/GameInstance.h"
 #include "EngineUtils.h"
+#include "GameFramework/Pawn.h"
 #include "InputCoreTypes.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -86,6 +88,7 @@ void ALostsensePlayerController::ToggleInventoryMenu() {
   bScarAtlasMenuOpen = false;
   MenuSelectionIndex = 0;
   NormalizeMenuSelection();
+  ApplyMenuInputMode();
 }
 
 void ALostsensePlayerController::ToggleScarAtlasMenu() {
@@ -94,6 +97,7 @@ void ALostsensePlayerController::ToggleScarAtlasMenu() {
   bInventoryMenuOpen = false;
   MenuSelectionIndex = 0;
   NormalizeMenuSelection();
+  ApplyMenuInputMode();
 }
 
 void ALostsensePlayerController::MenuSelectPrevious() {
@@ -200,10 +204,11 @@ void ALostsensePlayerController::MenuCancel() {
   bInventoryMenuOpen = false;
   bScarAtlasMenuOpen = false;
   MenuSelectionIndex = 0;
+  ApplyMenuInputMode();
 }
 
 int32 ALostsensePlayerController::CurrentMenuEntryCount() const {
-  const UGameInstance *GameInstance = GetGameInstance();
+  UGameInstance *GameInstance = GetGameInstance();
   const ULostsenseRuntimeSubsystem *Runtime =
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseRuntimeSubsystem>()
@@ -234,6 +239,20 @@ void ALostsensePlayerController::NormalizeMenuSelection() {
     return;
   }
   MenuSelectionIndex = (MenuSelectionIndex % Count + Count) % Count;
+}
+
+void ALostsensePlayerController::ApplyMenuInputMode() {
+  APawn *ControlledPawn = GetPawn();
+  if (ControlledPawn == nullptr) {
+    return;
+  }
+
+  if (IsGameplayInputSuppressed()) {
+    ULostsenseInputBridgeLibrary::GuardReleased(this);
+    ControlledPawn->DisableInput(this);
+    return;
+  }
+  ControlledPawn->EnableInput(this);
 }
 
 void ALostsensePlayerController::TryInteract() {
