@@ -36,9 +36,9 @@ int main() {
               "royal pressure door opens after brake restoration");
   test.Expect(route.Complete(DeepRouteMilestone::RoyalThresholdOpened),
               "opened pressure door advances royal threshold");
-  test.Expect(route.SetMechanism(DeepMechanismId::ReliefVent,
-                                 DeepMechanismState::Open),
-              "relief vent can establish safe pressure route");
+  test.Expect(
+      route.SetMechanism(DeepMechanismId::ReliefVent, DeepMechanismState::Open),
+      "relief vent can establish safe pressure route");
   test.Expect(!route.Complete(DeepRouteMilestone::VentilationNaveStabilized),
               "one valve cannot falsely stabilize the ventilation nave");
   test.Expect(route.SetMechanism(DeepMechanismId::VentilationIntake,
@@ -49,8 +49,7 @@ int main() {
   test.Expect(route.SetMechanism(DeepMechanismId::VaurReturnShortcut,
                                  DeepMechanismState::Open),
               "return shortcut persists after stabilization");
-  test.Expect(route.Complete(
-                  DeepRouteMilestone::PumpCathedralApproachOpened),
+  test.Expect(route.Complete(DeepRouteMilestone::PumpCathedralApproachOpened),
               "Pump Cathedral approach can open");
 
   const auto encoded = route.Serialize();
@@ -68,15 +67,13 @@ int main() {
                 "shortcut survives restore");
   }
 
-  test.Expect(
-      !DeepRouteState::Deserialize("DR1|4|1|0|0|0|0|0").has_value(),
-      "restore rejects impossible milestone gaps");
+  test.Expect(!DeepRouteState::Deserialize("DR1|4|1|0|0|0|0|0").has_value(),
+              "restore rejects impossible milestone gaps");
   test.Expect(
       !DeepRouteState::Deserialize("DR1|7|3|1|1|0|0|0").has_value(),
       "restore rejects completed brake milestone without restored brake");
-  test.Expect(
-      !DeepRouteState::Deserialize("DR1|1|99|0|0|0|0|0").has_value(),
-      "restore rejects invalid mechanism enum");
+  test.Expect(!DeepRouteState::Deserialize("DR1|1|99|0|0|0|0|0").has_value(),
+              "restore rejects invalid mechanism enum");
   test.Expect(!DeepRouteState::Deserialize(std::string(300, 'x')).has_value(),
               "restore rejects oversized payload");
 
