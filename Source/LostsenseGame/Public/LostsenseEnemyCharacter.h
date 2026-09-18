@@ -33,6 +33,8 @@ enum class ELostsenseEnemyArchetype : uint8 {
   Kharos,
   PaperDead,
   SaelRhyne,
+  Ashbound,
+  IlyrVael,
   Odran
 };
 
@@ -67,6 +69,7 @@ public:
   void ConfigureGildedLungBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureKharosBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureSaelRhyneBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureIlyrVaelBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,

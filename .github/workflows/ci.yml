@@ -82,6 +82,8 @@ jobs:
         run: python3 Scripts/Verify-ActSixAcceptance.py
       - name: Validate Act VII Second Silence source contracts
         run: python3 Scripts/Verify-ActSevenAcceptance.py
+      - name: Validate Act VIII Red Archive source contracts
+        run: python3 Scripts/Verify-ActEightAcceptance.py
 
   format:
     name: clang-format
