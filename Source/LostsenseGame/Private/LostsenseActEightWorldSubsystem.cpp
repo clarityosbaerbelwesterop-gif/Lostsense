@@ -84,7 +84,8 @@ void ULostsenseActEightWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   Story(InWorld, EmberCourt + FVector(0.0F, 0.0F, 120.0F), 80071);
 
   // Vask quota yard: furnace towers and pressure pipes feed the old destruction
-  // quotas. The authored control commits quest 80072 after the player reaches it.
+  // quotas. The authored control commits quest 80072 after the player reaches
+  // it.
   const FVector Vask(123000.0F, 0.0F, -24000.0F);
   Block(InWorld, *Cube, Vask, FVector(12.0F, 9.0F, 0.5F));
   for (int32 Furnace = 0; Furnace < 8; ++Furnace) {
@@ -112,7 +113,8 @@ void ULostsenseActEightWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   Story(InWorld, Cathedral + FVector(-1500.0F, 0.0F, 120.0F), 80073);
 
   // Ilyr: The Necessary Man -> Second Silence -> Mercy Engine. Phase-three
-  // conduit geometry remains external/readable rather than a generic demon form.
+  // conduit geometry remains external/readable rather than a generic demon
+  // form.
   const FVector IlyrArena(135000.0F, 0.0F, -26000.0F);
   Block(InWorld, *Cube, IlyrArena, FVector(11.0F, 10.0F, 0.5F));
   for (int32 Conduit = 0; Conduit < 6; ++Conduit) {
@@ -126,7 +128,8 @@ void ULostsenseActEightWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
         ELostsenseEnemyArchetype::IlyrVael, 28U);
 
   // The post-Ilyr door is a separate campaign beat. It only becomes active
-  // after 80074 completes and opens the authored descent toward the Last Archive.
+  // after 80074 completes and opens the authored descent toward the Last
+  // Archive.
   const FVector LastArchiveDoor(139000.0F, 0.0F, -27000.0F);
   Block(InWorld, *Cube, LastArchiveDoor, FVector(2.0F, 5.0F, 5.5F));
   Story(InWorld, LastArchiveDoor + FVector(-450.0F, 0.0F, 120.0F), 80075);
