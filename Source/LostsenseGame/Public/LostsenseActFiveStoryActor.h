@@ -1,8 +1,9 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "LostsenseActFiveStoryActor.generated.h"
 #include "LostsenseInteractable.h"
+
+#include "LostsenseActFiveStoryActor.generated.h"
 class UStaticMeshComponent;
 UCLASS()
 class LOSTSENSEGAME_API ALostsenseActFiveStoryActor final
