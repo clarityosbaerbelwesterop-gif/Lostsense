@@ -124,7 +124,8 @@ bool CampaignProgressCodec::Deserialize(std::string_view text,
   if (values[0] > 1U) {
     return false;
   }
-  const CampaignProgressState candidate{CurrentSchemaVersion, values[0] == 1U,
+  const CampaignProgressState candidate{CampaignProgressRuntime::CurrentSchemaVersion,
+                                        values[0] == 1U,
                                         values[1]};
   CampaignProgressRuntime validator;
   if (!validator.RestoreState(candidate)) {
