@@ -3,7 +3,7 @@
 
 int main() {
   using namespace Lostsense::Gameplay;
-  Lostsense::Tests::TestContext test;
+  Lostsense::Tests::TestSuite test{"Campaign catalog"};
 
   test.Expect(CampaignCatalog::IsCanonical(),
               "campaign catalog preserves canonical ordering");
@@ -31,5 +31,5 @@ int main() {
 
   test.Expect(!CampaignCatalog::NextQuest(80084U).has_value(),
               "What Remains is the final campaign quest");
-  return test.ExitCode();
+  return test.Finish();
 }
