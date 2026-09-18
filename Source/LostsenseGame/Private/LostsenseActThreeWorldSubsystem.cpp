@@ -81,8 +81,8 @@ void ULostsenseActThreeWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   const FVector CivicPlaza(37500.0F, 13800.0F, 180.0F);
   Block(InWorld, *Cube, CivicPlaza, FVector(13.0F, 10.0F, 0.45F));
   for (int32 Monument = 0; Monument < 6; ++Monument) {
-    const float X = CivicPlaza.X - 1800.0F +
-                    static_cast<float>(Monument) * 720.0F;
+    const float X =
+        CivicPlaza.X - 1800.0F + static_cast<float>(Monument) * 720.0F;
     const float Y = Monument % 2 == 0 ? 850.0F : -850.0F;
     Block(InWorld, *Cube, FVector(X, CivicPlaza.Y + Y, 720.0F),
           FVector(0.7F, 0.7F, 6.0F));
@@ -129,7 +129,7 @@ void ULostsenseActThreeWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
     const float Z = Palace.Z - static_cast<float>(Wing) * 180.0F;
     Block(InWorld, *Cube,
           Palace + FVector(static_cast<float>(Wing) * 720.0F,
-                            Wing % 2 == 0 ? 380.0F : -380.0F, Z),
+                           Wing % 2 == 0 ? 380.0F : -380.0F, Z),
           FVector(4.4F, 4.0F, 0.42F));
     Block(InWorld, *Cube,
           Palace + FVector(static_cast<float>(Wing) * 720.0F, 0.0F, Z + 650.0F),
@@ -154,8 +154,8 @@ void ULostsenseActThreeWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
           FRotator(0.0F, Angle, 0.0F));
   }
 
-  const FTransform BossTransform(
-      FRotator::ZeroRotator, EngineChamber + FVector(0.0F, 0.0F, 160.0F));
+  const FTransform BossTransform(FRotator::ZeroRotator,
+                                 EngineChamber + FVector(0.0F, 0.0F, 160.0F));
   ALostsenseEnemyCharacter *Caldris =
       InWorld.SpawnActorDeferred<ALostsenseEnemyCharacter>(
           ALostsenseEnemyCharacter::StaticClass(), BossTransform, nullptr,

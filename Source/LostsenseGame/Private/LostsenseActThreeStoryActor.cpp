@@ -62,8 +62,8 @@ bool ALostsenseActThreeStoryActor::CanInteract(
     return false;
   }
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
-  return Story != nullptr &&
-         Story->GetObjectiveState(QuestId()) == ELostsenseObjectiveState::Active;
+  return Story != nullptr && Story->GetObjectiveState(QuestId()) ==
+                                 ELostsenseObjectiveState::Active;
 }
 
 bool ALostsenseActThreeStoryActor::Interact(
@@ -95,9 +95,8 @@ int32 ALostsenseActThreeStoryActor::QuestId() const {
 
 bool ALostsenseActThreeStoryActor::IsCompleted() const {
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
-  return Story != nullptr &&
-         Story->GetObjectiveState(QuestId()) ==
-             ELostsenseObjectiveState::Completed;
+  return Story != nullptr && Story->GetObjectiveState(QuestId()) ==
+                                 ELostsenseObjectiveState::Completed;
 }
 
 void ALostsenseActThreeStoryActor::SynchronizePresentation() {

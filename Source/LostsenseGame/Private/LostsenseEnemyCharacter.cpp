@@ -170,8 +170,8 @@ void ALostsenseEnemyCharacter::ConfigureMotherVeyrBoss(
                           InItemLevel);
 }
 
-void ALostsenseEnemyCharacter::ConfigureCaldrisBoss(
-    const uint64 InCombatantId, const uint32 InItemLevel) {
+void ALostsenseEnemyCharacter::ConfigureCaldrisBoss(const uint64 InCombatantId,
+                                                    const uint32 InItemLevel) {
   ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Caldris,
                           InItemLevel);
 }
@@ -521,7 +521,6 @@ void ALostsenseEnemyCharacter::HandleDefeat(
   SetActorEnableCollision(false);
   SetLifeSpan(bBoss ? 8.0F : 4.0F);
 }
-
 
 bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
   if (Archetype != ELostsenseEnemyArchetype::MotherVeyr &&
