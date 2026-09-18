@@ -110,7 +110,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
                    Archetype == ELostsenseEnemyArchetype::Caldris)
                       ? Lostsense::Combat::CombatantKind::Boss
                       : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
-                          Archetype == ELostsenseEnemyArchetype::RailMarshal)
+                          Archetype == ELostsenseEnemyArchetype::RailMarshal ||
+                          Archetype == ELostsenseEnemyArchetype::BlankKnight)
                              ? Lostsense::Combat::CombatantKind::Elite
                              : Lostsense::Combat::CombatantKind::Enemy)},
         Effects{Combatant, {}} {
@@ -527,7 +528,7 @@ bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
       Archetype != ELostsenseEnemyArchetype::Caldris) {
     return true;
   }
-  const UGameInstance *GameInstance = GetGameInstance();
+  UGameInstance *GameInstance = GetGameInstance();
   const ULostsenseStorySubsystem *Story =
       GameInstance != nullptr
           ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
