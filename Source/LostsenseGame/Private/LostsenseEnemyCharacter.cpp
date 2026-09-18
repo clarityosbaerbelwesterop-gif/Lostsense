@@ -107,11 +107,11 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
             1.10,  0.0F, 0.82F, 0.92F,  1.08F};
   case ELostsenseEnemyArchetype::KeeperYsil:
     if (BossPhase >= 2) {
-      return {980.0, 30.0, 18.0, 2500.0, 330.0, 28.0,
-              1.20, 285.0F, 0.48F, 0.62F, 0.76F};
+      return {980.0, 30.0,   18.0,  2500.0, 330.0, 28.0,
+              1.20,  285.0F, 0.48F, 0.62F,  0.76F};
     }
-    return {980.0, 30.0, 18.0, 2500.0, 300.0, 24.0,
-            1.15, 245.0F, 0.68F, 0.82F, 0.98F};
+    return {980.0, 30.0,   18.0,  2500.0, 300.0, 24.0,
+            1.15,  245.0F, 0.68F, 0.82F,  0.98F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
