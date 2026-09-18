@@ -36,8 +36,8 @@ int main() {
                   restored.CurrentQuestId() == 80021U,
               "campaign continuation restores without drift");
 
-  for (std::uint32_t index = 12U;
-       index < CampaignCatalog::Quests().size(); ++index) {
+  for (std::uint32_t index = 12U; index < CampaignCatalog::Quests().size();
+       ++index) {
     test.Expect(restored.CompleteQuest(CampaignCatalog::Quests()[index].Id),
                 "remaining canonical quest completes in order");
   }

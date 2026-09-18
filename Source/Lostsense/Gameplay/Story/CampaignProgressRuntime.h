@@ -35,8 +35,8 @@ public:
   [[nodiscard]] bool RestoreState(const CampaignProgressState &state) noexcept;
 
 private:
-  [[nodiscard]] static bool ValidState(
-      const CampaignProgressState &state) noexcept;
+  [[nodiscard]] static bool
+  ValidState(const CampaignProgressState &state) noexcept;
 
   CampaignProgressState State_{};
 };

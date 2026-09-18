@@ -135,9 +135,8 @@ bool ULostsenseStorySubsystem::CompleteActTwoBeat(
 
 bool ULostsenseStorySubsystem::ResolveWitnessRoot(
     const ELostsenseWitnessRootDecision Decision) {
-  if (!IsStoryReady() ||
-      !StoryRuntime->ActTwo.ResolveWitnessRoot(
-          ToPortableRootDecision(Decision))) {
+  if (!IsStoryReady() || !StoryRuntime->ActTwo.ResolveWitnessRoot(
+                             ToPortableRootDecision(Decision))) {
     return false;
   }
   return StoryRuntime->Campaign.IsStarted() || StoryRuntime->Campaign.Begin();
@@ -291,11 +290,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   } else {
     Lostsense::Gameplay::ActTwoStoryState State;
     const auto ActTwoStart = ActTwoPosition + ActTwoMarker.size();
-    const std::string_view ActTwoPayload(
-        Utf8Payload.data() + ActTwoStart,
-        (CampaignPosition == std::string::npos ? Utf8Payload.size()
-                                               : CampaignPosition) -
-            ActTwoStart);
+    const std::string_view ActTwoPayload(Utf8Payload.data() + ActTwoStart,
+                                         (CampaignPosition == std::string::npos
+                                              ? Utf8Payload.size()
+                                              : CampaignPosition) -
+                                             ActTwoStart);
     if (!Lostsense::Gameplay::ActTwoStoryCodec::Deserialize(ActTwoPayload,
                                                             State) ||
         !ActTwoCandidate.RestoreState(State) ||
@@ -316,8 +315,8 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   } else {
     Lostsense::Gameplay::CampaignProgressState CampaignState;
     const auto CampaignStart = CampaignPosition + CampaignMarker.size();
-    const std::string_view CampaignPayload(
-        Utf8Payload.data() + CampaignStart, Utf8Payload.size() - CampaignStart);
+    const std::string_view CampaignPayload(Utf8Payload.data() + CampaignStart,
+                                           Utf8Payload.size() - CampaignStart);
     if (!Lostsense::Gameplay::CampaignProgressCodec::Deserialize(
             CampaignPayload, CampaignState) ||
         !CampaignCandidate.RestoreState(CampaignState) ||
