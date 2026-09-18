@@ -47,6 +47,7 @@ void ULostsenseActFiveWorldSubsystem::OnWorldBeginPlay(UWorld &W) {
       LoadObject<UStaticMesh>(nullptr, TEXT("/Engine/BasicShapes/Cube.Cube"));
   if (!Cube)
     return;
+  // First intact Namarith street continues directly from the Act IV breach.
   const FVector Street(62000.0F, 0.0F, -11600.0F);
   for (int32 I = 0; I < 8; ++I) {
     Block(W, *Cube, Street + FVector(I * 700.0F, 0.0F, 0.0F),
