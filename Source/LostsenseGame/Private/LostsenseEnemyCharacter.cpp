@@ -122,6 +122,20 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
     }
     return {1120.0, 34.0,   16.0,  2850.0, 350.0, 26.0,
             1.18,   250.0F, 0.72F, 0.82F,  0.96F};
+  case ELostsenseEnemyArchetype::PaperDead:
+    return {205.0, 23.0, 9.0, 1650.0, 245.0, 21.0,
+            1.08, 260.0F, 0.58F, 0.72F, 0.90F};
+  case ELostsenseEnemyArchetype::SaelRhyne:
+    if (BossPhase >= 3) {
+      return {1280.0, 38.0, 20.0, 2950.0, 410.0, 37.0,
+              1.28, 300.0F, 0.44F, 0.54F, 0.66F};
+    }
+    if (BossPhase >= 2) {
+      return {1280.0, 38.0, 20.0, 2950.0, 375.0, 33.0,
+              1.24, 275.0F, 0.54F, 0.66F, 0.78F};
+    }
+    return {1280.0, 38.0, 20.0, 2950.0, 340.0, 29.0,
+            1.20, 245.0F, 0.70F, 0.82F, 0.96F};
   case ELostsenseEnemyArchetype::KeeperYsil:
     if (BossPhase >= 2) {
       return {980.0, 30.0,   18.0,  2500.0, 330.0, 28.0,
@@ -153,7 +167,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
                    Archetype == ELostsenseEnemyArchetype::BishopPiston ||
                    Archetype == ELostsenseEnemyArchetype::GildedLung ||
                    Archetype == ELostsenseEnemyArchetype::KeeperYsil ||
-                   Archetype == ELostsenseEnemyArchetype::Kharos)
+                   Archetype == ELostsenseEnemyArchetype::Kharos ||
+                   Archetype == ELostsenseEnemyArchetype::SaelRhyne)
                       ? Lostsense::Combat::CombatantKind::Boss
                       : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
                           Archetype == ELostsenseEnemyArchetype::RailMarshal ||
@@ -204,7 +219,8 @@ void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
           InArchetype == ELostsenseEnemyArchetype::BishopPiston ||
           InArchetype == ELostsenseEnemyArchetype::GildedLung ||
           InArchetype == ELostsenseEnemyArchetype::KeeperYsil ||
-          InArchetype == ELostsenseEnemyArchetype::Kharos;
+          InArchetype == ELostsenseEnemyArchetype::Kharos ||
+          InArchetype == ELostsenseEnemyArchetype::SaelRhyne;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
@@ -241,6 +257,12 @@ void ALostsenseEnemyCharacter::ConfigureGildedLungBoss(
 void ALostsenseEnemyCharacter::ConfigureKharosBoss(const uint64 InCombatantId,
                                                    const uint32 InItemLevel) {
   ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Kharos,
+                          InItemLevel);
+}
+
+void ALostsenseEnemyCharacter::ConfigureSaelRhyneBoss(
+    const uint64 InCombatantId, const uint32 InItemLevel) {
+  ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::SaelRhyne,
                           InItemLevel);
 }
 
@@ -288,7 +310,8 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
   StateTimeRemaining = FMath::Max(0.0F, StateTimeRemaining - DeltaSeconds);
 
   if ((Archetype == ELostsenseEnemyArchetype::GildedLung ||
-       Archetype == ELostsenseEnemyArchetype::Kharos) &&
+       Archetype == ELostsenseEnemyArchetype::Kharos ||
+       Archetype == ELostsenseEnemyArchetype::SaelRhyne) &&
       !bBossFinalTransitionCommitted && BossPhase == 2 &&
       GetMaximumHealth() > 0.0 &&
       GetCurrentHealth() / GetMaximumHealth() <= 0.32) {
@@ -604,6 +627,8 @@ void ALostsenseEnemyCharacter::HandleDefeat(
       static_cast<void>(Story->CompleteCampaignQuest(80044));
     } else if (Archetype == ELostsenseEnemyArchetype::Kharos) {
       static_cast<void>(Story->CompleteCampaignQuest(80054));
+    } else if (Archetype == ELostsenseEnemyArchetype::SaelRhyne) {
+      static_cast<void>(Story->CompleteCampaignQuest(80064));
     } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));
@@ -621,7 +646,8 @@ bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
       Archetype != ELostsenseEnemyArchetype::BishopPiston &&
       Archetype != ELostsenseEnemyArchetype::GildedLung &&
       Archetype != ELostsenseEnemyArchetype::KeeperYsil &&
-      Archetype != ELostsenseEnemyArchetype::Kharos) {
+      Archetype != ELostsenseEnemyArchetype::Kharos &&
+      Archetype != ELostsenseEnemyArchetype::SaelRhyne) {
     return true;
   }
   UGameInstance *GameInstance = GetGameInstance();
@@ -648,5 +674,8 @@ bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
   if (Archetype == ELostsenseEnemyArchetype::KeeperYsil) {
     return Story->GetObjectiveState(80044) == ELostsenseObjectiveState::Active;
   }
-  return Story->GetObjectiveState(80054) == ELostsenseObjectiveState::Active;
+  if (Archetype == ELostsenseEnemyArchetype::Kharos) {
+    return Story->GetObjectiveState(80054) == ELostsenseObjectiveState::Active;
+  }
+  return Story->GetObjectiveState(80064) == ELostsenseObjectiveState::Active;
 }
