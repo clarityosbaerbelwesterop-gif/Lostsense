@@ -31,6 +31,9 @@ public:
   CanInteract(const ALostsenseKnightCharacter &Interactor) const override;
   virtual bool Interact(ALostsenseKnightCharacter &Interactor) override;
 
+protected:
+  virtual void Tick(float DeltaSeconds) override;
+
 private:
   int32 QuestId() const;
   bool IsCompleted() const;

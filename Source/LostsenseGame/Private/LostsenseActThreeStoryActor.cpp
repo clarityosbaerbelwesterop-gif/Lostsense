@@ -18,7 +18,8 @@ ULostsenseStorySubsystem *StoryFor(const AActor &Actor) {
 } // namespace
 
 ALostsenseActThreeStoryActor::ALostsenseActThreeStoryActor() {
-  PrimaryActorTick.bCanEverTick = false;
+  PrimaryActorTick.bCanEverTick = true;
+  PrimaryActorTick.TickInterval = 0.2F;
   Visual = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Visual"));
   SetRootComponent(Visual);
   Visual->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -77,6 +78,11 @@ bool ALostsenseActThreeStoryActor::Interact(
   }
   SynchronizePresentation();
   return true;
+}
+
+void ALostsenseActThreeStoryActor::Tick(const float DeltaSeconds) {
+  Super::Tick(DeltaSeconds);
+  SynchronizePresentation();
 }
 
 int32 ALostsenseActThreeStoryActor::QuestId() const {
