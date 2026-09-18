@@ -71,12 +71,14 @@ inline constexpr ItemId BellguardSabre{10022U};
 inline constexpr ItemId MarchSpear{10026U};
 inline constexpr ItemId TonguelessShield{10027U};
 inline constexpr ItemId OdransClapper{10028U};
+inline constexpr ItemId KharosBlindline{10068U};
 inline constexpr ItemId BellwardenCuirass{10201U};
 inline constexpr ItemId VaurGoldThread{10901U};
 
 inline constexpr LootTableId VaurEnemyLoot{7001U};
 inline constexpr LootTableId VaurEliteLoot{7002U};
 inline constexpr LootTableId OdranBossLoot{7003U};
+inline constexpr LootTableId KharosBossLoot{7004U};
 
 [[nodiscard]] std::vector<EffectDefinition> BuildKnightEffects();
 [[nodiscard]] std::vector<AbilityDefinition> BuildKnightAbilities();

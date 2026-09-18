@@ -28,6 +28,9 @@ enum class ELostsenseEnemyArchetype : uint8 {
   BishopPiston,
   GildedLung,
   KeeperYsil,
+  NullMantle,
+  ThoughtEater,
+  Kharos,
   Odran
 };
 
@@ -60,6 +63,7 @@ public:
   void ConfigureCaldrisBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureBishopPistonBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureGildedLungBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureKharosBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,
