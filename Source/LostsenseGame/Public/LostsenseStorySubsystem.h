@@ -36,6 +36,13 @@ UENUM(BlueprintType)
 enum class ELostsenseWitnessRootDecision : uint8 { None, Preserve, Burn };
 
 UENUM(BlueprintType)
+enum class ELostsenseActSevenArchiveChoice : uint8 {
+  None,
+  BellgraveCivilianArchive,
+  CrownlessCivilianArchive
+};
+
+UENUM(BlueprintType)
 enum class ELostsenseObjectiveState : uint8 { Locked, Active, Completed };
 
 UENUM(BlueprintType)
@@ -107,6 +114,12 @@ public:
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|Campaign")
   bool CompleteCampaignQuest(int32 QuestId);
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|ActVII")
+  bool ResolveActSevenArchiveChoice(ELostsenseActSevenArchiveChoice Choice);
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|Story|ActVII")
+  ELostsenseActSevenArchiveChoice GetActSevenArchiveChoice() const;
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story|Campaign")
   bool IsCampaignFinished() const;

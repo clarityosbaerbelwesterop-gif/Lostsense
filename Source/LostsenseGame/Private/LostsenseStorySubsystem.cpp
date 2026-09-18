@@ -1,5 +1,6 @@
 #include "LostsenseStorySubsystem.h"
 
+#include "Lostsense/Gameplay/Story/ActSevenChoiceRuntime.h"
 #include "Lostsense/Gameplay/Story/ActTwoStoryRuntime.h"
 #include "Lostsense/Gameplay/Story/CampaignProgressRuntime.h"
 #include "Lostsense/Gameplay/Story/StoryRuntime.h"
@@ -12,6 +13,7 @@ namespace {
 constexpr std::string_view DeepRouteMarker{"LOSTSENSE_DEEP_ROUTE\n"};
 constexpr std::string_view ActTwoMarker{"\nLOSTSENSE_ACT_TWO\n"};
 constexpr std::string_view CampaignMarker{"\nLOSTSENSE_CAMPAIGN\n"};
+constexpr std::string_view ActSevenMarker{"\nLOSTSENSE_ACT_SEVEN\n"};
 
 Lostsense::Gameplay::FirstSliceStoryBeat
 ToPortableBeat(const ELostsenseStoryBeat Beat) {
@@ -23,6 +25,18 @@ Lostsense::Gameplay::ActTwoStoryBeat
 ToPortableActTwoBeat(const ELostsenseActTwoStoryBeat Beat) {
   return static_cast<Lostsense::Gameplay::ActTwoStoryBeat>(
       static_cast<uint8>(Beat));
+}
+
+Lostsense::Gameplay::ActSevenArchiveChoice
+ToPortableActSevenChoice(const ELostsenseActSevenArchiveChoice Choice) {
+  return static_cast<Lostsense::Gameplay::ActSevenArchiveChoice>(
+      static_cast<uint8>(Choice));
+}
+
+ELostsenseActSevenArchiveChoice ToPresentationActSevenChoice(
+    const Lostsense::Gameplay::ActSevenArchiveChoice Choice) {
+  return static_cast<ELostsenseActSevenArchiveChoice>(
+      static_cast<uint8>(Choice));
 }
 
 Lostsense::Gameplay::WitnessRootDecision
@@ -73,6 +87,7 @@ struct ULostsenseStorySubsystem::FStoryRuntime {
       Lostsense::Gameplay::BuildFirstSliceObjectives()};
   Lostsense::Gameplay::ActTwoStoryRuntime ActTwo;
   Lostsense::Gameplay::CampaignProgressRuntime Campaign;
+  Lostsense::Gameplay::ActSevenChoiceRuntime ActSevenChoice;
   Lostsense::Gameplay::DeepRouteState DeepRoute;
 };
 
@@ -189,6 +204,28 @@ bool ULostsenseStorySubsystem::CompleteCampaignQuest(const int32 QuestId) {
   return true;
 }
 
+bool ULostsenseStorySubsystem::ResolveActSevenArchiveChoice(
+    const ELostsenseActSevenArchiveChoice Choice) {
+  if (!IsStoryReady() || Choice == ELostsenseActSevenArchiveChoice::None ||
+      StoryRuntime->Campaign.Objective(80062U) !=
+          Lostsense::Gameplay::ObjectiveState::Active ||
+      StoryRuntime->ActSevenChoice.Choice() !=
+          Lostsense::Gameplay::ActSevenArchiveChoice::None) {
+    return false;
+  }
+  if (!StoryRuntime->Campaign.CompleteQuest(80062U)) {
+    return false;
+  }
+  return StoryRuntime->ActSevenChoice.Resolve(ToPortableActSevenChoice(Choice));
+}
+
+ELostsenseActSevenArchiveChoice
+ULostsenseStorySubsystem::GetActSevenArchiveChoice() const {
+  return IsStoryReady() ? ToPresentationActSevenChoice(
+                              StoryRuntime->ActSevenChoice.Choice())
+                        : ELostsenseActSevenArchiveChoice::None;
+}
+
 bool ULostsenseStorySubsystem::IsCampaignFinished() const {
   return IsStoryReady() && StoryRuntime->Campaign.IsFinished();
 }
@@ -229,12 +266,15 @@ bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
   std::string StoryPayload;
   std::string ActTwoPayload;
   std::string CampaignPayload;
+  std::string ActSevenPayload;
   if (!Lostsense::Gameplay::FirstSliceStoryCodec::Serialize(
           StoryRuntime->Story.CaptureState(), StoryPayload) ||
       !Lostsense::Gameplay::ActTwoStoryCodec::Serialize(
           StoryRuntime->ActTwo.CaptureState(), ActTwoPayload) ||
       !Lostsense::Gameplay::CampaignProgressCodec::Serialize(
-          StoryRuntime->Campaign.CaptureState(), CampaignPayload)) {
+          StoryRuntime->Campaign.CaptureState(), CampaignPayload) ||
+      !Lostsense::Gameplay::ActSevenChoiceCodec::Serialize(
+          StoryRuntime->ActSevenChoice.CaptureState(), ActSevenPayload)) {
     return false;
   }
   StoryPayload.append(DeepRouteMarker);
@@ -243,6 +283,8 @@ bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
   StoryPayload.append(ActTwoPayload);
   StoryPayload.append(CampaignMarker);
   StoryPayload.append(CampaignPayload);
+  StoryPayload.append(ActSevenMarker);
+  StoryPayload.append(ActSevenPayload);
   OutPayload = UTF8_TO_TCHAR(StoryPayload.c_str());
   return true;
 }
@@ -264,6 +306,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
           ? std::string::npos
           : Utf8Payload.find(CampaignMarker,
                              ActTwoPosition + ActTwoMarker.size());
+  const auto ActSevenPosition =
+      CampaignPosition == std::string::npos
+          ? std::string::npos
+          : Utf8Payload.find(ActSevenMarker,
+                             CampaignPosition + CampaignMarker.size());
 
   const std::string_view StoryPayload(Utf8Payload.data(), DeepPosition);
   const std::string_view DeepPayload(Utf8Payload.data() + DeepStart,
@@ -326,8 +373,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   } else {
     Lostsense::Gameplay::CampaignProgressState CampaignState;
     const auto CampaignStart = CampaignPosition + CampaignMarker.size();
-    const std::string_view CampaignPayload(Utf8Payload.data() + CampaignStart,
-                                           Utf8Payload.size() - CampaignStart);
+    const std::string_view CampaignPayload(
+        Utf8Payload.data() + CampaignStart,
+        (ActSevenPosition == std::string::npos ? Utf8Payload.size()
+                                               : ActSevenPosition) -
+            CampaignStart);
     if (!Lostsense::Gameplay::CampaignProgressCodec::Deserialize(
             CampaignPayload, CampaignState) ||
         !CampaignCandidate.RestoreState(CampaignState) ||
@@ -338,9 +388,33 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     }
   }
 
+  Lostsense::Gameplay::ActSevenChoiceRuntime ActSevenCandidate;
+  if (ActSevenPosition != std::string::npos) {
+    Lostsense::Gameplay::ActSevenChoiceState ActSevenState;
+    const auto ActSevenStart = ActSevenPosition + ActSevenMarker.size();
+    const std::string_view ActSevenPayload(Utf8Payload.data() + ActSevenStart,
+                                           Utf8Payload.size() - ActSevenStart);
+    if (!Lostsense::Gameplay::ActSevenChoiceCodec::Deserialize(ActSevenPayload,
+                                                               ActSevenState) ||
+        !ActSevenCandidate.RestoreState(ActSevenState)) {
+      return false;
+    }
+  }
+  const bool ArchiveQuestCompleted =
+      CampaignCandidate.Objective(80062U) ==
+      Lostsense::Gameplay::ObjectiveState::Completed;
+  const bool ArchiveChoiceResolved =
+      ActSevenCandidate.Choice() !=
+      Lostsense::Gameplay::ActSevenArchiveChoice::None;
+  if (ArchiveQuestCompleted != ArchiveChoiceResolved) {
+    return false;
+  }
+
   if (!StoryRuntime->Story.RestoreState(StoryCandidate) ||
       !StoryRuntime->ActTwo.RestoreState(ActTwoCandidate.CaptureState()) ||
-      !StoryRuntime->Campaign.RestoreState(CampaignCandidate.CaptureState())) {
+      !StoryRuntime->Campaign.RestoreState(CampaignCandidate.CaptureState()) ||
+      !StoryRuntime->ActSevenChoice.RestoreState(
+          ActSevenCandidate.CaptureState())) {
     return false;
   }
   StoryRuntime->DeepRoute = *DeepCandidate;
