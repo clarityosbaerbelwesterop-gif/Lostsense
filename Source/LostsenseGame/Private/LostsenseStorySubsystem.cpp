@@ -245,7 +245,8 @@ bool ULostsenseStorySubsystem::ResolveCampaignEnding(
   if (!IsStoryReady() || Ending == ELostsenseCampaignEnding::None ||
       StoryRuntime->Campaign.Objective(80084U) !=
           Lostsense::Gameplay::ObjectiveState::Active ||
-      StoryRuntime->Ending.Ending() != Lostsense::Gameplay::CampaignEnding::None) {
+      StoryRuntime->Ending.Ending() !=
+          Lostsense::Gameplay::CampaignEnding::None) {
     return false;
   }
   if (!StoryRuntime->Campaign.CompleteQuest(80084U)) {
@@ -435,11 +436,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   if (ActSevenPosition != std::string::npos) {
     Lostsense::Gameplay::ActSevenChoiceState ActSevenState;
     const auto ActSevenStart = ActSevenPosition + ActSevenMarker.size();
-    const std::string_view ActSevenPayload(
-        Utf8Payload.data() + ActSevenStart,
-        (EndingPosition == std::string::npos ? Utf8Payload.size()
-                                             : EndingPosition) -
-            ActSevenStart);
+    const std::string_view ActSevenPayload(Utf8Payload.data() + ActSevenStart,
+                                           (EndingPosition == std::string::npos
+                                                ? Utf8Payload.size()
+                                                : EndingPosition) -
+                                               ActSevenStart);
     if (!Lostsense::Gameplay::ActSevenChoiceCodec::Deserialize(ActSevenPayload,
                                                                ActSevenState) ||
         !ActSevenCandidate.RestoreState(ActSevenState)) {
@@ -462,8 +463,8 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     const auto EndingStart = EndingPosition + EndingMarker.size();
     const std::string_view EndingPayload(Utf8Payload.data() + EndingStart,
                                          Utf8Payload.size() - EndingStart);
-    if (!Lostsense::Gameplay::CampaignEndingCodec::Deserialize(
-            EndingPayload, EndingState) ||
+    if (!Lostsense::Gameplay::CampaignEndingCodec::Deserialize(EndingPayload,
+                                                               EndingState) ||
         !EndingCandidate.RestoreState(EndingState)) {
       return false;
     }

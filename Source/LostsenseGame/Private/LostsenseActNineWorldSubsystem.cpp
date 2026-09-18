@@ -23,9 +23,9 @@ void Block(UWorld &World, UStaticMesh &Mesh, const FVector &Location,
     Actor->SetActorScale3D(Scale);
   }
 }
-void Story(UWorld &World, const FVector &Location, const int32 QuestId,
-           const ELostsenseCampaignEnding Ending =
-               ELostsenseCampaignEnding::None) {
+void Story(
+    UWorld &World, const FVector &Location, const int32 QuestId,
+    const ELostsenseCampaignEnding Ending = ELostsenseCampaignEnding::None) {
   const FTransform Transform(FRotator::ZeroRotator, Location, FVector(0.8F));
   ALostsenseActNineStoryActor *Actor =
       World.SpawnActorDeferred<ALostsenseActNineStoryActor>(
@@ -91,8 +91,8 @@ void ULostsenseActNineWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   Block(InWorld, *Cube, Spines, FVector(10.0F, 8.0F, 0.45F));
   for (int32 Spine = 0; Spine < 3; ++Spine) {
     Block(InWorld, *Cube,
-          Spines + FVector(-900.0F + static_cast<float>(Spine) * 900.0F,
-                           0.0F, 850.0F),
+          Spines + FVector(-900.0F + static_cast<float>(Spine) * 900.0F, 0.0F,
+                           850.0F),
           FVector(0.55F, 0.55F, 8.0F));
   }
   Story(InWorld, Spines + FVector(0.0F, -900.0F, 100.0F), 80082);
@@ -113,7 +113,8 @@ void ULostsenseActNineWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
         ELostsenseEnemyArchetype::AsterNull, 30U);
 
   // The ending is only reachable after Aster's death. Three distinct anchors
-  // preserve player agency and persist exactly one Sever / Bind / Scatter state.
+  // preserve player agency and persist exactly one Sever / Bind / Scatter
+  // state.
   const FVector EndingDais(165000.0F, 0.0F, -32000.0F);
   Block(InWorld, *Cube, EndingDais, FVector(7.0F, 7.0F, 0.45F));
   Story(InWorld, EndingDais + FVector(-800.0F, 0.0F, 120.0F), 80084,

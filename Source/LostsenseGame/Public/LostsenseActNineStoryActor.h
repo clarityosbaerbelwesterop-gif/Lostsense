@@ -17,9 +17,9 @@ class LOSTSENSEGAME_API ALostsenseActNineStoryActor final
 
 public:
   ALostsenseActNineStoryActor();
-  void Configure(int32 InQuestId,
-                 ELostsenseCampaignEnding InEnding =
-                     ELostsenseCampaignEnding::None);
+  void
+  Configure(int32 InQuestId,
+            ELostsenseCampaignEnding InEnding = ELostsenseCampaignEnding::None);
   virtual FText GetInteractionPrompt() const override;
   virtual bool
   CanInteract(const ALostsenseKnightCharacter &Interactor) const override;

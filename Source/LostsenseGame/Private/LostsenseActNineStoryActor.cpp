@@ -53,7 +53,8 @@ FText ALostsenseActNineStoryActor::GetInteractionPrompt() const {
   }
   switch (QuestId) {
   case 80080:
-    return FText::FromString(TEXT("Identify the stable authored reconstruction"));
+    return FText::FromString(
+        TEXT("Identify the stable authored reconstruction"));
   case 80081:
     return FText::FromString(TEXT("Free the Ninth Descent senseprints"));
   case 80082:
@@ -67,8 +68,10 @@ bool ALostsenseActNineStoryActor::CanInteract(
     const ALostsenseKnightCharacter &Interactor) const {
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
   return bConfigured && Story != nullptr &&
-         Story->GetObjectiveState(QuestId) == ELostsenseObjectiveState::Active &&
-         FVector::DistSquared(GetActorLocation(), Interactor.GetActorLocation()) <=
+         Story->GetObjectiveState(QuestId) ==
+             ELostsenseObjectiveState::Active &&
+         FVector::DistSquared(GetActorLocation(),
+                              Interactor.GetActorLocation()) <=
              FMath::Square(320.0F);
 }
 
@@ -99,8 +102,8 @@ void ALostsenseActNineStoryActor::SynchronizePresentation() {
   }
   SetActorScale3D(RestScale);
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
-  if (Story != nullptr &&
-      Story->GetObjectiveState(QuestId) == ELostsenseObjectiveState::Completed) {
+  if (Story != nullptr && Story->GetObjectiveState(QuestId) ==
+                              ELostsenseObjectiveState::Completed) {
     SetActorScale3D(RestScale * 0.45F);
   }
 }
