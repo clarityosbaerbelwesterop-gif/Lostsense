@@ -127,9 +127,9 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
              FVector(0.65F, 3.2F, 4.5F),
              ELostsenseActTwoInteraction::GiltfenRootTunnel);
 
-  // Thorn Choir is only approached in this block. The abbey threshold is
-  // authored and discoverable, but Mother Veyr's final encounter is reserved
-  // for the subsequent boss-production pass.
+  // Thorn Choir Abbey continues past the discovery threshold into an authored
+  // combat nave and witness-root sanctum. The threshold physically clears
+  // after discovery, preventing the finale from being bypassed accidentally.
   const FVector Abbey(21800.0F, 10800.0F, -120.0F);
   Block(InWorld, *Cube, Abbey, FVector(9.0F, 6.0F, 0.45F));
   Block(InWorld, *Cube, Abbey + FVector(1400.0F, 0.0F, 800.0F),
@@ -139,4 +139,49 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   StoryActor(InWorld, Abbey + FVector(900.0F, 0.0F, 180.0F),
              FVector(0.6F, 4.5F, 4.8F),
              ELostsenseActTwoInteraction::ThornChoirThreshold);
+
+  const FVector Nave = Abbey + FVector(4200.0F, 0.0F, -260.0F);
+  for (int32 Bay = 0; Bay < 5; ++Bay) {
+    const float X = Nave.X + static_cast<float>(Bay) * 720.0F;
+    Block(InWorld, *Cube, FVector(X, 0.0F, Nave.Z), FVector(4.2F, 5.0F, 0.35F));
+    Block(InWorld, *Cube, FVector(X, 620.0F, Nave.Z + 620.0F),
+          FVector(0.45F, 0.45F, 6.0F));
+    Block(InWorld, *Cube, FVector(X, -620.0F, Nave.Z + 620.0F),
+          FVector(0.45F, 0.45F, 6.0F));
+  }
+  Enemy(InWorld, Nave + FVector(900.0F, 520.0F, 120.0F), 2120U,
+        ELostsenseEnemyArchetype::Rootbound, 10U);
+  Enemy(InWorld, Nave + FVector(1500.0F, -500.0F, 120.0F), 2121U,
+        ELostsenseEnemyArchetype::ThornPenitent, 10U);
+
+  const FVector Arena = Nave + FVector(4300.0F, 0.0F, -120.0F);
+  Block(InWorld, *Cube, Arena, FVector(10.0F, 9.0F, 0.5F));
+  for (int32 Root = 0; Root < 8; ++Root) {
+    const float Angle = static_cast<float>(Root) * 45.0F;
+    const FVector Offset(FMath::Cos(FMath::DegreesToRadians(Angle)) * 820.0F,
+                         FMath::Sin(FMath::DegreesToRadians(Angle)) * 820.0F,
+                         520.0F);
+    Block(InWorld, *Cube, Arena + Offset, FVector(0.4F, 0.4F, 5.5F),
+          FRotator(0.0F, Angle, static_cast<float>((Root % 2) * 14 - 7)));
+  }
+
+  const FTransform BossTransform(FRotator::ZeroRotator,
+                                 Arena + FVector(0.0F, 0.0F, 140.0F));
+  ALostsenseEnemyCharacter *MotherVeyr =
+      InWorld.SpawnActorDeferred<ALostsenseEnemyCharacter>(
+          ALostsenseEnemyCharacter::StaticClass(), BossTransform, nullptr,
+          nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+  if (MotherVeyr != nullptr) {
+    MotherVeyr->ConfigureMotherVeyrBoss(30008U, 11U);
+    UGameplayStatics::FinishSpawningActor(MotherVeyr, BossTransform);
+  }
+
+  const FVector WitnessRoot = Arena + FVector(1500.0F, 0.0F, 160.0F);
+  Block(InWorld, *Cube, WitnessRoot, FVector(1.8F, 1.8F, 2.8F));
+  StoryActor(InWorld, WitnessRoot + FVector(0.0F, -420.0F, 80.0F),
+             FVector(0.55F, 0.55F, 1.4F),
+             ELostsenseActTwoInteraction::PreserveWitnessRoot);
+  StoryActor(InWorld, WitnessRoot + FVector(0.0F, 420.0F, 80.0F),
+             FVector(0.55F, 0.55F, 1.4F),
+             ELostsenseActTwoInteraction::BurnWitnessRoot);
 }

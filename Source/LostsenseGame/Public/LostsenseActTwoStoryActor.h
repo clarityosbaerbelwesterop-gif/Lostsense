@@ -14,7 +14,9 @@ enum class ELostsenseActTwoInteraction : uint8 {
   DomaIre,
   InfectedVillager,
   GiltfenRootTunnel,
-  ThornChoirThreshold
+  ThornChoirThreshold,
+  PreserveWitnessRoot,
+  BurnWitnessRoot
 };
 
 UCLASS()

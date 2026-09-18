@@ -21,6 +21,7 @@ enum class ELostsenseEnemyArchetype : uint8 {
   Rootbound,
   EchoStag,
   ThornPenitent,
+  MotherVeyr,
   Odran
 };
 
@@ -49,6 +50,7 @@ public:
                                ELostsenseEnemyArchetype InArchetype,
                                uint32 InItemLevel);
   void ConfigureOdranBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureMotherVeyrBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,
