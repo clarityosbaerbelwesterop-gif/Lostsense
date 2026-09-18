@@ -1,0 +1,20 @@
+name: PR17 format repair
+"on":
+  push:
+    branches: [work/acts5-9-campaign-finale]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/acts5-9-campaign-finale
+      - run: clang-format -i Source/LostsenseGame/Public/LostsenseEnemyCharacter.h Source/LostsenseGame/Private/LostsenseEnemyCharacter.cpp Source/LostsenseGame/Public/LostsenseActFiveStoryActor.h Source/LostsenseGame/Private/LostsenseActFiveStoryActor.cpp Source/LostsenseGame/Public/LostsenseActFiveWorldSubsystem.h Source/LostsenseGame/Private/LostsenseActFiveWorldSubsystem.cpp
+      - run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Source && git commit -m "Apply PR17 clang-format" && git push origin HEAD:work/acts5-9-campaign-finale
