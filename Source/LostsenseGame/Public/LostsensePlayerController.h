@@ -5,6 +5,18 @@
 
 #include "LostsensePlayerController.generated.h"
 
+UENUM(BlueprintType)
+enum class ELostsenseMenuPage : uint8 {
+  None,
+  Start,
+  Pause,
+  Inventory,
+  ScarAtlas,
+  QuestJournal,
+  WorldMap,
+  Options
+};
+
 UCLASS()
 class LOSTSENSEGAME_API ALostsensePlayerController final
     : public APlayerController {
@@ -23,10 +35,25 @@ public:
   void ToggleScarAtlasMenu();
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
+  void ToggleQuestJournal();
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
+  void ToggleWorldMap();
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
+  void TogglePauseMenu();
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
   void MenuSelectPrevious();
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
   void MenuSelectNext();
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
+  void MenuAdjustLeft();
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
+  void MenuAdjustRight();
 
   UFUNCTION(BlueprintCallable, Category = "Lostsense|Menu")
   void MenuConfirm();
@@ -35,14 +62,21 @@ public:
   void MenuCancel();
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Menu")
-  bool IsInventoryMenuOpen() const { return bInventoryMenuOpen; }
+  ELostsenseMenuPage GetActiveMenuPage() const { return ActiveMenuPage; }
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Menu")
-  bool IsScarAtlasMenuOpen() const { return bScarAtlasMenuOpen; }
+  bool IsInventoryMenuOpen() const {
+    return ActiveMenuPage == ELostsenseMenuPage::Inventory;
+  }
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|Menu")
+  bool IsScarAtlasMenuOpen() const {
+    return ActiveMenuPage == ELostsenseMenuPage::ScarAtlas;
+  }
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Menu")
   bool IsGameplayInputSuppressed() const {
-    return bInventoryMenuOpen || bScarAtlasMenuOpen;
+    return ActiveMenuPage != ELostsenseMenuPage::None;
   }
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Menu")
@@ -57,6 +91,8 @@ private:
   void SaveDevelopmentCharacter();
   void LoadDevelopmentCharacter();
   void ResetDevelopmentEncounter();
+  void OpenMenu(ELostsenseMenuPage Page);
+  void AdjustOption(int32 Direction);
   int32 CurrentMenuEntryCount() const;
   void NormalizeMenuSelection();
   void ApplyMenuInputMode();
@@ -65,7 +101,7 @@ private:
 
   FString StartupCharacterSnapshot;
   FString StartupStorySnapshot;
-  bool bInventoryMenuOpen = false;
-  bool bScarAtlasMenuOpen = false;
+  ELostsenseMenuPage ActiveMenuPage = ELostsenseMenuPage::Start;
   int32 MenuSelectionIndex = 0;
+  bool bOptionsOpenedFromStart = false;
 };

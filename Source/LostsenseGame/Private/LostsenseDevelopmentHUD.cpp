@@ -1,35 +1,29 @@
 #include "LostsenseDevelopmentHUD.h"
 
 #include "LostsenseEnemyCharacter.h"
+#include "LostsenseGameUserSettings.h"
 #include "LostsenseMenuProjection.h"
 #include "LostsensePlayerController.h"
 #include "LostsenseRuntimeSubsystem.h"
 #include "LostsenseStorySubsystem.h"
 
 #include "Engine/Canvas.h"
+#include "Engine/Engine.h"
 #include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "EngineUtils.h"
 
+#include "Lostsense/Gameplay/Story/CampaignCatalog.h"
+
 namespace {
 FString ObjectiveText(const int32 ObjectiveId) {
-  switch (ObjectiveId) {
-  case 80001:
-    return TEXT("Find Mara Venn at the bellsmith");
-  case 80002:
-    return TEXT("Meet Hadrun and prove your measure in the guard yard");
-  case 80003:
-    return TEXT("Follow Ravelwood into Weeping Cut; find Ninth Descent marks");
-  case 80004:
-    return TEXT("Descend into the Upper Vaur Goldworks");
-  case 80005:
-    return TEXT("Enter Coinless Shaft and follow the silent rail gallery");
-  case 80006:
-    return TEXT(
-        "Recover the Ninth Descent record and return Bellgrave changed");
-  default:
-    return TEXT("Orient yourself beneath Bellgrave's stabilization bell");
-  }
+  const auto Quest = Lostsense::Gameplay::CampaignCatalog::FindQuest(
+      static_cast<std::uint32_t>(FMath::Max(0, ObjectiveId)));
+  return Quest.has_value()
+             ? FString::Printf(TEXT("%d // %s // %s"), ObjectiveId,
+                               UTF8_TO_TCHAR(Quest->Title.data()),
+                               UTF8_TO_TCHAR(Quest->Objective.data()))
+             : TEXT("No active campaign objective");
 }
 
 FString ScarStateText(const FLostsenseScarMenuEntry &Entry) {
@@ -43,6 +37,30 @@ FString ScarStateText(const FLostsenseScarMenuEntry &Entry) {
     return TEXT("AVAILABLE");
   }
   return TEXT("LOCKED");
+}
+
+FString ObjectiveStateText(const ELostsenseObjectiveState State) {
+  switch (State) {
+  case ELostsenseObjectiveState::Active:
+    return TEXT("ACTIVE");
+  case ELostsenseObjectiveState::Completed:
+    return TEXT("DONE");
+  case ELostsenseObjectiveState::Locked:
+    return TEXT("LOCKED");
+  }
+  return TEXT("LOCKED");
+}
+
+void DrawSelection(AHUD &Hud, const bool bSelected, const FString &Text,
+                   const float X, const float Y, const float Width) {
+  if (bSelected) {
+    Hud.DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), X - 10.0F, Y - 5.0F,
+                 Width, 30.0F);
+  }
+  Hud.DrawText(
+      FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "), *Text),
+      bSelected ? FLinearColor::White : FLinearColor(0.74F, 0.74F, 0.77F), X, Y,
+      nullptr, 0.78F, false);
 }
 } // namespace
 
@@ -70,88 +88,214 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
 
   ConsumePresentationEvents();
 
-  DrawText(TEXT("LOSTSENSE // BELLGRAVE DESCENT SLICE"), FLinearColor::White,
-           32.0F, 24.0F, nullptr, 1.0F, false);
-  DrawMeter(TEXT("VITALITY"), Runtime->GetPlayerHealth(),
-            Runtime->GetPlayerMaximumHealth(), 32.0F, 58.0F, 330.0F);
-  DrawMeter(TEXT("RESOLVE"), Runtime->GetPlayerResource(),
-            Runtime->GetPlayerMaximumResource(), 32.0F, 102.0F, 330.0F);
+  const ALostsensePlayerController *Controller =
+      Cast<ALostsensePlayerController>(GetOwningPlayerController());
+  const ELostsenseMenuPage Page = Controller != nullptr
+                                      ? Controller->GetActiveMenuPage()
+                                      : ELostsenseMenuPage::None;
 
-  DrawText(FString::Printf(TEXT("SCAR POINTS  %d"),
-                           Runtime->GetUnspentSkillPoints()),
-           FLinearColor::White, 32.0F, 150.0F, nullptr, 0.9F, false);
+  if (Page != ELostsenseMenuPage::Start) {
+    DrawText(TEXT("LOSTSENSE // AVARRA"), FLinearColor::White, 32.0F, 24.0F,
+             nullptr, 1.0F, false);
+    DrawMeter(TEXT("VITALITY"), Runtime->GetPlayerHealth(),
+              Runtime->GetPlayerMaximumHealth(), 32.0F, 58.0F, 330.0F);
+    DrawMeter(TEXT("RESOLVE"), Runtime->GetPlayerResource(),
+              Runtime->GetPlayerMaximumResource(), 32.0F, 102.0F, 330.0F);
 
-  const int32 ObjectiveId =
-      Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
-  DrawText(FString::Printf(TEXT("OBJECTIVE  %s"), *ObjectiveText(ObjectiveId)),
-           FLinearColor::White, 32.0F, 182.0F, nullptr, 0.82F, false);
-  DrawText(
-      TEXT("E Interact   LMB Primary   RMB Heavy   Space Dodge   Shift Guard"),
-      FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 212.0F, nullptr, 0.78F, false);
-  DrawText(
-      TEXT("Q/2/R/F Skills   I Inventory   Tab Scar Atlas   T Quick Equip"),
-      FLinearColor(0.82F, 0.82F, 0.82F), 32.0F, 236.0F, nullptr, 0.78F, false);
-  DrawText(TEXT("F5 Save   F9 Load   F10 Reset slice"),
-           FLinearColor(0.72F, 0.72F, 0.72F), 32.0F, 260.0F, nullptr, 0.72F,
-           false);
+    const int32 ObjectiveId =
+        Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
+    DrawText(ObjectiveText(ObjectiveId), FLinearColor::White, 32.0F, 150.0F,
+             nullptr, 0.76F, false);
+    DrawText(TEXT("E Interact  I Inventory  Tab Scar Atlas  J Quests  M Map  P "
+                  "Pause"),
+             FLinearColor(0.78F, 0.78F, 0.80F), 32.0F, 180.0F, nullptr, 0.70F,
+             false);
 
-  float EventY = 302.0F;
-  DrawText(TEXT("AUTHORITATIVE EVENT FEED"), FLinearColor::White, 32.0F, EventY,
-           nullptr, 0.72F, false);
-  EventY += 22.0F;
-  for (const FString &Line : RecentEvents) {
-    DrawText(Line, FLinearColor(0.72F, 0.72F, 0.72F), 32.0F, EventY, nullptr,
-             0.68F, false);
-    EventY += 19.0F;
-  }
-
-  ALostsenseEnemyCharacter *Boss = nullptr;
-  for (TActorIterator<ALostsenseEnemyCharacter> It(GetWorld()); It; ++It) {
-    if (It->IsBoss() && !It->IsDefeated()) {
-      Boss = *It;
-      break;
+    ALostsenseEnemyCharacter *Boss = nullptr;
+    for (TActorIterator<ALostsenseEnemyCharacter> It(GetWorld()); It; ++It) {
+      if (It->IsBoss() && !It->IsDefeated()) {
+        Boss = *It;
+        break;
+      }
+    }
+    if (Boss != nullptr) {
+      const float Width = FMath::Min(620.0F, Canvas->ClipX - 120.0F);
+      const float X = (Canvas->ClipX - Width) * 0.5F;
+      const float Y = Canvas->ClipY - 96.0F;
+      DrawText(FString::Printf(TEXT("BOSS // PHASE %d"), Boss->GetBossPhase()),
+               FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
+      DrawMeter(TEXT("BOSS"), Boss->GetCurrentHealth(),
+                Boss->GetMaximumHealth(), X, Y, Width);
     }
   }
 
-  if (Boss != nullptr) {
-    const float Width = FMath::Min(620.0F, Canvas->ClipX - 120.0F);
-    const float X = (Canvas->ClipX - Width) * 0.5F;
-    const float Y = Canvas->ClipY - 96.0F;
-    DrawText(
-        FString::Printf(TEXT("ODRAN, THE BELL WITHOUT A TONGUE // PHASE %d"),
-                        Boss->GetBossPhase()),
-        FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
-    DrawMeter(TEXT("BOSS"), Boss->GetCurrentHealth(), Boss->GetMaximumHealth(),
-              X, Y, Width);
-  }
-
-  const ALostsensePlayerController *Controller =
-      Cast<ALostsensePlayerController>(GetOwningPlayerController());
-  if (Controller == nullptr || !Controller->IsGameplayInputSuppressed()) {
+  if (Controller == nullptr || Page == ELostsenseMenuPage::None) {
     return;
   }
 
-  const float PanelWidth = FMath::Min(610.0F, Canvas->ClipX - 64.0F);
-  const float PanelHeight = FMath::Min(650.0F, Canvas->ClipY - 96.0F);
-  const float PanelX = FMath::Max(32.0F, Canvas->ClipX - PanelWidth - 32.0F);
-  const float PanelY = 48.0F;
-  DrawRect(FLinearColor(0.025F, 0.025F, 0.03F, 0.96F), PanelX, PanelY,
+  if (Page == ELostsenseMenuPage::Start) {
+    DrawRect(FLinearColor(0.015F, 0.015F, 0.02F, 1.0F), 0.0F, 0.0F,
+             Canvas->ClipX, Canvas->ClipY);
+  }
+
+  const float PanelWidth = FMath::Min(760.0F, Canvas->ClipX - 64.0F);
+  const float PanelHeight = FMath::Min(700.0F, Canvas->ClipY - 80.0F);
+  const float PanelX = (Canvas->ClipX - PanelWidth) * 0.5F;
+  const float PanelY = (Canvas->ClipY - PanelHeight) * 0.5F;
+  DrawRect(FLinearColor(0.025F, 0.025F, 0.03F, 0.97F), PanelX, PanelY,
            PanelWidth, PanelHeight);
-  DrawRect(FLinearColor(0.28F, 0.28F, 0.30F, 0.96F), PanelX, PanelY, 5.0F,
+  DrawRect(FLinearColor(0.32F, 0.32F, 0.35F, 0.96F), PanelX, PanelY, 5.0F,
            PanelHeight);
 
   const int32 Selection = Controller->GetMenuSelectionIndex();
-  float RowY = PanelY + 82.0F;
+  float RowY = PanelY + 96.0F;
   constexpr float RowHeight = 38.0F;
-  constexpr int32 MaximumRows = 12;
+  constexpr int32 MaximumRows = 13;
 
-  if (Controller->IsInventoryMenuOpen()) {
+  if (Page == ELostsenseMenuPage::Start) {
+    DrawText(TEXT("LOSTSENSE"), FLinearColor::White, PanelX + 34.0F,
+             PanelY + 22.0F, nullptr, 1.55F, false);
+    DrawText(TEXT("A world remembers what people cannot."),
+             FLinearColor(0.62F, 0.62F, 0.66F), PanelX + 36.0F, PanelY + 58.0F,
+             nullptr, 0.74F, false);
+    const FString Entries[] = {TEXT("Continue"), TEXT("New Game"),
+                               TEXT("Options"), TEXT("Quit")};
+    for (int32 Index = 0; Index < 4; ++Index) {
+      DrawSelection(*this, Selection == Index, Entries[Index], PanelX + 44.0F,
+                    RowY, PanelWidth - 88.0F);
+      RowY += RowHeight;
+    }
+    DrawText(TEXT("UP/DOWN Navigate   ENTER Confirm"),
+             FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
+             PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
+    return;
+  }
+
+  if (Page == ELostsenseMenuPage::Pause) {
+    DrawText(TEXT("PAUSED"), FLinearColor::White, PanelX + 34.0F,
+             PanelY + 24.0F, nullptr, 1.20F, false);
+    const FString Entries[] = {TEXT("Resume"),         TEXT("Save Game"),
+                               TEXT("Load Game"),      TEXT("Quest Journal"),
+                               TEXT("World Map"),      TEXT("Options"),
+                               TEXT("Return to Title")};
+    for (int32 Index = 0; Index < 7; ++Index) {
+      DrawSelection(*this, Selection == Index, Entries[Index], PanelX + 44.0F,
+                    RowY, PanelWidth - 88.0F);
+      RowY += RowHeight;
+    }
+    return;
+  }
+
+  if (Page == ELostsenseMenuPage::Options) {
+    DrawText(TEXT("OPTIONS"), FLinearColor::White, PanelX + 34.0F,
+             PanelY + 24.0F, nullptr, 1.20F, false);
+    ULostsenseGameUserSettings *Settings =
+        GEngine != nullptr
+            ? Cast<ULostsenseGameUserSettings>(GEngine->GetGameUserSettings())
+            : nullptr;
+    float ScaleNormalized = 1.0F;
+    int32 ScaleValue = 100;
+    int32 ScaleMin = 50;
+    int32 ScaleMax = 100;
+    if (Settings != nullptr) {
+      Settings->GetResolutionScaleInformationEx(ScaleNormalized, ScaleValue,
+                                                ScaleMin, ScaleMax);
+    }
+    const int32 FrameRate =
+        Settings != nullptr ? Settings->GetFrameRatePreset() : 60;
+    const FString Values[] = {
+        FString::Printf(TEXT("VSync: %s"),
+                        Settings != nullptr && Settings->IsVSyncEnabled()
+                            ? TEXT("On")
+                            : TEXT("Off")),
+        FString::Printf(TEXT("Frame Rate Limit: %s"),
+                        FrameRate == 0
+                            ? TEXT("Unlimited")
+                            : *FString::Printf(TEXT("%d"), FrameRate)),
+        FString::Printf(TEXT("Resolution Scale: %d%%"), ScaleValue),
+        FString::Printf(TEXT("Camera Shake: %s"),
+                        Settings != nullptr && Settings->GetCameraShakeEnabled()
+                            ? TEXT("On")
+                            : TEXT("Off")),
+        FString::Printf(TEXT("Damage Numbers: %s"),
+                        Settings != nullptr &&
+                                Settings->GetDamageNumbersEnabled()
+                            ? TEXT("On")
+                            : TEXT("Off")),
+        TEXT("Apply & Save"),
+        TEXT("Back")};
+    for (int32 Index = 0; Index < 7; ++Index) {
+      DrawSelection(*this, Selection == Index, Values[Index], PanelX + 44.0F,
+                    RowY, PanelWidth - 88.0F);
+      RowY += RowHeight;
+    }
+    DrawText(TEXT("LEFT/RIGHT Change   ENTER Apply/Toggle   ESC Back"),
+             FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
+             PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
+    return;
+  }
+
+  if (Page == ELostsenseMenuPage::QuestJournal) {
+    DrawText(TEXT("QUEST JOURNAL // MAIN CAMPAIGN"), FLinearColor::White,
+             PanelX + 34.0F, PanelY + 24.0F, nullptr, 1.05F, false);
+    const auto &Quests = Lostsense::Gameplay::CampaignCatalog::Quests();
+    const int32 StartIndex = FMath::Clamp(
+        Selection - 6, 0,
+        FMath::Max(0, static_cast<int32>(Quests.size()) - MaximumRows));
+    const int32 EndIndex =
+        FMath::Min(static_cast<int32>(Quests.size()), StartIndex + MaximumRows);
+    for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
+      const auto &Quest = Quests[static_cast<std::size_t>(Index)];
+      const ELostsenseObjectiveState State =
+          Story != nullptr
+              ? Story->GetObjectiveState(static_cast<int32>(Quest.Id))
+              : ELostsenseObjectiveState::Locked;
+      const FString Label =
+          FString::Printf(TEXT("[%s] %u // %s"), *ObjectiveStateText(State),
+                          Quest.Id, UTF8_TO_TCHAR(Quest.Title.data()));
+      DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
+                    PanelWidth - 68.0F);
+      if (Selection == Index) {
+        DrawText(UTF8_TO_TCHAR(Quest.Objective.data()),
+                 FLinearColor(0.60F, 0.60F, 0.64F), PanelX + 58.0F,
+                 RowY + 21.0F, nullptr, 0.58F, false);
+      }
+      RowY += RowHeight;
+    }
+    DrawText(TEXT("UP/DOWN Browse canonical Acts I-IX   ESC Close"),
+             FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
+             PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
+    return;
+  }
+
+  if (Page == ELostsenseMenuPage::WorldMap) {
+    DrawText(TEXT("MAP // AVARRA"), FLinearColor::White, PanelX + 34.0F,
+             PanelY + 24.0F, nullptr, 1.05F, false);
+    const auto &Regions = Lostsense::Gameplay::CampaignCatalog::Regions();
+    const int32 StartIndex = FMath::Clamp(
+        Selection - 6, 0,
+        FMath::Max(0, static_cast<int32>(Regions.size()) - MaximumRows));
+    const int32 EndIndex = FMath::Min(static_cast<int32>(Regions.size()),
+                                      StartIndex + MaximumRows);
+    for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
+      const auto &Region = Regions[static_cast<std::size_t>(Index)];
+      const FString Label = FString::Printf(TEXT("%u // %s // %s"), Region.Id,
+                                            UTF8_TO_TCHAR(Region.Name.data()),
+                                            UTF8_TO_TCHAR(Region.Layer.data()));
+      DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
+                    PanelWidth - 68.0F);
+      RowY += RowHeight;
+    }
+    DrawText(
+        TEXT("Surface -> Vaur -> Namarith -> Abyss -> Red Archive -> Loom"),
+        FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
+        PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
+    return;
+  }
+
+  if (Page == ELostsenseMenuPage::Inventory) {
     DrawText(TEXT("INVENTORY // FIELD LOADOUT"), FLinearColor::White,
-             PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
-    DrawText(TEXT("Recovered gear, equipped state and materials"),
-             FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F, PanelY + 48.0F,
-             nullptr, 0.72F, false);
-
+             PanelX + 34.0F, PanelY + 24.0F, nullptr, 1.05F, false);
     TArray<FLostsenseInventoryMenuEntry> Entries;
     if (FLostsenseMenuProjection::CaptureInventory(*Runtime, Entries)) {
       const int32 StartIndex = FMath::Clamp(
@@ -159,30 +303,19 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
       const int32 EndIndex =
           FMath::Min(Entries.Num(), StartIndex + MaximumRows);
       for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
-        const bool bSelected = Index == Selection;
-        if (bSelected) {
-          DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
-                   RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
-        }
-        DrawText(
-            FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "),
-                            *Entries[Index].Label),
-            bSelected ? FLinearColor::White : FLinearColor(0.76F, 0.76F, 0.78F),
-            PanelX + 26.0F, RowY, nullptr, 0.72F, false);
+        DrawSelection(*this, Selection == Index, Entries[Index].Label,
+                      PanelX + 34.0F, RowY, PanelWidth - 68.0F);
         RowY += RowHeight;
       }
     }
-    DrawText(TEXT("UP/DOWN Browse   ENTER/E Equip compatible gear   ESC Close"),
-             FLinearColor(0.72F, 0.72F, 0.74F), PanelX + 24.0F,
-             PanelY + PanelHeight - 34.0F, nullptr, 0.68F, false);
     return;
   }
 
   DrawText(TEXT("SCAR ATLAS // KNIGHT 102"), FLinearColor::White,
-           PanelX + 24.0F, PanelY + 20.0F, nullptr, 1.05F, false);
+           PanelX + 34.0F, PanelY + 24.0F, nullptr, 1.05F, false);
   DrawText(FString::Printf(TEXT("Unspent Scar Points: %d"),
                            Runtime->GetUnspentSkillPoints()),
-           FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 24.0F, PanelY + 48.0F,
+           FLinearColor(0.68F, 0.68F, 0.70F), PanelX + 34.0F, PanelY + 54.0F,
            nullptr, 0.72F, false);
 
   TArray<FLostsenseScarMenuEntry> Entries;
@@ -192,26 +325,14 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     const int32 EndIndex = FMath::Min(Entries.Num(), StartIndex + MaximumRows);
     for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
       const FLostsenseScarMenuEntry &Entry = Entries[Index];
-      const bool bSelected = Index == Selection;
-      if (bSelected) {
-        DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), PanelX + 16.0F,
-                 RowY - 5.0F, PanelWidth - 32.0F, RowHeight - 3.0F);
-      }
-      DrawText(FString::Printf(TEXT("%s[%s] %s // %s // COST %d"),
-                               bSelected ? TEXT("> ") : TEXT("  "),
-                               *ScarStateText(Entry), *Entry.Name,
-                               *Entry.Category, Entry.PointCost),
-               bSelected ? FLinearColor::White
-                         : FLinearColor(0.76F, 0.76F, 0.78F),
-               PanelX + 26.0F, RowY, nullptr, 0.68F, false);
-      DrawText(Entry.Detail, FLinearColor(0.56F, 0.56F, 0.60F), PanelX + 46.0F,
-               RowY + 17.0F, nullptr, 0.60F, false);
+      const FString Label = FString::Printf(TEXT("[%s] %s // %s // COST %d"),
+                                            *ScarStateText(Entry), *Entry.Name,
+                                            *Entry.Category, Entry.PointCost);
+      DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
+                    PanelWidth - 68.0F);
       RowY += RowHeight;
     }
   }
-  DrawText(TEXT("UP/DOWN Navigate   ENTER/E Allocate   ESC Close"),
-           FLinearColor(0.72F, 0.72F, 0.74F), PanelX + 24.0F,
-           PanelY + PanelHeight - 34.0F, nullptr, 0.68F, false);
 }
 
 void ALostsenseDevelopmentHUD::DrawMeter(const FString &Label,
