@@ -44,11 +44,9 @@ FText ALostsenseActSixStoryActor::GetInteractionPrompt() const {
   case 80051:
     return FText::FromString(TEXT("Request bearing from Serit No-Echo"));
   case 80052:
-    return FText::FromString(
-        TEXT("Recover the rejected contradiction record"));
+    return FText::FromString(TEXT("Recover the rejected contradiction record"));
   case 80053:
-    return FText::FromString(
-        TEXT("Rotate the Blind Astrarium absence lenses"));
+    return FText::FromString(TEXT("Rotate the Blind Astrarium absence lenses"));
   default:
     return FText::GetEmpty();
   }
@@ -58,8 +56,10 @@ bool ALostsenseActSixStoryActor::CanInteract(
     const ALostsenseKnightCharacter &Interactor) const {
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
   return bConfigured && Story != nullptr &&
-         Story->GetObjectiveState(QuestId) == ELostsenseObjectiveState::Active &&
-         FVector::DistSquared(GetActorLocation(), Interactor.GetActorLocation()) <=
+         Story->GetObjectiveState(QuestId) ==
+             ELostsenseObjectiveState::Active &&
+         FVector::DistSquared(GetActorLocation(),
+                              Interactor.GetActorLocation()) <=
              FMath::Square(320.0F);
 }
 
@@ -88,8 +88,8 @@ void ALostsenseActSixStoryActor::SynchronizePresentation() {
   }
   SetActorScale3D(RestScale);
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
-  if (Story != nullptr &&
-      Story->GetObjectiveState(QuestId) == ELostsenseObjectiveState::Completed) {
+  if (Story != nullptr && Story->GetObjectiveState(QuestId) ==
+                              ELostsenseObjectiveState::Completed) {
     SetActorScale3D(RestScale * 0.45F);
   }
 }

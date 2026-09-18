@@ -28,8 +28,8 @@ void Story(UWorld &World, const FVector &Location, const int32 QuestId) {
   const FTransform Transform(FRotator::ZeroRotator, Location, FVector(0.8F));
   ALostsenseActSixStoryActor *Actor =
       World.SpawnActorDeferred<ALostsenseActSixStoryActor>(
-          ALostsenseActSixStoryActor::StaticClass(), Transform, nullptr, nullptr,
-          ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+          ALostsenseActSixStoryActor::StaticClass(), Transform, nullptr,
+          nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
   if (Actor != nullptr) {
     Actor->Configure(QuestId);
     UGameplayStatics::FinishSpawningActor(Actor, Transform);
@@ -99,8 +99,8 @@ void ULostsenseActSixWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   Story(InWorld, ContradictionShelf + FVector(-700.0F, 0.0F, 120.0F), 80052);
   Enemy(InWorld, ContradictionShelf + FVector(500.0F, 650.0F, 120.0F), 6501U,
         ELostsenseEnemyArchetype::NullMantle, 21U);
-  Enemy(InWorld, ContradictionShelf + FVector(1200.0F, -500.0F, 120.0F),
-        6502U, ELostsenseEnemyArchetype::ThoughtEater, 21U);
+  Enemy(InWorld, ContradictionShelf + FVector(1200.0F, -500.0F, 120.0F), 6502U,
+        ELostsenseEnemyArchetype::ThoughtEater, 21U);
 
   // Blind Astrarium (20028): offset lens towers frame deliberately absent
   // corridors. The interaction represents reorientation of the absence lenses.
@@ -128,8 +128,8 @@ void ULostsenseActSixWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
     const FVector Offset(FMath::Cos(FMath::DegreesToRadians(Angle)) * 1000.0F,
                          FMath::Sin(FMath::DegreesToRadians(Angle)) * 1000.0F,
                          80.0F);
-    Block(InWorld, *Cube, KharosArena + Offset,
-          FVector(1.8F, 0.12F, 0.08F), FRotator(0.0F, Angle, 0.0F));
+    Block(InWorld, *Cube, KharosArena + Offset, FVector(1.8F, 0.12F, 0.08F),
+          FRotator(0.0F, Angle, 0.0F));
   }
   Enemy(InWorld, KharosArena + FVector(0.0F, 0.0F, 160.0F), 30041U,
         ELostsenseEnemyArchetype::Kharos, 23U);

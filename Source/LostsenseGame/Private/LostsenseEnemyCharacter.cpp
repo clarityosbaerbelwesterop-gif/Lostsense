@@ -106,22 +106,22 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
     return {900.0, 28.0, 22.0,  2450.0, 340.0, 21.0,
             1.10,  0.0F, 0.82F, 0.92F,  1.08F};
   case ELostsenseEnemyArchetype::NullMantle:
-    return {150.0, 18.0, 8.0, 1650.0, 240.0, 17.0,
-            1.02, 290.0F, 0.54F, 0.70F, 0.92F};
+    return {150.0, 18.0,   8.0,   1650.0, 240.0, 17.0,
+            1.02,  290.0F, 0.54F, 0.70F,  0.92F};
   case ELostsenseEnemyArchetype::ThoughtEater:
-    return {178.0, 20.0, 6.0, 1750.0, 270.0, 19.0,
-            1.06, 315.0F, 0.62F, 0.76F, 0.96F};
+    return {178.0, 20.0,   6.0,   1750.0, 270.0, 19.0,
+            1.06,  315.0F, 0.62F, 0.76F,  0.96F};
   case ELostsenseEnemyArchetype::Kharos:
     if (BossPhase >= 3) {
-      return {1120.0, 34.0, 16.0, 2850.0, 430.0, 34.0,
-              1.26, 300.0F, 0.42F, 0.54F, 0.66F};
+      return {1120.0, 34.0,   16.0,  2850.0, 430.0, 34.0,
+              1.26,   300.0F, 0.42F, 0.54F,  0.66F};
     }
     if (BossPhase >= 2) {
-      return {1120.0, 34.0, 16.0, 2850.0, 390.0, 30.0,
-              1.22, 280.0F, 0.54F, 0.64F, 0.78F};
+      return {1120.0, 34.0,   16.0,  2850.0, 390.0, 30.0,
+              1.22,   280.0F, 0.54F, 0.64F,  0.78F};
     }
-    return {1120.0, 34.0, 16.0, 2850.0, 350.0, 26.0,
-            1.18, 250.0F, 0.72F, 0.82F, 0.96F};
+    return {1120.0, 34.0,   16.0,  2850.0, 350.0, 26.0,
+            1.18,   250.0F, 0.72F, 0.82F,  0.96F};
   case ELostsenseEnemyArchetype::KeeperYsil:
     if (BossPhase >= 2) {
       return {980.0, 30.0,   18.0,  2500.0, 330.0, 28.0,
@@ -238,8 +238,8 @@ void ALostsenseEnemyCharacter::ConfigureGildedLungBoss(
                           InItemLevel);
 }
 
-void ALostsenseEnemyCharacter::ConfigureKharosBoss(
-    const uint64 InCombatantId, const uint32 InItemLevel) {
+void ALostsenseEnemyCharacter::ConfigureKharosBoss(const uint64 InCombatantId,
+                                                   const uint32 InItemLevel) {
   ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Kharos,
                           InItemLevel);
 }
@@ -559,7 +559,8 @@ void ALostsenseEnemyCharacter::HandleDefeat(
                  ? Lostsense::Gameplay::FirstSlice::KharosBossLoot.Value
                  : ((bBoss || bElite)
                         ? Lostsense::Gameplay::FirstSlice::VaurEliteLoot.Value
-                        : Lostsense::Gameplay::FirstSlice::VaurEnemyLoot.Value));
+                        : Lostsense::Gameplay::FirstSlice::VaurEnemyLoot
+                              .Value));
   const TArray<Lostsense::Gameplay::GeneratedLootEntry> Drops =
       Runtime.GenerateLoot(Table, ItemLevel,
                            PortableEnemy->Combatant.Id().Value);
