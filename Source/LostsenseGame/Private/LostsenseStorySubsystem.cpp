@@ -221,9 +221,9 @@ bool ULostsenseStorySubsystem::ResolveActSevenArchiveChoice(
 
 ELostsenseActSevenArchiveChoice
 ULostsenseStorySubsystem::GetActSevenArchiveChoice() const {
-  return IsStoryReady()
-             ? ToPresentationActSevenChoice(StoryRuntime->ActSevenChoice.Choice())
-             : ELostsenseActSevenArchiveChoice::None;
+  return IsStoryReady() ? ToPresentationActSevenChoice(
+                              StoryRuntime->ActSevenChoice.Choice())
+                        : ELostsenseActSevenArchiveChoice::None;
 }
 
 bool ULostsenseStorySubsystem::IsCampaignFinished() const {
@@ -376,7 +376,7 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     const std::string_view CampaignPayload(
         Utf8Payload.data() + CampaignStart,
         (ActSevenPosition == std::string::npos ? Utf8Payload.size()
-                                              : ActSevenPosition) -
+                                               : ActSevenPosition) -
             CampaignStart);
     if (!Lostsense::Gameplay::CampaignProgressCodec::Deserialize(
             CampaignPayload, CampaignState) ||
@@ -394,8 +394,8 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     const auto ActSevenStart = ActSevenPosition + ActSevenMarker.size();
     const std::string_view ActSevenPayload(Utf8Payload.data() + ActSevenStart,
                                            Utf8Payload.size() - ActSevenStart);
-    if (!Lostsense::Gameplay::ActSevenChoiceCodec::Deserialize(
-            ActSevenPayload, ActSevenState) ||
+    if (!Lostsense::Gameplay::ActSevenChoiceCodec::Deserialize(ActSevenPayload,
+                                                               ActSevenState) ||
         !ActSevenCandidate.RestoreState(ActSevenState)) {
       return false;
     }

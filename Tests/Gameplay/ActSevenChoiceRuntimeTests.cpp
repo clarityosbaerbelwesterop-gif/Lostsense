@@ -14,8 +14,7 @@ int main() {
               "None cannot resolve the choice");
   test.Expect(runtime.Resolve(ActSevenArchiveChoice::BellgraveCivilianArchive),
               "first explicit archive choice resolves");
-  test.Expect(!runtime.Resolve(
-                  ActSevenArchiveChoice::CrownlessCivilianArchive),
+  test.Expect(!runtime.Resolve(ActSevenArchiveChoice::CrownlessCivilianArchive),
               "archive choice cannot be overwritten");
 
   std::string payload;

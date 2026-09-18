@@ -123,19 +123,19 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
     return {1120.0, 34.0,   16.0,  2850.0, 350.0, 26.0,
             1.18,   250.0F, 0.72F, 0.82F,  0.96F};
   case ELostsenseEnemyArchetype::PaperDead:
-    return {205.0, 23.0, 9.0, 1650.0, 245.0, 21.0,
-            1.08, 260.0F, 0.58F, 0.72F, 0.90F};
+    return {205.0, 23.0,   9.0,   1650.0, 245.0, 21.0,
+            1.08,  260.0F, 0.58F, 0.72F,  0.90F};
   case ELostsenseEnemyArchetype::SaelRhyne:
     if (BossPhase >= 3) {
-      return {1280.0, 38.0, 20.0, 2950.0, 410.0, 37.0,
-              1.28, 300.0F, 0.44F, 0.54F, 0.66F};
+      return {1280.0, 38.0,   20.0,  2950.0, 410.0, 37.0,
+              1.28,   300.0F, 0.44F, 0.54F,  0.66F};
     }
     if (BossPhase >= 2) {
-      return {1280.0, 38.0, 20.0, 2950.0, 375.0, 33.0,
-              1.24, 275.0F, 0.54F, 0.66F, 0.78F};
+      return {1280.0, 38.0,   20.0,  2950.0, 375.0, 33.0,
+              1.24,   275.0F, 0.54F, 0.66F,  0.78F};
     }
-    return {1280.0, 38.0, 20.0, 2950.0, 340.0, 29.0,
-            1.20, 245.0F, 0.70F, 0.82F, 0.96F};
+    return {1280.0, 38.0,   20.0,  2950.0, 340.0, 29.0,
+            1.20,   245.0F, 0.70F, 0.82F,  0.96F};
   case ELostsenseEnemyArchetype::KeeperYsil:
     if (BossPhase >= 2) {
       return {980.0, 30.0,   18.0,  2500.0, 330.0, 28.0,

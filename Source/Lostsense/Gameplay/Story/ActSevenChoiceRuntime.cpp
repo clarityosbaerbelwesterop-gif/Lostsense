@@ -4,7 +4,8 @@
 
 namespace Lostsense::Gameplay {
 
-bool ActSevenChoiceRuntime::Resolve(const ActSevenArchiveChoice choice) noexcept {
+bool ActSevenChoiceRuntime::Resolve(
+    const ActSevenArchiveChoice choice) noexcept {
   if (Choice_ != ActSevenArchiveChoice::None ||
       choice == ActSevenArchiveChoice::None) {
     return false;
@@ -39,8 +40,7 @@ bool ActSevenChoiceCodec::Serialize(const ActSevenChoiceState &state,
   if (!validation.RestoreState(state)) {
     return false;
   }
-  out = "A7C1|" +
-        std::to_string(static_cast<std::uint8_t>(state.Archive));
+  out = "A7C1|" + std::to_string(static_cast<std::uint8_t>(state.Archive));
   return true;
 }
 
@@ -59,8 +59,7 @@ bool ActSevenChoiceCodec::Deserialize(const std::string_view payload,
                 ActSevenArchiveChoice::CrownlessCivilianArchive)) {
     return false;
   }
-  ActSevenChoiceState candidate{
-      1U, static_cast<ActSevenArchiveChoice>(raw)};
+  ActSevenChoiceState candidate{1U, static_cast<ActSevenArchiveChoice>(raw)};
   ActSevenChoiceRuntime validation;
   if (!validation.RestoreState(candidate)) {
     return false;
