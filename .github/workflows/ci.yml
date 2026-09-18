@@ -78,6 +78,8 @@ jobs:
         run: python3 Scripts/Verify-ActFourAcceptance.py
       - name: Validate Act V City Under Sky source contracts
         run: python3 Scripts/Verify-ActFiveAcceptance.py
+      - name: Validate Act VI Hollow Meridian source contracts
+        run: python3 Scripts/Verify-ActSixAcceptance.py
 
   format:
     name: clang-format

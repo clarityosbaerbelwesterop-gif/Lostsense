@@ -350,6 +350,15 @@ ItemCatalog BuildItemCatalog() {
   clapper.AbilityMutations = {ClappersReturn};
   static_cast<void>(catalog.AddItem(clapper));
 
+  ItemDefinition blindline =
+      MakeKnightWeapon(KharosBlindline, SpearWeapon, {MainHand}, 24.0);
+  blindline.AllowedRarities.clear();
+  blindline.FixedRarity = BossUniqueRarity;
+  blindline.Unique = true;
+  blindline.BaseModifiers.push_back({Stats::CombatAttributes::ArmorPenetration,
+                                     Stats::ModifierOperation::Additive, 10.0});
+  static_cast<void>(catalog.AddItem(blindline));
+
   ItemDefinition cuirass;
   cuirass.Id = BellwardenCuirass;
   cuirass.Type = ArmorItem;
@@ -405,6 +414,12 @@ LootCatalog BuildLootCatalog() {
   odran.Rolls = 1U;
   odran.Entries = {{OdransClapper, 1U, 1U, 1U, {KnightClass}}};
   static_cast<void>(catalog.AddTable(odran));
+
+  LootTableDefinition kharos;
+  kharos.Id = KharosBossLoot;
+  kharos.Rolls = 1U;
+  kharos.Entries = {{KharosBlindline, 1U, 1U, 1U, {KnightClass}}};
+  static_cast<void>(catalog.AddTable(kharos));
 
   return catalog;
 }
