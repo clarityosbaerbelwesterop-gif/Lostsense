@@ -1,0 +1,25 @@
+name: PR21 format repair
+"on":
+  push:
+    branches: [work/act9-first-witness-finale]
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/act9-first-witness-finale
+      - name: Format Act IX C++ surface
+        run: |
+          clang-format -i             Source/Lostsense/Gameplay/Story/CampaignEndingRuntime.h             Source/Lostsense/Gameplay/Story/CampaignEndingRuntime.cpp             Tests/Gameplay/CampaignEndingRuntimeTests.cpp             Source/LostsenseGame/Public/LostsenseStorySubsystem.h             Source/LostsenseGame/Private/LostsenseStorySubsystem.cpp             Source/LostsenseGame/Public/LostsenseEnemyCharacter.h             Source/LostsenseGame/Private/LostsenseEnemyCharacter.cpp             Source/LostsenseGame/Public/LostsenseActNineStoryActor.h             Source/LostsenseGame/Private/LostsenseActNineStoryActor.cpp             Source/LostsenseGame/Public/LostsenseActNineWorldSubsystem.h             Source/LostsenseGame/Private/LostsenseActNineWorldSubsystem.cpp
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Source Tests
+          git commit -m "Apply PR21 clang-format"
+          git push origin HEAD:work/act9-first-witness-finale
