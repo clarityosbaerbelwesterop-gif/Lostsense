@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "project": "Lostsense",
+  "authority": "Design/*_AUTHORITY.md",
+  "policy": {
+    "no_likeness_training": true,
+    "no_copyrighted_character_references": true,
+    "review_before_import": true,
+    "generated_assets_are_presentation_only": true
+  },
+  "collections": [
+    {
+      "id": "bellgrave_keyframes",
+      "kind": "image",
+      "model": "gpt_image_2_5",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "prompts": [
+        "Original dark-fantasy frontier town Bellgrave at dawn, wind-cut pasture, bronze stabilization belfry above a sealed mine cage, witness-gold dust, grounded medieval industrial architecture, cinematic game environment concept, no text",
+        "Original dark-fantasy Coinless Shaft counterweight chamber, timber and iron rails, clapperless bronze bell machinery, deep vertical mine, readable combat arena, cinematic game environment concept, no text"
+      ]
+    },
+    {
+      "id": "ravelwood_keyframes",
+      "kind": "image",
+      "model": "gpt_image_2_5",
+      "aspect_ratio": "16:9",
+      "resolution": "2k",
+      "prompts": [
+        "Original dark-fantasy Ravelwood, black-sap forest with enormous memory-bearing roots, root-stilt village Morrowstep, mist and witness-gold glints, beautiful but unsettling, cinematic game environment concept, no text",
+        "Original Thorn Choir Abbey apse opening into a living root cavity, thorn organs, memory knots in roots, readable boss arena, dark fantasy game environment concept, no text"
+      ]
+    }
+  ],
+  "animation_actions": [
+    "idle combat",
+    "walk forward",
+    "run forward",
+    "dodge roll",
+    "sword slash",
+    "heavy sword attack",
+    "shield block",
+    "hit reaction",
+    "death"
+  ]
+}
