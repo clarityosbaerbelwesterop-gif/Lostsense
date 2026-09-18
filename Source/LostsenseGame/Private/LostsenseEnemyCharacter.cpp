@@ -96,15 +96,15 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
             1.08,  205.0F, 0.72F, 0.92F,  1.05F};
   case ELostsenseEnemyArchetype::GildedLung:
     if (BossPhase >= 3) {
-      return {900.0, 28.0,   22.0,  2450.0, 410.0, 29.0,
-              1.18,  0.0F,   0.46F, 0.58F,  0.70F};
+      return {900.0, 28.0, 22.0,  2450.0, 410.0, 29.0,
+              1.18,  0.0F, 0.46F, 0.58F,  0.70F};
     }
     if (BossPhase >= 2) {
-      return {900.0, 28.0,   22.0,  2450.0, 380.0, 25.0,
-              1.15,  0.0F,   0.60F, 0.72F,  0.88F};
+      return {900.0, 28.0, 22.0,  2450.0, 380.0, 25.0,
+              1.15,  0.0F, 0.60F, 0.72F,  0.88F};
     }
-    return {900.0, 28.0,   22.0,  2450.0, 340.0, 21.0,
-            1.10,  0.0F,   0.82F, 0.92F,  1.08F};
+    return {900.0, 28.0, 22.0,  2450.0, 340.0, 21.0,
+            1.10,  0.0F, 0.82F, 0.92F,  1.08F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
@@ -200,8 +200,8 @@ void ALostsenseEnemyCharacter::ConfigureCaldrisBoss(const uint64 InCombatantId,
 
 void ALostsenseEnemyCharacter::ConfigureBishopPistonBoss(
     const uint64 InCombatantId, const uint32 InItemLevel) {
-  ConfigureEnemyArchetype(InCombatantId,
-                          ELostsenseEnemyArchetype::BishopPiston, InItemLevel);
+  ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::BishopPiston,
+                          InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::ConfigureGildedLungBoss(

@@ -103,9 +103,8 @@ int32 ALostsenseActFourStoryActor::QuestId() const {
 
 bool ALostsenseActFourStoryActor::IsCompleted() const {
   const ULostsenseStorySubsystem *Story = StoryFor(*this);
-  return Story != nullptr &&
-         Story->GetObjectiveState(QuestId()) ==
-             ELostsenseObjectiveState::Completed;
+  return Story != nullptr && Story->GetObjectiveState(QuestId()) ==
+                                 ELostsenseObjectiveState::Completed;
 }
 
 void ALostsenseActFourStoryActor::SynchronizePresentation() {
