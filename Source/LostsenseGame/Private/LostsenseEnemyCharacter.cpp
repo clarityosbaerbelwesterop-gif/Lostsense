@@ -105,6 +105,13 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
     }
     return {900.0, 28.0, 22.0,  2450.0, 340.0, 21.0,
             1.10,  0.0F, 0.82F, 0.92F,  1.08F};
+  case ELostsenseEnemyArchetype::KeeperYsil:
+    if (BossPhase >= 2) {
+      return {980.0, 30.0, 18.0, 2500.0, 330.0, 28.0,
+              1.20, 285.0F, 0.48F, 0.62F, 0.76F};
+    }
+    return {980.0, 30.0, 18.0, 2500.0, 300.0, 24.0,
+            1.15, 245.0F, 0.68F, 0.82F, 0.98F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
@@ -127,7 +134,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
                    Archetype == ELostsenseEnemyArchetype::MotherVeyr ||
                    Archetype == ELostsenseEnemyArchetype::Caldris ||
                    Archetype == ELostsenseEnemyArchetype::BishopPiston ||
-                   Archetype == ELostsenseEnemyArchetype::GildedLung)
+                   Archetype == ELostsenseEnemyArchetype::GildedLung ||
+                   Archetype == ELostsenseEnemyArchetype::KeeperYsil)
                       ? Lostsense::Combat::CombatantKind::Boss
                       : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
                           Archetype == ELostsenseEnemyArchetype::RailMarshal ||
@@ -176,7 +184,8 @@ void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
           InArchetype == ELostsenseEnemyArchetype::MotherVeyr ||
           InArchetype == ELostsenseEnemyArchetype::Caldris ||
           InArchetype == ELostsenseEnemyArchetype::BishopPiston ||
-          InArchetype == ELostsenseEnemyArchetype::GildedLung;
+          InArchetype == ELostsenseEnemyArchetype::GildedLung ||
+          InArchetype == ELostsenseEnemyArchetype::KeeperYsil;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
@@ -560,6 +569,8 @@ void ALostsenseEnemyCharacter::HandleDefeat(
       static_cast<void>(Story->CompleteCampaignQuest(80032));
     } else if (Archetype == ELostsenseEnemyArchetype::GildedLung) {
       static_cast<void>(Story->CompleteCampaignQuest(80034));
+    } else if (Archetype == ELostsenseEnemyArchetype::KeeperYsil) {
+      static_cast<void>(Story->CompleteCampaignQuest(80044));
     } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));
@@ -575,7 +586,8 @@ bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
   if (Archetype != ELostsenseEnemyArchetype::MotherVeyr &&
       Archetype != ELostsenseEnemyArchetype::Caldris &&
       Archetype != ELostsenseEnemyArchetype::BishopPiston &&
-      Archetype != ELostsenseEnemyArchetype::GildedLung) {
+      Archetype != ELostsenseEnemyArchetype::GildedLung &&
+      Archetype != ELostsenseEnemyArchetype::KeeperYsil) {
     return true;
   }
   UGameInstance *GameInstance = GetGameInstance();
@@ -596,5 +608,8 @@ bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
   if (Archetype == ELostsenseEnemyArchetype::BishopPiston) {
     return Story->GetObjectiveState(80032) == ELostsenseObjectiveState::Active;
   }
-  return Story->GetObjectiveState(80034) == ELostsenseObjectiveState::Active;
+  if (Archetype == ELostsenseEnemyArchetype::GildedLung) {
+    return Story->GetObjectiveState(80034) == ELostsenseObjectiveState::Active;
+  }
+  return Story->GetObjectiveState(80044) == ELostsenseObjectiveState::Active;
 }
