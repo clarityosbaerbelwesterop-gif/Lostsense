@@ -54,14 +54,13 @@ FString ObjectiveStateText(const ELostsenseObjectiveState State) {
 void DrawSelection(AHUD &Hud, const bool bSelected, const FString &Text,
                    const float X, const float Y, const float Width) {
   if (bSelected) {
-    Hud.DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), X - 10.0F,
-                 Y - 5.0F, Width, 30.0F);
+    Hud.DrawRect(FLinearColor(0.18F, 0.18F, 0.20F, 0.98F), X - 10.0F, Y - 5.0F,
+                 Width, 30.0F);
   }
-  Hud.DrawText(FString::Printf(TEXT("%s%s"),
-                               bSelected ? TEXT("> ") : TEXT("  "), *Text),
-               bSelected ? FLinearColor::White
-                         : FLinearColor(0.74F, 0.74F, 0.77F),
-               X, Y, nullptr, 0.78F, false);
+  Hud.DrawText(
+      FString::Printf(TEXT("%s%s"), bSelected ? TEXT("> ") : TEXT("  "), *Text),
+      bSelected ? FLinearColor::White : FLinearColor(0.74F, 0.74F, 0.77F), X, Y,
+      nullptr, 0.78F, false);
 }
 } // namespace
 
@@ -91,9 +90,9 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
 
   const ALostsensePlayerController *Controller =
       Cast<ALostsensePlayerController>(GetOwningPlayerController());
-  const ELostsenseMenuPage Page =
-      Controller != nullptr ? Controller->GetActiveMenuPage()
-                            : ELostsenseMenuPage::None;
+  const ELostsenseMenuPage Page = Controller != nullptr
+                                      ? Controller->GetActiveMenuPage()
+                                      : ELostsenseMenuPage::None;
 
   if (Page != ELostsenseMenuPage::Start) {
     DrawText(TEXT("LOSTSENSE // AVARRA"), FLinearColor::White, 32.0F, 24.0F,
@@ -107,10 +106,10 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
         Story != nullptr ? Story->GetCurrentObjectiveId() : 0;
     DrawText(ObjectiveText(ObjectiveId), FLinearColor::White, 32.0F, 150.0F,
              nullptr, 0.76F, false);
-    DrawText(
-        TEXT("E Interact  I Inventory  Tab Scar Atlas  J Quests  M Map  P Pause"),
-        FLinearColor(0.78F, 0.78F, 0.80F), 32.0F, 180.0F, nullptr, 0.70F,
-        false);
+    DrawText(TEXT("E Interact  I Inventory  Tab Scar Atlas  J Quests  M Map  P "
+                  "Pause"),
+             FLinearColor(0.78F, 0.78F, 0.80F), 32.0F, 180.0F, nullptr, 0.70F,
+             false);
 
     ALostsenseEnemyCharacter *Boss = nullptr;
     for (TActorIterator<ALostsenseEnemyCharacter> It(GetWorld()); It; ++It) {
@@ -123,9 +122,8 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
       const float Width = FMath::Min(620.0F, Canvas->ClipX - 120.0F);
       const float X = (Canvas->ClipX - Width) * 0.5F;
       const float Y = Canvas->ClipY - 96.0F;
-      DrawText(
-          FString::Printf(TEXT("BOSS // PHASE %d"), Boss->GetBossPhase()),
-          FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
+      DrawText(FString::Printf(TEXT("BOSS // PHASE %d"), Boss->GetBossPhase()),
+               FLinearColor::White, X, Y - 26.0F, nullptr, 0.9F, false);
       DrawMeter(TEXT("BOSS"), Boss->GetCurrentHealth(),
                 Boss->GetMaximumHealth(), X, Y, Width);
     }
@@ -176,10 +174,10 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
   if (Page == ELostsenseMenuPage::Pause) {
     DrawText(TEXT("PAUSED"), FLinearColor::White, PanelX + 34.0F,
              PanelY + 24.0F, nullptr, 1.20F, false);
-    const FString Entries[] = {
-        TEXT("Resume"), TEXT("Save Game"), TEXT("Load Game"),
-        TEXT("Quest Journal"), TEXT("World Map"), TEXT("Options"),
-        TEXT("Return to Title")};
+    const FString Entries[] = {TEXT("Resume"),         TEXT("Save Game"),
+                               TEXT("Load Game"),      TEXT("Quest Journal"),
+                               TEXT("World Map"),      TEXT("Options"),
+                               TEXT("Return to Title")};
     for (int32 Index = 0; Index < 7; ++Index) {
       DrawSelection(*this, Selection == Index, Entries[Index], PanelX + 44.0F,
                     RowY, PanelWidth - 88.0F);
@@ -216,8 +214,7 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
                             : *FString::Printf(TEXT("%d"), FrameRate)),
         FString::Printf(TEXT("Resolution Scale: %d%%"), ScaleValue),
         FString::Printf(TEXT("Camera Shake: %s"),
-                        Settings != nullptr &&
-                                Settings->GetCameraShakeEnabled()
+                        Settings != nullptr && Settings->GetCameraShakeEnabled()
                             ? TEXT("On")
                             : TEXT("Off")),
         FString::Printf(TEXT("Damage Numbers: %s"),
@@ -225,7 +222,8 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
                                 Settings->GetDamageNumbersEnabled()
                             ? TEXT("On")
                             : TEXT("Off")),
-        TEXT("Apply & Save"), TEXT("Back")};
+        TEXT("Apply & Save"),
+        TEXT("Back")};
     for (int32 Index = 0; Index < 7; ++Index) {
       DrawSelection(*this, Selection == Index, Values[Index], PanelX + 44.0F,
                     RowY, PanelWidth - 88.0F);
@@ -241,10 +239,9 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     DrawText(TEXT("QUEST JOURNAL // MAIN CAMPAIGN"), FLinearColor::White,
              PanelX + 34.0F, PanelY + 24.0F, nullptr, 1.05F, false);
     const auto &Quests = Lostsense::Gameplay::CampaignCatalog::Quests();
-    const int32 StartIndex =
-        FMath::Clamp(Selection - 6, 0,
-                     FMath::Max(0, static_cast<int32>(Quests.size()) -
-                                       MaximumRows));
+    const int32 StartIndex = FMath::Clamp(
+        Selection - 6, 0,
+        FMath::Max(0, static_cast<int32>(Quests.size()) - MaximumRows));
     const int32 EndIndex =
         FMath::Min(static_cast<int32>(Quests.size()), StartIndex + MaximumRows);
     for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
@@ -253,9 +250,9 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
           Story != nullptr
               ? Story->GetObjectiveState(static_cast<int32>(Quest.Id))
               : ELostsenseObjectiveState::Locked;
-      const FString Label = FString::Printf(
-          TEXT("[%s] %u // %s"), *ObjectiveStateText(State), Quest.Id,
-          UTF8_TO_TCHAR(Quest.Title.data()));
+      const FString Label =
+          FString::Printf(TEXT("[%s] %u // %s"), *ObjectiveStateText(State),
+                          Quest.Id, UTF8_TO_TCHAR(Quest.Title.data()));
       DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
                     PanelWidth - 68.0F);
       if (Selection == Index) {
@@ -275,24 +272,24 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     DrawText(TEXT("MAP // AVARRA"), FLinearColor::White, PanelX + 34.0F,
              PanelY + 24.0F, nullptr, 1.05F, false);
     const auto &Regions = Lostsense::Gameplay::CampaignCatalog::Regions();
-    const int32 StartIndex =
-        FMath::Clamp(Selection - 6, 0,
-                     FMath::Max(0, static_cast<int32>(Regions.size()) -
-                                       MaximumRows));
+    const int32 StartIndex = FMath::Clamp(
+        Selection - 6, 0,
+        FMath::Max(0, static_cast<int32>(Regions.size()) - MaximumRows));
     const int32 EndIndex = FMath::Min(static_cast<int32>(Regions.size()),
-                                     StartIndex + MaximumRows);
+                                      StartIndex + MaximumRows);
     for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
       const auto &Region = Regions[static_cast<std::size_t>(Index)];
-      const FString Label = FString::Printf(
-          TEXT("%u // %s // %s"), Region.Id, UTF8_TO_TCHAR(Region.Name.data()),
-          UTF8_TO_TCHAR(Region.Layer.data()));
+      const FString Label = FString::Printf(TEXT("%u // %s // %s"), Region.Id,
+                                            UTF8_TO_TCHAR(Region.Name.data()),
+                                            UTF8_TO_TCHAR(Region.Layer.data()));
       DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
                     PanelWidth - 68.0F);
       RowY += RowHeight;
     }
-    DrawText(TEXT("Surface -> Vaur -> Namarith -> Abyss -> Red Archive -> Loom"),
-             FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
-             PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
+    DrawText(
+        TEXT("Surface -> Vaur -> Namarith -> Abyss -> Red Archive -> Loom"),
+        FLinearColor(0.65F, 0.65F, 0.68F), PanelX + 36.0F,
+        PanelY + PanelHeight - 40.0F, nullptr, 0.68F, false);
     return;
   }
 
@@ -328,10 +325,9 @@ void ALostsenseDevelopmentHUD::DrawHUD() {
     const int32 EndIndex = FMath::Min(Entries.Num(), StartIndex + MaximumRows);
     for (int32 Index = StartIndex; Index < EndIndex; ++Index) {
       const FLostsenseScarMenuEntry &Entry = Entries[Index];
-      const FString Label =
-          FString::Printf(TEXT("[%s] %s // %s // COST %d"),
-                          *ScarStateText(Entry), *Entry.Name, *Entry.Category,
-                          Entry.PointCost);
+      const FString Label = FString::Printf(TEXT("[%s] %s // %s // COST %d"),
+                                            *ScarStateText(Entry), *Entry.Name,
+                                            *Entry.Category, Entry.PointCost);
       DrawSelection(*this, Selection == Index, Label, PanelX + 34.0F, RowY,
                     PanelWidth - 68.0F);
       RowY += RowHeight;

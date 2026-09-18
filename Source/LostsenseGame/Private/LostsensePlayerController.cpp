@@ -200,9 +200,8 @@ void ALostsensePlayerController::AdjustOption(const int32 Direction) {
     int32 MaximumValue = 100;
     Settings->GetResolutionScaleInformationEx(Current, CurrentValue,
                                               MinimumValue, MaximumValue);
-    const float Next =
-        FMath::Clamp(Current + static_cast<float>(Direction) * 0.1F, 0.5F,
-                     1.0F);
+    const float Next = FMath::Clamp(
+        Current + static_cast<float>(Direction) * 0.1F, 0.5F, 1.0F);
     Settings->SetResolutionScaleNormalized(Next);
     break;
   }
@@ -283,7 +282,7 @@ void ALostsensePlayerController::MenuConfirm() {
     }
     if (MenuSelectionIndex == 6) {
       OpenMenu(bOptionsOpenedFromStart ? ELostsenseMenuPage::Start
-                                      : ELostsenseMenuPage::Pause);
+                                       : ELostsenseMenuPage::Pause);
       return;
     }
     AdjustOption(1);
@@ -381,7 +380,7 @@ void ALostsensePlayerController::MenuCancel() {
   }
   if (ActiveMenuPage == ELostsenseMenuPage::Options) {
     OpenMenu(bOptionsOpenedFromStart ? ELostsenseMenuPage::Start
-                                    : ELostsenseMenuPage::Pause);
+                                     : ELostsenseMenuPage::Pause);
     return;
   }
   OpenMenu(ELostsenseMenuPage::None);
@@ -585,5 +584,6 @@ FString ALostsensePlayerController::DevelopmentSavePath() const {
 }
 
 FString ALostsensePlayerController::DevelopmentStorySavePath() const {
-  return FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("LostsenseStory.save"));
+  return FPaths::Combine(FPaths::ProjectSavedDir(),
+                         TEXT("LostsenseStory.save"));
 }

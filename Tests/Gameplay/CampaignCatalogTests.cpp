@@ -21,8 +21,7 @@ int main() {
               "Act II follows Act I without inventing an intermediate quest");
 
   const auto actFour = CampaignCatalog::FindQuest(80030U);
-  test.Expect(actFour.has_value() &&
-                  actFour->Act == CampaignAct::GoldRemembers,
+  test.Expect(actFour.has_value() && actFour->Act == CampaignAct::GoldRemembers,
               "Pump Cathedral campaign authority remains Act IV");
 
   const auto finale = CampaignCatalog::FindQuest(80083U);
