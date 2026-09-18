@@ -27,6 +27,7 @@ enum class ELostsenseEnemyArchetype : uint8 {
   Caldris,
   BishopPiston,
   GildedLung,
+  KeeperYsil,
   Odran
 };
 
