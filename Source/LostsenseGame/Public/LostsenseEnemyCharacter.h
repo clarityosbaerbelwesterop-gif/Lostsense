@@ -21,7 +21,10 @@ enum class ELostsenseEnemyArchetype : uint8 {
   Rootbound,
   EchoStag,
   ThornPenitent,
+  CourtShade,
+  BlankKnight,
   MotherVeyr,
+  Caldris,
   Odran
 };
 
@@ -51,6 +54,7 @@ public:
                                uint32 InItemLevel);
   void ConfigureOdranBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureMotherVeyrBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureCaldrisBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,
@@ -93,6 +97,7 @@ private:
                               double DistanceToPlayer);
   void CommandNearbyConstructs();
   void HandleDefeat(ULostsenseRuntimeSubsystem &Runtime);
+  bool IsEncounterUnlocked() const;
 
   struct FPortableEnemy;
   TUniquePtr<FPortableEnemy> PortableEnemy;

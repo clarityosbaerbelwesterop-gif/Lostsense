@@ -67,6 +67,12 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
   case ELostsenseEnemyArchetype::ThornPenitent:
     return {108.0, 12.0,   9.0,   1450.0, 235.0, 13.0,
             0.98,  245.0F, 0.66F, 0.78F,  0.98F};
+  case ELostsenseEnemyArchetype::CourtShade:
+    return {132.0, 14.0,   7.0,   1450.0, 215.0, 14.0,
+            0.96,  260.0F, 0.58F, 0.74F,  0.92F};
+  case ELostsenseEnemyArchetype::BlankKnight:
+    return {185.0, 16.0,   18.0,  1500.0, 245.0, 17.0,
+            1.02,  205.0F, 0.82F, 0.88F,  1.12F};
   case ELostsenseEnemyArchetype::MotherVeyr:
     if (BossPhase >= 2) {
       return {410.0, 18.0,   12.0,  1850.0, 280.0, 18.0,
@@ -74,6 +80,13 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
     }
     return {410.0, 18.0,   12.0,  1850.0, 250.0, 15.0,
             1.00,  235.0F, 0.76F, 0.88F,  1.08F};
+  case ELostsenseEnemyArchetype::Caldris:
+    if (BossPhase >= 2) {
+      return {560.0, 22.0,   20.0,  1950.0, 300.0, 22.0,
+              1.10,  315.0F, 0.48F, 0.62F,  0.78F};
+    }
+    return {560.0, 22.0,   20.0,  1950.0, 270.0, 18.0,
+            1.05,  245.0F, 0.72F, 0.84F,  1.02F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
@@ -93,7 +106,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
   FPortableEnemy(const uint64 Id, const ELostsenseEnemyArchetype Archetype)
       : Combatant{Lostsense::Combat::CombatantId{Id},
                   (Archetype == ELostsenseEnemyArchetype::Odran ||
-                   Archetype == ELostsenseEnemyArchetype::MotherVeyr)
+                   Archetype == ELostsenseEnemyArchetype::MotherVeyr ||
+                   Archetype == ELostsenseEnemyArchetype::Caldris)
                       ? Lostsense::Combat::CombatantKind::Boss
                       : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
                           Archetype == ELostsenseEnemyArchetype::RailMarshal)
@@ -135,9 +149,11 @@ void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
   PendingCombatantId = InCombatantId;
   Archetype = InArchetype;
   bElite = InArchetype == ELostsenseEnemyArchetype::ForemanKett ||
-           InArchetype == ELostsenseEnemyArchetype::RailMarshal;
+           InArchetype == ELostsenseEnemyArchetype::RailMarshal ||
+           InArchetype == ELostsenseEnemyArchetype::BlankKnight;
   bBoss = InArchetype == ELostsenseEnemyArchetype::Odran ||
-          InArchetype == ELostsenseEnemyArchetype::MotherVeyr;
+          InArchetype == ELostsenseEnemyArchetype::MotherVeyr ||
+          InArchetype == ELostsenseEnemyArchetype::Caldris;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
@@ -150,6 +166,12 @@ void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
 void ALostsenseEnemyCharacter::ConfigureMotherVeyrBoss(
     const uint64 InCombatantId, const uint32 InItemLevel) {
   ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::MotherVeyr,
+                          InItemLevel);
+}
+
+void ALostsenseEnemyCharacter::ConfigureCaldrisBoss(
+    const uint64 InCombatantId, const uint32 InItemLevel) {
+  ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Caldris,
                           InItemLevel);
 }
 
@@ -181,6 +203,10 @@ void ALostsenseEnemyCharacter::Tick(const float DeltaSeconds) {
 
   if (PortableEnemy->Combatant.Health().IsDead()) {
     HandleDefeat(*Runtime);
+    return;
+  }
+  if (!IsEncounterUnlocked()) {
+    EnterState(ELostsenseEnemyAiState::Idle);
     return;
   }
 
@@ -357,7 +383,8 @@ void ALostsenseEnemyCharacter::CommandNearbyConstructs() {
 
 bool ALostsenseEnemyCharacter::ReceivePlayerAbility(
     ULostsenseRuntimeSubsystem &Runtime, const uint32 AbilityId) {
-  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead() ||
+      !IsEncounterUnlocked()) {
     return false;
   }
   const bool Activated = Runtime.ActivatePlayerAbilityAgainst(
@@ -370,7 +397,8 @@ bool ALostsenseEnemyCharacter::ReceivePlayerAbility(
 
 bool ALostsenseEnemyCharacter::ReceivePlayerLoadoutSlot(
     ULostsenseRuntimeSubsystem &Runtime, const int32 SlotIndex) {
-  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead()) {
+  if (PortableEnemy == nullptr || PortableEnemy->Combatant.Health().IsDead() ||
+      !IsEncounterUnlocked()) {
     return false;
   }
   const bool Activated = Runtime.ActivatePlayerLoadoutSlot(
@@ -480,6 +508,8 @@ void ALostsenseEnemyCharacter::HandleDefeat(
     } else if (Archetype == ELostsenseEnemyArchetype::MotherVeyr) {
       static_cast<void>(Story->CompleteActTwoBeat(
           ELostsenseActTwoStoryBeat::MotherVeyrDefeated));
+    } else if (Archetype == ELostsenseEnemyArchetype::Caldris) {
+      static_cast<void>(Story->CompleteCampaignQuest(80024));
     } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));
@@ -489,4 +519,25 @@ void ALostsenseEnemyCharacter::HandleDefeat(
   GetCharacterMovement()->DisableMovement();
   SetActorEnableCollision(false);
   SetLifeSpan(bBoss ? 8.0F : 4.0F);
+}
+
+
+bool ALostsenseEnemyCharacter::IsEncounterUnlocked() const {
+  if (Archetype != ELostsenseEnemyArchetype::MotherVeyr &&
+      Archetype != ELostsenseEnemyArchetype::Caldris) {
+    return true;
+  }
+  const UGameInstance *GameInstance = GetGameInstance();
+  const ULostsenseStorySubsystem *Story =
+      GameInstance != nullptr
+          ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
+          : nullptr;
+  if (Story == nullptr) {
+    return false;
+  }
+  if (Archetype == ELostsenseEnemyArchetype::MotherVeyr) {
+    return Story->HasActTwoBeat(
+        ELostsenseActTwoStoryBeat::ThornChoirDiscovered);
+  }
+  return Story->GetObjectiveState(80024) == ELostsenseObjectiveState::Active;
 }
