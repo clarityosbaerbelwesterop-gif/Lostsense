@@ -1,6 +1,7 @@
 #include "LostsenseStorySubsystem.h"
 
 #include "Lostsense/Gameplay/Story/ActTwoStoryRuntime.h"
+#include "Lostsense/Gameplay/Story/CampaignProgressRuntime.h"
 #include "Lostsense/Gameplay/Story/StoryRuntime.h"
 #include "Lostsense/Gameplay/World/DeepRouteState.h"
 
@@ -10,6 +11,7 @@
 namespace {
 constexpr std::string_view DeepRouteMarker{"LOSTSENSE_DEEP_ROUTE\n"};
 constexpr std::string_view ActTwoMarker{"\nLOSTSENSE_ACT_TWO\n"};
+constexpr std::string_view CampaignMarker{"\nLOSTSENSE_CAMPAIGN\n"};
 
 Lostsense::Gameplay::FirstSliceStoryBeat
 ToPortableBeat(const ELostsenseStoryBeat Beat) {
@@ -70,6 +72,7 @@ struct ULostsenseStorySubsystem::FStoryRuntime {
   Lostsense::Gameplay::FirstSliceStoryRuntime Story{
       Lostsense::Gameplay::BuildFirstSliceObjectives()};
   Lostsense::Gameplay::ActTwoStoryRuntime ActTwo;
+  Lostsense::Gameplay::CampaignProgressRuntime Campaign;
   Lostsense::Gameplay::DeepRouteState DeepRoute;
 };
 
@@ -119,20 +122,35 @@ bool ULostsenseStorySubsystem::HasActTwoBeat(
 
 bool ULostsenseStorySubsystem::CompleteActTwoBeat(
     const ELostsenseActTwoStoryBeat Beat) {
-  return IsStoryReady() &&
-         StoryRuntime->ActTwo.CompleteBeat(ToPortableActTwoBeat(Beat));
+  if (!IsStoryReady() ||
+      !StoryRuntime->ActTwo.CompleteBeat(ToPortableActTwoBeat(Beat))) {
+    return false;
+  }
+  if (Beat == ELostsenseActTwoStoryBeat::WitnessRootResolved &&
+      !StoryRuntime->Campaign.IsStarted()) {
+    return StoryRuntime->Campaign.Begin();
+  }
+  return true;
 }
 
 bool ULostsenseStorySubsystem::ResolveWitnessRoot(
     const ELostsenseWitnessRootDecision Decision) {
-  return IsStoryReady() && StoryRuntime->ActTwo.ResolveWitnessRoot(
-                               ToPortableRootDecision(Decision));
+  if (!IsStoryReady() ||
+      !StoryRuntime->ActTwo.ResolveWitnessRoot(
+          ToPortableRootDecision(Decision))) {
+    return false;
+  }
+  return StoryRuntime->Campaign.IsStarted() || StoryRuntime->Campaign.Begin();
 }
 
 ELostsenseObjectiveState
 ULostsenseStorySubsystem::GetObjectiveState(const int32 ObjectiveId) const {
   if (!IsStoryReady() || ObjectiveId <= 0) {
     return ELostsenseObjectiveState::Locked;
+  }
+  if (ObjectiveId >= 80020) {
+    return ToPresentationState(
+        StoryRuntime->Campaign.Objective(static_cast<uint32>(ObjectiveId)));
   }
   if (ObjectiveId >= 80010 && ObjectiveId <= 80014) {
     return ToPresentationState(
@@ -153,7 +171,16 @@ int32 ULostsenseStorySubsystem::GetCurrentObjectiveId() const {
       return Id;
     }
   }
-  return 0;
+  return static_cast<int32>(StoryRuntime->Campaign.CurrentQuestId());
+}
+
+bool ULostsenseStorySubsystem::CompleteCampaignQuest(const int32 QuestId) {
+  return IsStoryReady() && QuestId >= 80020 &&
+         StoryRuntime->Campaign.CompleteQuest(static_cast<uint32>(QuestId));
+}
+
+bool ULostsenseStorySubsystem::IsCampaignFinished() const {
+  return IsStoryReady() && StoryRuntime->Campaign.IsFinished();
 }
 
 bool ULostsenseStorySubsystem::HasDeepRouteMilestone(
@@ -191,16 +218,21 @@ bool ULostsenseStorySubsystem::SaveStoryToText(FString &OutPayload) const {
   }
   std::string StoryPayload;
   std::string ActTwoPayload;
+  std::string CampaignPayload;
   if (!Lostsense::Gameplay::FirstSliceStoryCodec::Serialize(
           StoryRuntime->Story.CaptureState(), StoryPayload) ||
       !Lostsense::Gameplay::ActTwoStoryCodec::Serialize(
-          StoryRuntime->ActTwo.CaptureState(), ActTwoPayload)) {
+          StoryRuntime->ActTwo.CaptureState(), ActTwoPayload) ||
+      !Lostsense::Gameplay::CampaignProgressCodec::Serialize(
+          StoryRuntime->Campaign.CaptureState(), CampaignPayload)) {
     return false;
   }
   StoryPayload.append(DeepRouteMarker);
   StoryPayload.append(StoryRuntime->DeepRoute.Serialize());
   StoryPayload.append(ActTwoMarker);
   StoryPayload.append(ActTwoPayload);
+  StoryPayload.append(CampaignMarker);
+  StoryPayload.append(CampaignPayload);
   OutPayload = UTF8_TO_TCHAR(StoryPayload.c_str());
   return true;
 }
@@ -217,6 +249,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   }
   const auto DeepStart = DeepPosition + DeepRouteMarker.size();
   const auto ActTwoPosition = Utf8Payload.find(ActTwoMarker, DeepStart);
+  const auto CampaignPosition =
+      ActTwoPosition == std::string::npos
+          ? std::string::npos
+          : Utf8Payload.find(CampaignMarker,
+                             ActTwoPosition + ActTwoMarker.size());
 
   const std::string_view StoryPayload(Utf8Payload.data(), DeepPosition);
   const std::string_view DeepPayload(Utf8Payload.data() + DeepStart,
@@ -254,8 +291,11 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
   } else {
     Lostsense::Gameplay::ActTwoStoryState State;
     const auto ActTwoStart = ActTwoPosition + ActTwoMarker.size();
-    const std::string_view ActTwoPayload(Utf8Payload.data() + ActTwoStart,
-                                         Utf8Payload.size() - ActTwoStart);
+    const std::string_view ActTwoPayload(
+        Utf8Payload.data() + ActTwoStart,
+        (CampaignPosition == std::string::npos ? Utf8Payload.size()
+                                               : CampaignPosition) -
+            ActTwoStart);
     if (!Lostsense::Gameplay::ActTwoStoryCodec::Deserialize(ActTwoPayload,
                                                             State) ||
         !ActTwoCandidate.RestoreState(State) ||
@@ -266,8 +306,31 @@ bool ULostsenseStorySubsystem::LoadStoryFromText(const FString &Payload) {
     }
   }
 
+  Lostsense::Gameplay::CampaignProgressRuntime CampaignCandidate;
+  if (CampaignPosition == std::string::npos) {
+    if (ActTwoCandidate.HasBeat(
+            Lostsense::Gameplay::ActTwoStoryBeat::WitnessRootResolved) &&
+        !CampaignCandidate.Begin()) {
+      return false;
+    }
+  } else {
+    Lostsense::Gameplay::CampaignProgressState CampaignState;
+    const auto CampaignStart = CampaignPosition + CampaignMarker.size();
+    const std::string_view CampaignPayload(
+        Utf8Payload.data() + CampaignStart, Utf8Payload.size() - CampaignStart);
+    if (!Lostsense::Gameplay::CampaignProgressCodec::Deserialize(
+            CampaignPayload, CampaignState) ||
+        !CampaignCandidate.RestoreState(CampaignState) ||
+        CampaignCandidate.IsStarted() !=
+            ActTwoCandidate.HasBeat(
+                Lostsense::Gameplay::ActTwoStoryBeat::WitnessRootResolved)) {
+      return false;
+    }
+  }
+
   if (!StoryRuntime->Story.RestoreState(StoryCandidate) ||
-      !StoryRuntime->ActTwo.RestoreState(ActTwoCandidate.CaptureState())) {
+      !StoryRuntime->ActTwo.RestoreState(ActTwoCandidate.CaptureState()) ||
+      !StoryRuntime->Campaign.RestoreState(CampaignCandidate.CaptureState())) {
     return false;
   }
   StoryRuntime->DeepRoute = *DeepCandidate;

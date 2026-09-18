@@ -105,6 +105,12 @@ public:
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story")
   int32 GetCurrentObjectiveId() const;
 
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|Campaign")
+  bool CompleteCampaignQuest(int32 QuestId);
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|Story|Campaign")
+  bool IsCampaignFinished() const;
+
   UFUNCTION(BlueprintPure, Category = "Lostsense|DeepRoute")
   bool HasDeepRouteMilestone(ELostsenseDeepRouteMilestone Milestone) const;
 
