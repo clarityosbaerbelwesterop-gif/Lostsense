@@ -25,6 +25,8 @@ enum class ELostsenseEnemyArchetype : uint8 {
   BlankKnight,
   MotherVeyr,
   Caldris,
+  BishopPiston,
+  GildedLung,
   Odran
 };
 
@@ -55,6 +57,8 @@ public:
   void ConfigureOdranBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureMotherVeyrBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureCaldrisBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureBishopPistonBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureGildedLungBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,
@@ -110,6 +114,7 @@ private:
   bool bBoss = false;
   bool bDefeatHandled = false;
   bool bBossTransitionCommitted = false;
+  bool bBossFinalTransitionCommitted = false;
   bool bAttackCommitted = false;
   int32 BossPhase = 1;
   int32 AttackPatternIndex = 0;

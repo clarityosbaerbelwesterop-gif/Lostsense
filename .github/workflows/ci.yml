@@ -74,6 +74,8 @@ jobs:
         run: python3 Scripts/Verify-ActTwoAcceptance.py
       - name: Validate Act III Crownless Reach source contracts
         run: python3 Scripts/Verify-ActThreeAcceptance.py
+      - name: Validate Act IV Gold Remembers source contracts
+        run: python3 Scripts/Verify-ActFourAcceptance.py
 
   format:
     name: clang-format

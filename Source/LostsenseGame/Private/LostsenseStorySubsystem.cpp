@@ -174,8 +174,19 @@ int32 ULostsenseStorySubsystem::GetCurrentObjectiveId() const {
 }
 
 bool ULostsenseStorySubsystem::CompleteCampaignQuest(const int32 QuestId) {
-  return IsStoryReady() && QuestId >= 80020 &&
-         StoryRuntime->Campaign.CompleteQuest(static_cast<uint32>(QuestId));
+  if (!IsStoryReady() || QuestId < 80020 ||
+      !StoryRuntime->Campaign.CompleteQuest(static_cast<uint32>(QuestId))) {
+    return false;
+  }
+  if (QuestId == 80024 &&
+      StoryRuntime->DeepRoute.IsComplete(
+          Lostsense::Gameplay::DeepRouteMilestone::VentilationNaveStabilized) &&
+      !StoryRuntime->DeepRoute.IsComplete(
+          Lostsense::Gameplay::DeepRouteMilestone::ActFourClearanceGranted)) {
+    return StoryRuntime->DeepRoute.Complete(
+        Lostsense::Gameplay::DeepRouteMilestone::ActFourClearanceGranted);
+  }
+  return true;
 }
 
 bool ULostsenseStorySubsystem::IsCampaignFinished() const {

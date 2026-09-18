@@ -195,6 +195,15 @@ bool ALostsenseDeepMechanismActor::Interact(
     bChanged = Story->CompleteDeepRouteMilestone(
         ELostsenseDeepRouteMilestone::VentilationNaveStabilized);
   }
+  if (bChanged &&
+      Story->HasDeepRouteMilestone(
+          ELostsenseDeepRouteMilestone::VentilationNaveStabilized) &&
+      Story->GetObjectiveState(80030) == ELostsenseObjectiveState::Active &&
+      !Story->HasDeepRouteMilestone(
+          ELostsenseDeepRouteMilestone::ActFourClearanceGranted)) {
+    bChanged = Story->CompleteDeepRouteMilestone(
+        ELostsenseDeepRouteMilestone::ActFourClearanceGranted);
+  }
 
   if (bChanged) {
     SynchronizePresentation();
