@@ -1,0 +1,30 @@
+name: PR13 format repair
+
+"on":
+  push:
+    branches: [work/campaign-runtime-acts3-9]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/campaign-runtime-acts3-9
+      - name: Format PR13 C++ surface
+        run: |
+          clang-format -i             Source/Lostsense/Gameplay/Story/CampaignProgressRuntime.h             Source/Lostsense/Gameplay/Story/CampaignProgressRuntime.cpp             Tests/Gameplay/CampaignProgressRuntimeTests.cpp             Source/LostsenseGame/Public/LostsenseStorySubsystem.h             Source/LostsenseGame/Private/LostsenseStorySubsystem.cpp
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Source Tests
+          git commit -m "Apply PR13 clang-format"
+          git push origin HEAD:work/campaign-runtime-acts3-9
