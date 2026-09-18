@@ -124,7 +124,8 @@ bool ALostsenseActTwoStoryActor::Interact(
   }
   bool Completed = false;
   if (Interaction == ELostsenseActTwoInteraction::PreserveWitnessRoot) {
-    Completed = Story->ResolveWitnessRoot(ELostsenseWitnessRootDecision::Preserve);
+    Completed =
+        Story->ResolveWitnessRoot(ELostsenseWitnessRootDecision::Preserve);
   } else if (Interaction == ELostsenseActTwoInteraction::BurnWitnessRoot) {
     Completed = Story->ResolveWitnessRoot(ELostsenseWitnessRootDecision::Burn);
   } else {

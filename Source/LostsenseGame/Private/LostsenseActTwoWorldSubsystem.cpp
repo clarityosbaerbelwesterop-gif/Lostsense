@@ -143,8 +143,7 @@ void ULostsenseActTwoWorldSubsystem::OnWorldBeginPlay(UWorld &InWorld) {
   const FVector Nave = Abbey + FVector(4200.0F, 0.0F, -260.0F);
   for (int32 Bay = 0; Bay < 5; ++Bay) {
     const float X = Nave.X + static_cast<float>(Bay) * 720.0F;
-    Block(InWorld, *Cube, FVector(X, 0.0F, Nave.Z),
-          FVector(4.2F, 5.0F, 0.35F));
+    Block(InWorld, *Cube, FVector(X, 0.0F, Nave.Z), FVector(4.2F, 5.0F, 0.35F));
     Block(InWorld, *Cube, FVector(X, 620.0F, Nave.Z + 620.0F),
           FVector(0.45F, 0.45F, 6.0F));
     Block(InWorld, *Cube, FVector(X, -620.0F, Nave.Z + 620.0F),
