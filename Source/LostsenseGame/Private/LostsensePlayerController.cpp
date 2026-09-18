@@ -194,9 +194,15 @@ void ALostsensePlayerController::AdjustOption(const int32 Direction) {
     break;
   }
   case 2: {
-    const float Current = Settings->GetResolutionScaleNormalized();
-    const float Next = FMath::Clamp(Current + static_cast<float>(Direction) * 0.1F,
-                                    0.5F, 1.0F);
+    float Current = 1.0F;
+    int32 CurrentValue = 100;
+    int32 MinimumValue = 50;
+    int32 MaximumValue = 100;
+    Settings->GetResolutionScaleInformationEx(Current, CurrentValue,
+                                              MinimumValue, MaximumValue);
+    const float Next =
+        FMath::Clamp(Current + static_cast<float>(Direction) * 0.1F, 0.5F,
+                     1.0F);
     Settings->SetResolutionScaleNormalized(Next);
     break;
   }
