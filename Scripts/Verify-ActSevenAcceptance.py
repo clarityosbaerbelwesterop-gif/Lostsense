@@ -3,8 +3,10 @@ from pathlib import Path
 import sys
 R=Path(__file__).resolve().parents[1]
 checks={
+"Source/Lostsense/Gameplay/Story/ActSevenChoiceRuntime.h":[
+ "BellgraveCivilianArchive","CrownlessCivilianArchive"],
 "Source/Lostsense/Gameplay/Story/ActSevenChoiceRuntime.cpp":[
- "BellgraveCivilianArchive","CrownlessCivilianArchive","A7C1|"],
+ "A7C1|"],
 "Tests/Gameplay/ActSevenChoiceRuntimeTests.cpp":[
  "cannot be overwritten","round-trips exactly"],
 "Source/LostsenseGame/Private/LostsenseStorySubsystem.cpp":[
