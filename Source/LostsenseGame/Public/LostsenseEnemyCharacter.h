@@ -35,6 +35,8 @@ enum class ELostsenseEnemyArchetype : uint8 {
   SaelRhyne,
   Ashbound,
   IlyrVael,
+  ReconstructedElite,
+  AsterNull,
   Odran
 };
 
@@ -70,6 +72,7 @@ public:
   void ConfigureKharosBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureSaelRhyneBoss(uint64 InCombatantId, uint32 InItemLevel);
   void ConfigureIlyrVaelBoss(uint64 InCombatantId, uint32 InItemLevel);
+  void ConfigureAsterNullBoss(uint64 InCombatantId, uint32 InItemLevel);
   bool ReceivePlayerAbility(ULostsenseRuntimeSubsystem &Runtime,
                             uint32 AbilityId);
   bool ReceivePlayerLoadoutSlot(ULostsenseRuntimeSubsystem &Runtime,

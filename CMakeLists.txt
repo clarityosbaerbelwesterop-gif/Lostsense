@@ -74,6 +74,7 @@ add_library(
   Source/Lostsense/Gameplay/Story/CampaignCatalog.cpp
   Source/Lostsense/Gameplay/Story/CampaignProgressRuntime.cpp
   Source/Lostsense/Gameplay/Story/ActSevenChoiceRuntime.cpp
+  Source/Lostsense/Gameplay/Story/CampaignEndingRuntime.cpp
   Source/Lostsense/Gameplay/World/DeepRouteState.cpp)
 target_include_directories(lostsense_gameplay PUBLIC Source)
 target_link_libraries(lostsense_gameplay PUBLIC lostsense_combat
@@ -156,6 +157,9 @@ if(BUILD_TESTING)
   lostsense_add_gameplay_test(lostsense_act_seven_choice_tests
                               Tests/Gameplay/ActSevenChoiceRuntimeTests.cpp
                               gameplay.act_seven_choice)
+  lostsense_add_gameplay_test(lostsense_campaign_ending_tests
+                              Tests/Gameplay/CampaignEndingRuntimeTests.cpp
+                              gameplay.campaign_ending)
 endif()
 
 find_program(LOSTSENSE_CLANG_FORMAT NAMES clang-format clang-format-18)

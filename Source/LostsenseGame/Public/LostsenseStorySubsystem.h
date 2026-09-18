@@ -43,6 +43,9 @@ enum class ELostsenseActSevenArchiveChoice : uint8 {
 };
 
 UENUM(BlueprintType)
+enum class ELostsenseCampaignEnding : uint8 { None, Sever, Bind, Scatter };
+
+UENUM(BlueprintType)
 enum class ELostsenseObjectiveState : uint8 { Locked, Active, Completed };
 
 UENUM(BlueprintType)
@@ -120,6 +123,12 @@ public:
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story|ActVII")
   ELostsenseActSevenArchiveChoice GetActSevenArchiveChoice() const;
+
+  UFUNCTION(BlueprintCallable, Category = "Lostsense|Story|Ending")
+  bool ResolveCampaignEnding(ELostsenseCampaignEnding Ending);
+
+  UFUNCTION(BlueprintPure, Category = "Lostsense|Story|Ending")
+  ELostsenseCampaignEnding GetCampaignEnding() const;
 
   UFUNCTION(BlueprintPure, Category = "Lostsense|Story|Campaign")
   bool IsCampaignFinished() const;

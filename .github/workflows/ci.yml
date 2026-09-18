@@ -84,6 +84,8 @@ jobs:
         run: python3 Scripts/Verify-ActSevenAcceptance.py
       - name: Validate Act VIII Red Archive source contracts
         run: python3 Scripts/Verify-ActEightAcceptance.py
+      - name: Validate Act IX First Witness source contracts
+        run: python3 Scripts/Verify-ActNineAcceptance.py
 
   format:
     name: clang-format
