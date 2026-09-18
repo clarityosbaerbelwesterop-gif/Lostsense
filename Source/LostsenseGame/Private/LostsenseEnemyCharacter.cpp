@@ -67,6 +67,13 @@ FArchetypeTuning TuningFor(const ELostsenseEnemyArchetype Archetype,
   case ELostsenseEnemyArchetype::ThornPenitent:
     return {108.0, 12.0,   9.0,   1450.0, 235.0, 13.0,
             0.98,  245.0F, 0.66F, 0.78F,  0.98F};
+  case ELostsenseEnemyArchetype::MotherVeyr:
+    if (BossPhase >= 2) {
+      return {410.0, 18.0,   12.0,  1850.0, 280.0, 18.0,
+              1.05,  300.0F, 0.52F, 0.68F,  0.82F};
+    }
+    return {410.0, 18.0,   12.0,  1850.0, 250.0, 15.0,
+            1.00,  235.0F, 0.76F, 0.88F,  1.08F};
   case ELostsenseEnemyArchetype::Odran:
     if (BossPhase >= 2) {
       return {280.0, 14.0,   11.0,  1600.0, 215.0, 15.0,
@@ -85,7 +92,8 @@ struct ALostsenseEnemyCharacter::FPortableEnemy {
 
   FPortableEnemy(const uint64 Id, const ELostsenseEnemyArchetype Archetype)
       : Combatant{Lostsense::Combat::CombatantId{Id},
-                  Archetype == ELostsenseEnemyArchetype::Odran
+                  (Archetype == ELostsenseEnemyArchetype::Odran ||
+                   Archetype == ELostsenseEnemyArchetype::MotherVeyr)
                       ? Lostsense::Combat::CombatantKind::Boss
                       : ((Archetype == ELostsenseEnemyArchetype::ForemanKett ||
                           Archetype == ELostsenseEnemyArchetype::RailMarshal)
@@ -128,13 +136,20 @@ void ALostsenseEnemyCharacter::ConfigureEnemyArchetype(
   Archetype = InArchetype;
   bElite = InArchetype == ELostsenseEnemyArchetype::ForemanKett ||
            InArchetype == ELostsenseEnemyArchetype::RailMarshal;
-  bBoss = InArchetype == ELostsenseEnemyArchetype::Odran;
+  bBoss = InArchetype == ELostsenseEnemyArchetype::Odran ||
+          InArchetype == ELostsenseEnemyArchetype::MotherVeyr;
   ItemLevel = FMath::Max(1U, InItemLevel);
 }
 
 void ALostsenseEnemyCharacter::ConfigureOdranBoss(const uint64 InCombatantId,
                                                   const uint32 InItemLevel) {
   ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::Odran,
+                          InItemLevel);
+}
+
+void ALostsenseEnemyCharacter::ConfigureMotherVeyrBoss(
+    const uint64 InCombatantId, const uint32 InItemLevel) {
+  ConfigureEnemyArchetype(InCombatantId, ELostsenseEnemyArchetype::MotherVeyr,
                           InItemLevel);
 }
 
@@ -459,9 +474,12 @@ void ALostsenseEnemyCharacter::HandleDefeat(
           ? GameInstance->GetSubsystem<ULostsenseStorySubsystem>()
           : nullptr;
   if (Story != nullptr) {
-    if (bBoss) {
+    if (Archetype == ELostsenseEnemyArchetype::Odran) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::OdranDefeated));
+    } else if (Archetype == ELostsenseEnemyArchetype::MotherVeyr) {
+      static_cast<void>(Story->CompleteActTwoBeat(
+          ELostsenseActTwoStoryBeat::MotherVeyrDefeated));
     } else if (PortableEnemy->Combatant.Id().Value == 1000U) {
       static_cast<void>(
           Story->CompleteBeat(ELostsenseStoryBeat::BellgraveDepartureAllowed));

@@ -29,6 +29,9 @@ BeatFor(const ELostsenseActTwoInteraction Interaction) {
     return ELostsenseActTwoStoryBeat::GiltfenRootTunnelOpened;
   case ELostsenseActTwoInteraction::ThornChoirThreshold:
     return ELostsenseActTwoStoryBeat::ThornChoirDiscovered;
+  case ELostsenseActTwoInteraction::PreserveWitnessRoot:
+  case ELostsenseActTwoInteraction::BurnWitnessRoot:
+    return ELostsenseActTwoStoryBeat::WitnessRootResolved;
   }
   return ELostsenseActTwoStoryBeat::BlackSapTrailFound;
 }
@@ -67,7 +70,11 @@ FText ALostsenseActTwoStoryActor::GetInteractionPrompt() const {
   case ELostsenseActTwoInteraction::GiltfenRootTunnel:
     return FText::FromString(TEXT("Open remembered road through roots"));
   case ELostsenseActTwoInteraction::ThornChoirThreshold:
-    return FText::FromString(TEXT("Witness the Thorn Choir threshold"));
+    return FText::FromString(TEXT("Enter the Thorn Choir sanctum"));
+  case ELostsenseActTwoInteraction::PreserveWitnessRoot:
+    return FText::FromString(TEXT("Preserve the abbey witness root"));
+  case ELostsenseActTwoInteraction::BurnWitnessRoot:
+    return FText::FromString(TEXT("Burn the abbey witness root"));
   }
   return FText::GetEmpty();
 }
@@ -96,6 +103,12 @@ bool ALostsenseActTwoStoryActor::CanInteract(
   case ELostsenseActTwoInteraction::ThornChoirThreshold:
     return Story->HasActTwoBeat(
         ELostsenseActTwoStoryBeat::GiltfenRootTunnelOpened);
+  case ELostsenseActTwoInteraction::PreserveWitnessRoot:
+  case ELostsenseActTwoInteraction::BurnWitnessRoot:
+    return Story->HasActTwoBeat(
+               ELostsenseActTwoStoryBeat::MotherVeyrDefeated) &&
+           !Story->HasActTwoBeat(
+               ELostsenseActTwoStoryBeat::WitnessRootResolved);
   }
   return false;
 }
@@ -106,7 +119,18 @@ bool ALostsenseActTwoStoryActor::Interact(
     return false;
   }
   ULostsenseStorySubsystem *Story = StoryFor(*this);
-  if (Story == nullptr || !Story->CompleteActTwoBeat(BeatFor(Interaction))) {
+  if (Story == nullptr) {
+    return false;
+  }
+  bool Completed = false;
+  if (Interaction == ELostsenseActTwoInteraction::PreserveWitnessRoot) {
+    Completed = Story->ResolveWitnessRoot(ELostsenseWitnessRootDecision::Preserve);
+  } else if (Interaction == ELostsenseActTwoInteraction::BurnWitnessRoot) {
+    Completed = Story->ResolveWitnessRoot(ELostsenseWitnessRootDecision::Burn);
+  } else {
+    Completed = Story->CompleteActTwoBeat(BeatFor(Interaction));
+  }
+  if (!Completed) {
     return false;
   }
   SynchronizePresentation();
@@ -132,10 +156,13 @@ void ALostsenseActTwoStoryActor::SynchronizePresentation() {
   if (!IsCompleted()) {
     return;
   }
-  if (Interaction == ELostsenseActTwoInteraction::GiltfenRootTunnel) {
+  if (Interaction == ELostsenseActTwoInteraction::GiltfenRootTunnel ||
+      Interaction == ELostsenseActTwoInteraction::ThornChoirThreshold) {
     SetActorLocation(RestLocation + FVector(0.0F, 0.0F, 700.0F));
   } else if (Interaction == ELostsenseActTwoInteraction::BlackSapTrace ||
-             Interaction == ELostsenseActTwoInteraction::InfectedVillager) {
+             Interaction == ELostsenseActTwoInteraction::InfectedVillager ||
+             Interaction == ELostsenseActTwoInteraction::PreserveWitnessRoot ||
+             Interaction == ELostsenseActTwoInteraction::BurnWitnessRoot) {
     SetActorScale3D(RestScale * 0.65F);
   }
 }

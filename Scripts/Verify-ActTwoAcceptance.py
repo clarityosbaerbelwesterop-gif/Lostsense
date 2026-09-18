@@ -20,10 +20,15 @@ checks = {
     "Source/LostsenseGame/Private/LostsenseActTwoStoryActor.cpp": [
         "Stabilize senseprint without killing host",
         "GiltfenRootTunnelOpened", "ThornChoirDiscovered",
+        "PreserveWitnessRoot", "BurnWitnessRoot", "ResolveWitnessRoot",
     ],
     "Source/LostsenseGame/Private/LostsenseActTwoWorldSubsystem.cpp": [
         "Morrowstep", "RootTunnel", "ThornChoirThreshold",
-        "nonlethal resolution",
+        "MotherVeyr", "30008U", "WitnessRoot", "nonlethal resolution",
+    ],
+    "Source/LostsenseGame/Private/LostsenseEnemyCharacter.cpp": [
+        "MotherVeyr", "ConfigureMotherVeyrBoss",
+        "MotherVeyrDefeated",
     ],
     "Source/LostsenseGame/Private/LostsenseDeepMechanismActor.cpp": [
         "ActFourClearanceGranted",
